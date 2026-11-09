@@ -1,6 +1,7 @@
 import handlebars from 'handlebars';
 import { AsyncTemplate } from './AsyncTemplate';
 import { Receiver } from '../Receiver';
+import { ExternalContentError, TemplateError } from './TemplateErrors';
 
 
 export class HandlebarsAsyncTemplate<Context> implements AsyncTemplate<Context> {
@@ -17,17 +18,32 @@ export class HandlebarsAsyncTemplate<Context> implements AsyncTemplate<Context> 
   }
 
   async render (context: Context, receiver: Receiver): Promise<string> {
-    let html = this.template(context);
-      if(this.hasExternalContetn) {
+    let html = this.apply(context);
+    if (this.hasExternalContetn) {
+      try {
         await Promise.all([
           this.getTemplateExternalContent(this.urlsForRequest),
           this.getReceiverExternalContent(this.receiverExternalContent, receiver)
         ]);
-        html = this.template(context); 
+        html = this.apply(context);
+      } catch (error: any) {
+        throw error instanceof TemplateError ? error : new ExternalContentError(error.message);
+      } finally {
         this.receiverExternalContent = [];
         this.hasExternalContetn = false;
       }
+    }
     return html;
+  }
+
+  // Handlebars разбирает шаблон при первом вызове: и синтаксические ошибки,
+  // и ошибки подстановки возникают здесь
+  private apply (context: Context): string {
+    try {
+      return this.template(context);
+    } catch (error: any) {
+      throw new TemplateError(error.message);
+    }
   }
 
   private async getTemplateExternalContent (urls: Array<string>) {

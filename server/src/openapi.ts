@@ -3,6 +3,7 @@ import { requestBodyJsonSchema as createRetryMailingBody } from './controllers/c
 import {
   requestBodyJsonSchema as requestSubscriptionBody
 } from './controllers/requestSubscription';
+import { requestBodyJsonSchema as previewDraftBody } from './controllers/previewDraft';
 import { requestBodyJsonSchema as previewEmailBody } from './controllers/previewEmail';
 import { requestBodyJsonSchema as sendTestEmailBody } from './controllers/sendTestEmail';
 import { requestBodyJsonSchema as subscribeBody } from './controllers/subscribe';
@@ -295,8 +296,36 @@ export const openApiDocument = {
         requestBody: body(previewEmailBody, { email: 'user@example.com' }),
         responses: {
           200: ok(ref('EmailPreview')),
-          400: badRequest,
-          404: notFound
+          400: failure(
+            'Ошибка проверки тела или шаблона (`TEMPLATE_ERROR`: поле и сообщение Handlebars)'
+          ),
+          404: notFound,
+          502: failure('Не удалось получить внешнее содержимое (`EXTERNAL_CONTENT_ERROR`)')
+        }
+      }
+    },
+    '/preview': {
+      post: {
+        tags: ['mailings'],
+        summary: 'Предпросмотр письма без созданной рассылки',
+        description:
+          'Собирает письма из переданных полей (те же, что при создании рассылки) ' +
+          'для каждого получателя из `receivers` (до 100) тем же кодом, что и ' +
+          'отправка; ничего не сохраняет и не отправляет. Ответ — массив писем в ' +
+          'порядке `receivers`. Рассылки ещё нет, поэтому в `List-Id` вместо её ' +
+          'номера стоит 0. У рассылки, открытой для подписки, получателям без ' +
+          '`code` выдаётся случайный код, как при создании.',
+        requestBody: body(previewDraftBody, {
+          subject: 'Привет, {{receiver.name}}',
+          html: '<p>Здравствуйте, {{receiver.name}}!</p>',
+          receivers: [{ email: 'user@example.com', name: 'Иван' }]
+        }),
+        responses: {
+          200: ok({ type: 'array', items: ref('EmailPreview') }),
+          400: failure(
+            'Ошибка проверки тела или шаблона (`TEMPLATE_ERROR`: поле и сообщение Handlebars)'
+          ),
+          502: failure('Не удалось получить внешнее содержимое (`EXTERNAL_CONTENT_ERROR`)')
         }
       }
     },

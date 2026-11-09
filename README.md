@@ -256,11 +256,23 @@ You can check how a receiver will see the letter without running the mailing:
   is among the receivers, their name, code and `extraData` are used and external
   content is fetched; otherwise the letter is built with the address only
   (`receiverFound: false`).
+- **Preview without a mailing** — `POST /preview`: the same fields as for
+  creating a mailing (`subject`, `html`, `from`, `replyTo`, `listUnsubscribe`,
+  `openForSubscription`, `extraData`, `name`) and `receivers`, up to 100
+  receivers `{email, name?, code?, extraData?}`. The answer is an array of
+  letters in the same form, one per receiver; nothing is saved. A program that
+  prepares a mailing on its side can check the letter before creating it.
+  `List-Id` has 0 instead of the mailing number.
 - **Test letter** — the "Пробное письмо на адрес" field,
   `POST /mailings/:id/send-test-email` with `{email}` in the API: the letter is
   really sent to that address, to a receiver with the address only.
 
-Both use the saved mailing: unsaved changes in the editor are not included.
+If the subject or HTML template does not compile, the preview answers 400
+with the `TEMPLATE_ERROR` code and a text like `html: Parse error on line 3: ...`;
+if external content cannot be fetched, it answers 502 (`EXTERNAL_CONTENT_ERROR`).
+
+The preview of a mailing and the test letter use the saved mailing: unsaved
+changes in the editor are not included.
 Other programs (admin panels and so on) should not render the letter with their
 own copy of Handlebars: the service builds the plain text version and headers
 itself, and a copy may differ from it — use the preview to show the letter.
@@ -352,6 +364,7 @@ every route is documented.
 | `GET /mailings/:id/failed-receivers` | Receivers with delivery errors, `?limit=N`, `?format=csv` |
 | `POST /mailings/:id/send-test-email` | Send the letter to `{email}` |
 | `POST /mailings/:id/preview` | Build the letter for receiver `{email}` without sending it: subject, HTML, plain text and headers as the service sends them |
+| `POST /preview` | The same without a mailing: from mailing fields and `receivers` (up to 100), returns an array of letters |
 | `POST /mailings/create-retry` | New mailing for failed receivers of `{sourceId}` |
 | `POST /mailings/:id/requestSubscription` | Subscription request, see above |
 | `POST /mailings/:id/subscribe` | Confirm subscription `{email, code}` |

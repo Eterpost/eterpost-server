@@ -3,6 +3,7 @@ import { MailingRepository } from './MailingRepository';
 import { AsyncTemplate } from './templates/AsyncTemplate';
 import { HandlebarsAsyncTemplate } from './templates/HandlebarsAsyncTemplate';
 import { MailingState } from './MailingState';
+import { TemplateError } from './templates/TemplateErrors';
 
 
 export interface MailingProperties {
@@ -120,7 +121,7 @@ export class Mailing implements MailingProperties {
   }
 
   getHtmlForReceiver (receiver: Receiver): Promise<string> {
-    return this.renderTemplate(this.htmlTemplate, receiver);
+    return this.renderTemplate(this.htmlTemplate, receiver, 'html');
   }
 
   async getReceiverByEmail (email: string): Promise<Receiver | null> {
@@ -155,7 +156,7 @@ export class Mailing implements MailingProperties {
   }
 
   getSubjectForReceiver (receiver: Receiver): Promise<string> {
-    return this.renderTemplate(this.subjectTemplate, receiver);
+    return this.renderTemplate(this.subjectTemplate, receiver, 'subject');
   }
 
   async getUnsentReceivers () {
@@ -194,12 +195,17 @@ export class Mailing implements MailingProperties {
     return this.repository.removeReceiver(this.id, receiver, excluded);
   }
 
-  private renderTemplate (template: AsyncTemplate<MailingTemplateContext>, receiver: Receiver) {
-    return template.render({
-      mailing: this,
-      receiver
-    },
-    receiver);
+  private async renderTemplate (
+    template: AsyncTemplate<MailingTemplateContext>, receiver: Receiver, field: string
+  ) {
+    try {
+      return await template.render({ mailing: this, receiver }, receiver);
+    } catch (error) {
+      if (error instanceof TemplateError) {
+        error.field = field;
+      }
+      throw error;
+    }
   }
 
   private get htmlTemplate () {
