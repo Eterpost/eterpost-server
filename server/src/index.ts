@@ -17,6 +17,7 @@ import { RedisSorterStatusRepository } from './RedisSorterStatusRepository';
 import { readHandlebarsTemplate } from './templates/readTemplate';
 import { ApiKeyRepository } from './ApiKeyRepository';
 import { SpaceRepository } from './SpaceRepository';
+import { migrateMailingsToDefaultSpace } from './migrateSpaces';
 
 
 async function main () {
@@ -76,6 +77,10 @@ async function main () {
     mailingRepository,
     config
   );
+  const migrated = await migrateMailingsToDefaultSpace(mailingRepository);
+  if (migrated > 0) {
+    logger.info(`Moved ${migrated} mailings to the default space`);
+  }
   await stateManager.initialize();
   const app = createExpressServer(config.server);
   setupRoutes(

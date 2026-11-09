@@ -283,4 +283,47 @@ describe('RedisMailingRepository', { skip: redisSkip }, () => {
       assert.equal((await repositoryOne.getNextReceiver(id))!.email, 'c@example.com');
     });
   });
+
+  describe('space and test flag', () => {
+    const baseProps = {
+      html: testHtml, name: testName, subject: testSubject, undeliveredCount: 0
+    };
+
+    it('should keep the space and the test flag', async () => {
+      const created = await repositoryOne.create(
+        { ...baseProps, space: 'sales', test: true }, []
+      );
+      const loaded = await repositoryOne.getById(created.id);
+      assert.equal(loaded!.space, 'sales');
+      assert.equal(loaded!.test, true);
+    });
+
+    it('should keep the space and the test flag on update', async () => {
+      const created = await repositoryOne.create({ ...baseProps, space: 'sales' }, []);
+      await repositoryOne.updateInTransaction(created.id, mailing => {
+        mailing.test = true;
+      });
+      const loaded = await repositoryOne.getById(created.id);
+      assert.equal(loaded!.space, 'sales');
+      assert.equal(loaded!.test, true);
+    });
+
+    it('should use the default space and no test flag by default', async () => {
+      const created = await repositoryOne.create(baseProps, []);
+      const loaded = await repositoryOne.getById(created.id);
+      assert.equal(created.space, 'default');
+      assert.equal(loaded!.space, 'default');
+      assert.equal(loaded!.test, false);
+    });
+
+    it('should read a mailing stored without the space as the default one', async () => {
+      await redisConnectionPoolOne.runWithConnection(client => client.set(
+        'MAILING_COMMON_DATA_9001',
+        JSON.stringify({ html: testHtml, name: testName, subject: testSubject })
+      ));
+      const loaded = await repositoryOne.getById(9001);
+      assert.equal(loaded!.space, 'default');
+      assert.equal(loaded!.test, false);
+    });
+  });
 });

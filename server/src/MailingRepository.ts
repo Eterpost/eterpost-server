@@ -74,6 +74,11 @@ export interface MailingRepository {
    */
   getAll (): Promise<Mailing[]>;
   getById (id: number): Promise<Mailing | null>;
+  /**
+   * Дописывает пространство 'default' рассылкам без него (общим данным),
+   * возвращает их число
+   */
+  setDefaultSpace (): Promise<number>;
   getByListId (listId: string): Promise<Mailing | null>;
   /**
    * Адреса, исключённые из рассылки из-за ошибок доставки

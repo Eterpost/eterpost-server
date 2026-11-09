@@ -6,6 +6,7 @@ import {
 } from './MailingRepository';
 import { BaseRedisRepository } from './BaseRedisRepository';
 import { RedisClient, RedisConnectionPool } from './RedisConnectionPool';
+import { DEFAULT_SPACE } from './SpaceRepository';
 
 
 export interface RedisMailingRepositoryConfig {
@@ -74,7 +75,11 @@ implements MailingRepository {
 
   async create (properties: MailingProperties, receivers: ReceiverProperties[]): Promise<Mailing> {
     // Сохраняется всегда: отсутствие поля означает рассылку, созданную до настройки
-    properties = { ...properties, listUnsubscribe: properties.listUnsubscribe ?? true };
+    properties = {
+      ...properties,
+      listUnsubscribe: properties.listUnsubscribe ?? true,
+      space: properties.space ?? DEFAULT_SPACE
+    };
     const data = {
       creationDate: properties.creationDate,
       extraData: properties.extraData,
@@ -86,8 +91,10 @@ implements MailingRepository {
       position: 0,
       replyTo: properties.replyTo,
       sentCount: 0,
+      space: properties.space,
       state: MailingState.NEW,
       subject: properties.subject,
+      test: properties.test,
       tracking: properties.tracking,
       undeliveredCount: 0
     };
@@ -129,6 +136,23 @@ implements MailingRepository {
       }).filter(object =>
         object !== null && object.id <= maxId
       ) as Mailing[];
+    });
+  }
+
+  async setDefaultSpace (): Promise<number> {
+    return this.redisConnectionPool.runWithConnection(async redisClient => {
+      const keys = await redisClient.keys(this.config.commonDataKeyPrefix + '*');
+      let count = 0;
+      for (const key of keys) {
+        const jsonString = await redisClient.get(key);
+        if (!jsonString) { continue; }
+        const object = JSON.parse(jsonString);
+        if (object.space !== undefined) { continue; }
+        // Переписываются только общие данные: остальные поля остаются как были
+        await redisClient.set(key, JSON.stringify({ ...object, space: DEFAULT_SPACE }));
+        count++;
+      }
+      return count;
     });
   }
 
@@ -526,8 +550,10 @@ implements MailingRepository {
       position: properties.position,
       replyTo: properties.replyTo,
       sentCount: properties.sentCount,
+      space: properties.space,
       state: properties.state,
       subject: properties.subject,
+      test: properties.test,
       tracking: properties.tracking,
       undeliveredCount: properties.undeliveredCount
     });

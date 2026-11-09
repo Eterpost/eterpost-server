@@ -4,6 +4,7 @@ import { AsyncTemplate } from './templates/AsyncTemplate';
 import { HandlebarsAsyncTemplate } from './templates/HandlebarsAsyncTemplate';
 import { MailingState } from './MailingState';
 import { TemplateError } from './templates/TemplateErrors';
+import { DEFAULT_SPACE } from './SpaceRepository';
 
 
 export interface MailingProperties {
@@ -34,9 +35,17 @@ export interface MailingProperties {
    */
   position?: number;
   replyTo?: string;
+  /**
+   * Пространство, которому принадлежит рассылка. По умолчанию 'default'
+   */
+  space?: string;
   state?: MailingState;
   sentCount?: number;
   subject: string;
+  /**
+   * Пробная рассылка: не учитывается в статистике и не влияет на адреса
+   */
+  test?: boolean;
   /**
    * Отслеживать открытия и переходы по ссылкам (server.tracking.url)
    */
@@ -69,9 +78,11 @@ export class Mailing implements MailingProperties {
   public openForSubscription: boolean;
   public position: number;
   public replyTo?: string;
+  public space: string;
   public state: MailingState;
   public sentCount: number;
   public subject: string;
+  public test: boolean;
   public tracking: boolean;
   public undeliveredCount: number;
   private _htmlTemplate?: AsyncTemplate<MailingTemplateContext>;
@@ -95,11 +106,14 @@ export class Mailing implements MailingProperties {
     this.name = properties.name;
     this.openForSubscription = properties.openForSubscription || false;
     this.replyTo = properties.replyTo;
+    // Рассылки, сохранённые до появления пространств, относятся к default
+    this.space = properties.space ?? DEFAULT_SPACE;
     this.state = properties.state || MailingState.NEW;
     this.sentCount = properties.sentCount || 0;
     // Рассылки, сохранённые до появления position, продолжаются с sentCount
     this.position = properties.position ?? this.sentCount;
     this.subject = properties.subject;
+    this.test = properties.test || false;
     this.tracking = properties.tracking || false;
     this.undeliveredCount = properties.undeliveredCount || 0;
   }
