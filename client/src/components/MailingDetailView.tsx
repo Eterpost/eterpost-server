@@ -218,6 +218,10 @@ export class MailingDetailView extends React.Component<
               Дублировать
             </Button>
             {retryButton}
+            <a className='button default' download
+               href={API_URL + `/mailings/${mailing.id}/results?format=csv`}>
+              Скачать результаты
+            </a>
             <div className='spacer' />
             <ConfirmationButton
               disabled={!canEdit} onClick={this.handleDelete}
