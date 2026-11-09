@@ -1,5 +1,6 @@
 import { convert } from 'html-to-text';
 import { Email } from './Email';
+import { toEmailDocument } from './emailDocument';
 
 
 // Картинки пропускаем: в тексте от них остались бы только адреса или data: URI
@@ -49,7 +50,8 @@ export function composeMessage (email: Email, serviceFrom: string): ComposedMess
     attachments: email.attachments,
     from: email.from || serviceFrom,
     headers: email.headers,
-    html: email.html,
+    // Фрагмент — в документ, который почтовик может показать в тёмной теме
+    html: email.html ? toEmailDocument(email.html) : email.html,
     replyTo: email.replyTo,
     // Возвраты всегда идут на адрес сервиса (его разбирает mail-sorter),
     // даже если у рассылки свой From

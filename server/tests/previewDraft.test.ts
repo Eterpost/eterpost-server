@@ -1,5 +1,6 @@
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
+import { toEmailDocument } from '../src/emailDocument';
 import { createFakeLogger } from './testing-utils';
 import { MailingExecutor } from '../src/MailingExecutor';
 import { Mailing } from '../src/Mailing';
@@ -70,7 +71,7 @@ describe('POST /preview', () => {
     const letters = body.data;
     assert.equal(letters.length, 2);
     assert.equal(letters[0].subject, 'Привет, Иван');
-    assert.equal(letters[0].html, '<h1>Иван</h1><p>Москва, осень</p>');
+    assert.equal(letters[0].html, toEmailDocument('<h1>Иван</h1><p>Москва, осень</p>'));
     assert.match(letters[0].text, /^ИВАН$/m);
     assert.deepEqual(letters[0].to, [{ address: 'ivan@example.com', name: 'Иван' }]);
     assert.equal(letters[0].from, 'no-reply@etersoft.ru');
@@ -79,7 +80,7 @@ describe('POST /preview', () => {
     assert.equal(letters[0].headers['List-Unsubscribe'], '<mailto:unsubscribe@etersoft.ru>');
     assert.equal(letters[0].headers.Precedence, 'bulk');
     assert.equal(letters[1].subject, 'Привет, Анна');
-    assert.equal(letters[1].html, '<h1>Анна</h1><p>Казань, осень</p>');
+    assert.equal(letters[1].html, toEmailDocument('<h1>Анна</h1><p>Казань, осень</p>'));
   });
 
   it('should use From, Reply-To and listUnsubscribe of the draft', async () => {

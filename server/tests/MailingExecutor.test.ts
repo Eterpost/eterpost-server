@@ -1,5 +1,6 @@
 import { after, afterEach, before, beforeEach, describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
+import { toEmailDocument } from '../src/emailDocument';
 import {
   createFakeLogger, getTestingRedisConnectionPool, redisSkip, sleep
 } from './testing-utils';
@@ -111,7 +112,7 @@ describe('MailingExecutor', { skip: redisSkip }, () => {
 
       assert.equal(mailer.sendEmail.mock.callCount(), 0);
       assert.equal(message.subject, 'For Иван');
-      assert.equal(message.html, '<h1>Hello, Иван</h1><p>Code 42</p>');
+      assert.equal(message.html, toEmailDocument('<h1>Hello, Иван</h1><p>Code 42</p>'));
       assert.match(message.text!, /^HELLO, ИВАН$/m);
       assert.match(message.text!, /^Code 42$/m);
       assert.equal(message.from, 'Sales <sales@etersoft.ru>');
@@ -194,7 +195,7 @@ describe('MailingExecutor', { skip: redisSkip }, () => {
       const [testEmail] = mailer.sendEmail.mock.calls[1].arguments as unknown as [Email];
       assert.equal(testEmail.html, html);
       const preview = await executor.previewEmail(tracked, new Receiver('me@example.com'));
-      assert.equal(preview.html, html);
+      assert.equal(preview.html, toEmailDocument(html));
       assert.equal(testMailing.tracking, false);
     });
   });
