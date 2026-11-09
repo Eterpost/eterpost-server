@@ -29,7 +29,8 @@ const editableFields = {
   receiversChanged: '',
   receiversCount: 'Количество получателей',
   replyTo: 'Обратный адрес (Reply-To)',
-  subject: 'Тема письма'
+  subject: 'Тема письма',
+  tracking: 'Отслеживание открытий и переходов'
 };
 const keys = Object.keys(editableFields) as Array<keyof MailingEditData>;
 
@@ -44,6 +45,7 @@ export interface MailingEditData {
   receiversChanged: boolean;
   replyTo: string;
   subject: string;
+  tracking: boolean;
 }
 
 export interface MailingDetailViewProps {
@@ -179,6 +181,11 @@ export class MailingDetailView extends React.Component<
           <dt>Уведомлений о недоставке</dt>
           <dd>{mailing.undeliveredCount}</dd>
 
+          {mailing.tracking ? <dt>Открыли письмо</dt> : null}
+          {mailing.tracking ? <dd>{mailing.opened || 0}</dd> : null}
+          {mailing.tracking ? <dt>Перешли по ссылкам</dt> : null}
+          {mailing.tracking ? <dd>{mailing.clicked || 0}</dd> : null}
+
           {mailing.creationDate ? <dt>Создана</dt> : null}
           {mailing.creationDate ? <dd>{formatDate(mailing.creationDate)}</dd> : null}
 
@@ -194,6 +201,10 @@ export class MailingDetailView extends React.Component<
           <Checkbox value={this.state.fields.openForSubscription}
                     onChange={this.handlers.openForSubscription}>
             Подписка через API открыта
+          </Checkbox>
+          <Checkbox value={this.state.fields.tracking}
+                    onChange={this.handlers.tracking}>
+            Отслеживать открытия и переходы по ссылкам
           </Checkbox>
         </div>
 

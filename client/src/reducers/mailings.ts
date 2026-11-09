@@ -36,6 +36,10 @@ export interface Mailing {
   sentCount: number;
   state: MailingState;
   subject: string;
+  // Отслеживание открытий и переходов; opened/clicked — сколько адресов
+  tracking: boolean;
+  opened?: number;
+  clicked?: number;
   undeliveredCount: number;
 }
 
@@ -65,6 +69,7 @@ function createMailing (data: MailingCreateData, id: number, listId: string): Ma
     listUnsubscribe: true,
     name: data.name,
     openForSubscription: false,
+    tracking: false,
     receivers: data.receivers,
     receiversChanged: false,
     replyTo: data.replyTo,
