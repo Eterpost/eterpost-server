@@ -2,7 +2,7 @@ import { Mailing, MailingProperties } from './Mailing';
 import { MailingState } from './MailingState';
 import { Receiver, ReceiverProperties } from './Receiver';
 import {
-  MailingFailure, MailingRepository, RcptRetry, TrackedLetter, TrackingStats
+  MailingFailure, MailingRepository, MailingUnsubscribe, RcptRetry, TrackedLetter, TrackingStats
 } from './MailingRepository';
 import { BaseRedisRepository } from './BaseRedisRepository';
 import { RedisClient, RedisConnectionPool } from './RedisConnectionPool';
@@ -17,6 +17,8 @@ export interface RedisMailingRepositoryConfig {
   opensKeyPrefix: string;
   clicksKeyPrefix: string;
   linkClicksKeyPrefix: string;
+  sentKeyPrefix: string;
+  unsubscribesKeyPrefix: string;
   idCounterKey: string;
   receiversListKeyPrefix: string;
   rcptRetriesKeyPrefix: string;
@@ -37,6 +39,9 @@ const defaultConfig: RedisMailingRepositoryConfig = {
   opensKeyPrefix: 'MAILING_OPENS_',
   clicksKeyPrefix: 'MAILING_CLICKS_',
   linkClicksKeyPrefix: 'MAILING_LINK_CLICKS_',
+  // Результаты рассылки: адрес → дата последней отправки; адрес → отписка
+  sentKeyPrefix: 'MAILING_SENT_',
+  unsubscribesKeyPrefix: 'MAILING_UNSUBSCRIBES_',
   idCounterKey: 'MAILING_ID_COUNTER',
   receiversListKeyPrefix: 'MAILING_RECEIVER_LIST_',
   rcptRetriesKeyPrefix: 'MAILING_RCPT_RETRIES_'
@@ -222,6 +227,37 @@ implements MailingRepository {
     });
   }
 
+  async recordSent (id: number, email: string, date: Date): Promise<void> {
+    return this.redisConnectionPool.runWithConnection(async redisClient => {
+      await redisClient.hSet(this.config.sentKeyPrefix + id, email, date.toISOString());
+    });
+  }
+
+  async getSent (id: number): Promise<Map<string, string>> {
+    return this.redisConnectionPool.runWithConnection(async redisClient => {
+      return new Map(Object.entries(await redisClient.hGetAll(this.config.sentKeyPrefix + id)));
+    });
+  }
+
+  async recordUnsubscribe (
+    id: number, { email, ...unsubscribe }: MailingUnsubscribe
+  ): Promise<void> {
+    return this.redisConnectionPool.runWithConnection(async redisClient => {
+      await redisClient.hSet(
+        this.config.unsubscribesKeyPrefix + id, email, JSON.stringify(unsubscribe)
+      );
+    });
+  }
+
+  async getUnsubscribes (id: number): Promise<Map<string, MailingUnsubscribe>> {
+    return this.redisConnectionPool.runWithConnection(async redisClient => {
+      const data = await redisClient.hGetAll(this.config.unsubscribesKeyPrefix + id);
+      return new Map(Object.entries(data).map(([email, json]) => [
+        email, { ...JSON.parse(json), email }
+      ]));
+    });
+  }
+
   async getTrackingCounts (id: number): Promise<{ clicked: number, opened: number }> {
     return this.redisConnectionPool.runWithConnection(async redisClient => {
       const [opened, clicked] = await Promise.all([
@@ -251,7 +287,8 @@ implements MailingRepository {
       multi.del(this.getFailuresKey(mailing.id));
       for (const prefix of [
         this.config.trackedLettersKeyPrefix, this.config.opensKeyPrefix,
-        this.config.clicksKeyPrefix, this.config.linkClicksKeyPrefix
+        this.config.clicksKeyPrefix, this.config.linkClicksKeyPrefix,
+        this.config.sentKeyPrefix, this.config.unsubscribesKeyPrefix
       ]) {
         multi.del(prefix + mailing.id);
       }

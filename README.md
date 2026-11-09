@@ -285,6 +285,19 @@ Other programs (admin panels and so on) should not render the letter with their
 own copy of Handlebars: the service builds the plain text version and headers
 itself, and a copy may differ from it — use the preview to show the letter.
 
+### Mailing results
+
+`GET /mailings/:id/results` ("Скачать результаты" in the web client, CSV) gives
+for every address, including those no longer among the receivers: when the
+letter was sent (`sentAt`), the delivery error (`failure`), exclusion for
+errors (`excluded`), unsubscription with its date and way
+(`unsubscribed.method`: `link` — by the link, `mail` — by a letter or the
+List-Unsubscribe button), the first open and click (`openedAt`, `clickedAt`,
+with tracking on). `summary` has the number of addresses with each event.
+`?event=sent|failed|excluded|unsubscribed|opened|clicked` keeps only the
+addresses with that event, `?offset=` and `?limit=` page the list. Sending and
+unsubscriptions are recorded starting from this version.
+
 ### Tracking of opens and clicks
 
 Off by default. It is turned on for a mailing with the "Отслеживать открытия и
@@ -413,6 +426,7 @@ every route is documented.
 | `GET /mailings/:id/receivers` | Receivers, `?limit=N`, `?format=csv` |
 | `DELETE /mailings/:id/receivers/:email` | Remove a receiver |
 | `GET /mailings/:id/failed-receivers` | Receivers with delivery errors, `?limit=N`, `?format=csv` |
+| `GET /mailings/:id/results` | Results by receiver: sending, error, exclusion, unsubscription, open, click; `?event=`, `?offset=`, `?limit=`, `?format=csv` |
 | `POST /mailings/:id/restore-excluded` | Put back addresses excluded for delivery errors `{emails?}`, returns `{restored}` |
 | `POST /mailings/:id/send-test-email` | Send the letter to `{email}` |
 | `POST /mailings/:id/preview` | Build the letter for receiver `{email}` without sending it: subject, HTML, plain text and headers as the service sends them |

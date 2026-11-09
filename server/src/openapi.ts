@@ -267,6 +267,57 @@ export const openApiDocument = {
         }
       }
     },
+    '/mailings/{id}/results': {
+      get: {
+        tags: ['receivers'],
+        summary: 'Результаты рассылки по получателям',
+        description:
+          'Строка на каждый адрес, включая тех, кого уже нет среди получателей ' +
+          '(отписались, исключены): когда отправлено письмо, ошибка доставки, ' +
+          'исключение, отписка (дата и способ: `link` — по ссылке, `mail` — письмом ' +
+          'или кнопкой List-Unsubscribe), первое открытие и переход (у рассылок с ' +
+          '`tracking`). `summary` — сколько адресов с каждым событием. Данные об ' +
+          'отправке и отписках собираются с версии, где появился этот метод. ' +
+          'CSV — со строкой заголовков: ' +
+          '`email,name,sentAt,status,spam,diagnosticCode,failedAt,excluded,' +
+          'unsubscribedAt,unsubscribeMethod,openedAt,clickedAt`.',
+        parameters: [
+          mailingId(),
+          {
+            name: 'event',
+            in: 'query',
+            schema: { enum: ['sent', 'failed', 'excluded', 'unsubscribed', 'opened', 'clicked'] },
+            description: 'Только адреса с этим событием'
+          },
+          {
+            name: 'offset',
+            in: 'query',
+            schema: { type: 'integer', minimum: 0 },
+            description: 'Пропустить столько строк'
+          },
+          csvList.limit, csvList.format
+        ],
+        responses: {
+          200: okOrCsv({
+            type: 'object',
+            properties: {
+              list: { type: 'array', items: ref('ReceiverResult') },
+              summary: {
+                type: 'object',
+                description: 'receivers — сколько сейчас в списке получателей, остальные ' +
+                  'поля — сколько адресов с событием',
+                properties: Object.fromEntries([
+                  'receivers', 'sent', 'failed', 'excluded', 'unsubscribed', 'opened', 'clicked'
+                ].map(name => [name, { type: 'integer' }]))
+              },
+              total: { type: 'integer', description: 'Строк с учётом event, без limit' }
+            }
+          }),
+          400: badRequest,
+          404: notFound
+        }
+      }
+    },
     '/mailings/{id}/failed-receivers': {
       get: {
         tags: ['receivers'],
@@ -493,6 +544,34 @@ export const openApiDocument = {
           code: { type: 'string' }
         },
         required: ['success', 'error']
+      },
+      ReceiverResult: {
+        type: 'object',
+        properties: {
+          email: { type: 'string' },
+          name: { type: 'string' },
+          sentAt: { type: 'string', format: 'date-time', description: 'Последняя отправка' },
+          failure: {
+            type: 'object',
+            properties: {
+              date: { type: 'string', format: 'date-time' },
+              diagnosticCode: { type: 'string' },
+              spam: { type: 'boolean' },
+              status: { type: 'string' }
+            }
+          },
+          excluded: { type: 'boolean', description: 'Исключён из-за ошибок доставки' },
+          unsubscribed: {
+            type: 'object',
+            properties: {
+              date: { type: 'string', format: 'date-time' },
+              method: { enum: ['link', 'mail'] }
+            }
+          },
+          openedAt: { type: 'string', format: 'date-time', description: 'Первое открытие' },
+          clickedAt: { type: 'string', format: 'date-time', description: 'Первый переход' }
+        },
+        required: ['email']
       },
       EmailPreview: {
         type: 'object',

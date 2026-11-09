@@ -15,6 +15,7 @@ import { previewEmail } from './controllers/previewEmail';
 import { previewDraft } from './controllers/previewDraft';
 import { restoreExcluded } from './controllers/restoreExcluded';
 import { trackClick, trackOpen } from './controllers/tracking';
+import { getResults } from './controllers/getResults';
 import { AddressStatsRepository } from './AddressStatsRepository';
 import { getFailedReceivers } from './controllers/getFailedReceivers';
 import { FailureCounter } from './FailureCounter';
@@ -54,6 +55,7 @@ export function setupRoutes (
   app.put('/mailings/:id', updateMailing(repository, stateManager, logger, receiverListFilter));
   app.get('/mailings/:id/receivers', getReceivers(repository));
   app.get('/mailings/:id/failed-receivers', getFailedReceivers(repository, failureCounter));
+  app.get('/mailings/:id/results', getResults(repository, failureCounter));
   app.post('/mailings/:id/send-test-email', sendTestEmail(repository, executor, logger));
   app.post('/mailings/:id/preview', previewEmail(repository, executor));
   app.post('/preview', previewDraft(config, executor));

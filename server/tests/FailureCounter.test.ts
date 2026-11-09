@@ -8,6 +8,7 @@ import { FailureCounter } from '../src/FailureCounter';
 import { unsubscribeFromAll } from '../src/controllers/unsubscribeFromAll';
 import { createRetryMailing } from '../src/controllers/createRetryMailing';
 import { restoreExcluded } from '../src/controllers/restoreExcluded';
+import { getResults } from '../src/controllers/getResults';
 
 
 const bounced = 'failure-counter-bounced@example.com';
@@ -209,6 +210,62 @@ describe('FailureCounter', { skip: redisSkip }, () => {
 
     await mailingRepository.remove(mailing);
     await mailingRepository.remove((await mailingRepository.getById(created.data.id))!);
+  });
+
+  it('should report the results of a mailing by receiver', async () => {
+    const [sent, failedHere, gone, bad] = [
+      'results-sent@example.com', 'results-failed@example.com',
+      'results-gone@example.com', 'results-bad@example.com'
+    ];
+    const mailing = await mailingRepository.create({
+      html: '<p>Test</p>', name: 'test', subject: 'test', tracking: true, undeliveredCount: 0
+    }, [sent, failedHere, gone, bad].map(email => ({ email, name: email.split('@')[0] })));
+    const date = new Date();
+    for (const email of [sent, failedHere, gone]) {
+      await mailingRepository.recordSent(mailing.id, email, date);
+    }
+    await mailingRepository.setFailure(mailing.id, {
+      date: date.toISOString(), email: failedHere, spam: true, status: '5.7.1'
+    });
+    await statsRepository.create({ email: bad, lastStatus: '5.1.1', lastStatusDate: date });
+    await call(unsubscribeFromAll(mailingRepository, logger), { email: bad });
+    await call(unsubscribeFromAll(mailingRepository, logger), {
+      email: gone, listUnsubscribe: true
+    });
+    await mailingRepository.recordOpen(mailing.id, sent, date);
+    await mailingRepository.recordClick(mailing.id, sent, 'https://example.com/', date);
+
+    const results = async (query: Record<string, string> = {}) => {
+      let result: any;
+      const res: any = {
+        json: (data: any) => { result = data; return res; },
+        status: () => res
+      };
+      await (getResults(mailingRepository, failureCounter) as any)(
+        { params: { id: String(mailing.id) }, query }, res
+      );
+      return result.data;
+    };
+
+    const all = await results();
+    assert.deepEqual(all.summary, {
+      clicked: 1, excluded: 1, failed: 2, opened: 1, receivers: 2, sent: 3, unsubscribed: 1
+    });
+    const byEmail = new Map(all.list.map((row: any) => [row.email, row]));
+    assert.equal((byEmail.get(sent) as any).clickedAt, date.toISOString());
+    assert.equal((byEmail.get(failedHere) as any).failure.spam, true);
+    assert.deepEqual((byEmail.get(gone) as any).unsubscribed.method, 'mail');
+    assert.equal((byEmail.get(gone) as any).name, 'results-gone');
+    assert.equal((byEmail.get(bad) as any).excluded, true);
+
+    const unsubscribed = await results({ event: 'unsubscribed' });
+    assert.deepEqual(unsubscribed.list.map((row: any) => row.email), [gone]);
+    const page = await results({ limit: '1', offset: '1' });
+    assert.equal(page.total, 4);
+    assert.equal(page.list.length, 1);
+
+    await mailingRepository.remove(mailing);
+    assert.deepEqual(await mailingRepository.getSent(mailing.id), new Map());
   });
 
   it('should report the date and the mailing of an error', async () => {

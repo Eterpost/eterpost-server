@@ -224,8 +224,10 @@ export class MailingExecutor extends EventEmitter {
 
     // TODO: думаю, что это стоит вынести в отдельный класс-наблюдатель,
     // чтобы подсчёт статистики работал по событию отправки письма
+    const date = new Date();
     for (const address of email.receivers) {
       await this.updateAddressStats(address.email);
+      await this.mailingRepository.recordSent(mailing.id, address.email, date);
     }
   }
 

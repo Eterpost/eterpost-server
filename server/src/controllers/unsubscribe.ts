@@ -64,6 +64,12 @@ export function unsubscribe (
       return;
     }
 
+    await mailingRepository.recordUnsubscribe(mailing.id, {
+      date: new Date().toISOString(),
+      email: receiverToUnsubscribe.email,
+      method: 'link',
+      name: receiverToUnsubscribe.name
+    });
     logger.info(`Unsubscribed: mailing #${mailing.id}, email ${req.body.email}`);
 
     const text = mailing.extraData ? mailing.extraData.textAfterUnsubscribe : null;

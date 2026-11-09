@@ -51,6 +51,17 @@ export interface TrackingStats {
 }
 
 /**
+ * Отписка получателя от рассылки: link — по ссылке из письма
+ * (subscription-facade), mail — письмом или кнопкой List-Unsubscribe (mail-sorter)
+ */
+export interface MailingUnsubscribe {
+  date: string;
+  email: string;
+  method: 'link' | 'mail';
+  name?: string;
+}
+
+/**
  * Интерфейс хранилища, содержащего информацию о рассылках (как выполненных,
  * так и выполняющихся)
  */
@@ -81,6 +92,13 @@ export interface MailingRepository {
   recordOpen (id: number, email: string, date: Date): Promise<void>;
   recordClick (id: number, email: string, url: string, date: Date): Promise<void>;
   getTrackingStats (id: number): Promise<TrackingStats>;
+  /**
+   * Когда получателю последний раз отправлено письмо рассылки
+   */
+  recordSent (id: number, email: string, date: Date): Promise<void>;
+  getSent (id: number): Promise<Map<string, string>>;
+  recordUnsubscribe (id: number, unsubscribe: MailingUnsubscribe): Promise<void>;
+  getUnsubscribes (id: number): Promise<Map<string, MailingUnsubscribe>>;
   /**
    * Сколько адресов открыло письмо и сколько перешло по ссылкам
    */
