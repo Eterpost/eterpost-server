@@ -406,6 +406,11 @@ $ docker run -d --name test-redis -p 127.0.0.1:16379:6379 redis:7-alpine
 $ TEST_REDIS_URL=redis://127.0.0.1:16379/1 npm test
 ```
 
+## Ошибки и пожелания
+
+Ошибки и пожелания принимаются в Bugzilla Etersoft: продукт Eterpost,
+компонент eterpost-server — [завести задачу](https://bugs.etersoft.ru/enter_bug.cgi?product=Eterpost&component=eterpost-server).
+
 ## ![AGPL](https://www.gnu.org/graphics/agplv3-88x31.png) Лицензия
 
 GNU AGPL v3, см. [LICENSE](LICENSE).
