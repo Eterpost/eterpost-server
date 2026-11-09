@@ -1,16 +1,7 @@
 import { MailSender } from './MailSender';
 import { Email } from './Email';
 import { createTransport, Transporter } from 'nodemailer';
-import { convert } from 'html-to-text';
-
-
-// Картинки пропускаем: в тексте от них остались бы только адреса или data: URI
-const htmlToTextOptions = {
-  selectors: [
-    { options: { hideLinkHrefIfSameAsText: true }, selector: 'a' },
-    { format: 'skip', selector: 'img' }
-  ]
-};
+import { composeMessage } from './composeMessage';
 
 
 export interface SmtpMailSenderConfig {
@@ -49,27 +40,13 @@ export class SmtpMailSender implements MailSender {
   }
 
   async sendEmail (email: Email): Promise<void> {
-    const to = email.receivers.map(receiver => receiver.email);
-    // В заголовке «Кому» — с именем, nodemailer сам закодирует кириллицу
-    const toHeader = email.receivers.map(receiver =>
-      receiver.name ? { address: receiver.email, name: receiver.name } : receiver.email
-    );
     await this.transport.sendMail({
-      attachments: email.attachments,
-      // Возвраты всегда идут на адрес сервиса (его разбирает mail-sorter),
-      // даже если у рассылки свой From
+      ...composeMessage(email, this.config.from),
+      // Возвраты всегда идут на адрес сервиса (его разбирает mail-sorter)
       envelope: {
         from: this.config.from,
-        to
-      },
-      from: email.from || this.config.from,
-      headers: email.headers,
-      html: email.html,
-      replyTo: email.replyTo,
-      sender: email.from ? this.config.from : undefined,
-      subject: email.subject,
-      text: email.text || (email.html ? convert(email.html, htmlToTextOptions) : undefined),
-      to: toHeader
+        to: email.receivers.map(receiver => receiver.email)
+      }
     });
   }
 }

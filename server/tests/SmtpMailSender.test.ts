@@ -4,6 +4,7 @@ import { createTransport } from 'nodemailer';
 import { SmtpMailSender } from '../src/SmtpMailSender';
 import { Email } from '../src/Email';
 import { Receiver } from '../src/Receiver';
+import { composeMessage } from '../src/composeMessage';
 
 
 const serviceAddress = 'no-reply@etersoft.ru';
@@ -21,6 +22,7 @@ function decodeWords (value: string): string {
 }
 
 async function send (email: Email) {
+  let options: any;
   const sender = new SmtpMailSender({ from: serviceAddress, host: 'localhost', port: '25' });
   const transport = createTransport({ buffer: true, newline: 'unix', streamTransport: true }, {
     from: serviceAddress
@@ -28,12 +30,13 @@ async function send (email: Email) {
   let info: any;
   (sender as any).transport = {
     sendMail: async (message: any) => {
+      options = message;
       info = await transport.sendMail(message);
       return info;
     }
   };
   await sender.sendEmail(email);
-  return { envelope: info.envelope, message: info.message.toString() as string };
+  return { envelope: info.envelope, message: info.message.toString() as string, options };
 }
 
 describe('SmtpMailSender', () => {
@@ -95,6 +98,21 @@ describe('SmtpMailSender', () => {
     assert.match(text, /^OFFER$/m);
     assert.match(text, /Details here \[https:\/\/example\.com\/x\]\./);
     assert.doesNotMatch(text, /data:image|logo/);
+  });
+
+  it('should send exactly the message composeMessage builds for a preview', async () => {
+    const email = new Email({
+      from: 'Sales <sales@etersoft.ru>',
+      headers: { Precedence: 'bulk' },
+      html: '<h1>Offer</h1><p>Details <a href="https://example.com/x">here</a>.</p>',
+      receivers: [new Receiver('ivan@example.com', 'Иван')],
+      replyTo: 'sales@etersoft.ru',
+      subject: 'Test'
+    });
+    const { options } = await send(email);
+    const { envelope, ...sent } = options;
+    assert.deepEqual(envelope, { from: serviceAddress, to: ['ivan@example.com'] });
+    assert.deepEqual(sent, composeMessage(email, serviceAddress));
   });
 
   it('should pass TLS, authentication and EHLO name to the transport', () => {
