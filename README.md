@@ -244,6 +244,27 @@ Two helpers insert content from other services:
 
 If a request fails, the letter is not sent and the mailing goes to the ERROR state.
 
+### Preview and test letter
+
+You can check how a receiver will see the letter without running the mailing:
+
+- **Preview** — the "Предпросмотр для" field and the "Показать" button in the
+  mailing card, `POST /mailings/:id/preview` with `{email}` in the API. The
+  server builds the letter with the same code as for sending and returns the
+  subject, HTML, plain text version, From/Sender/To/Reply-To and headers
+  (`List-Id`, `List-Unsubscribe`, `Precedence`); nothing is sent. If the address
+  is among the receivers, their name, code and `extraData` are used and external
+  content is fetched; otherwise the letter is built with the address only
+  (`receiverFound: false`).
+- **Test letter** — the "Пробное письмо на адрес" field,
+  `POST /mailings/:id/send-test-email` with `{email}` in the API: the letter is
+  really sent to that address, to a receiver with the address only.
+
+Both use the saved mailing: unsaved changes in the editor are not included.
+Other programs (admin panels and so on) should not render the letter with their
+own copy of Handlebars: the service builds the plain text version and headers
+itself, and a copy may differ from it — use the preview to show the letter.
+
 ### Periodic receivers
 
 Receivers who subscribed with a schedule (`periodicDate`) get the letter only on
