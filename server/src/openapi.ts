@@ -178,12 +178,22 @@ export const openApiDocument = {
       post: {
         tags: ['mailings'],
         summary: 'Создать повторную рассылку по адресам с ошибками доставки',
-        description: 'Адреса, исключённые mail-sorter (`excluded`), в неё не попадают.',
-        requestBody: body(createRetryMailingBody, { sourceId: 1 }),
+        description:
+          'Адреса, исключённые mail-sorter (`excluded`), в неё не попадают. `filter` ' +
+          'оставляет только нужные ошибки: отказы как спам, домены, временные или ' +
+          'постоянные. С `dryRun: true` рассылка не создаётся, ответ — `{count}`, ' +
+          'сколько адресов попадёт в повтор.',
+        requestBody: body(createRetryMailingBody, {
+          sourceId: 1, filter: { spam: true, domains: ['mail.ru', 'list.ru', 'bk.ru', 'inbox.ru'] }
+        }),
         responses: {
           200: ok({
             type: 'object',
-            properties: { id: { type: 'integer' }, listId: { type: 'string' } }
+            properties: {
+              count: { type: 'integer', description: 'Только при dryRun' },
+              id: { type: 'integer' },
+              listId: { type: 'string' }
+            }
           }),
           400: badRequest,
           404: failure('Рассылка-источник не найдена')

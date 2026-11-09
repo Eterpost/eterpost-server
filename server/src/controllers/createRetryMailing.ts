@@ -6,7 +6,34 @@ import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
 import { catchPromise } from '../utils/catchPromise';
 import { getListId } from '../getListId';
 import { Logger } from '../Logger';
-import { FailureCounter } from '../FailureCounter';
+import { FailedReceiver, FailureCounter } from '../FailureCounter';
+
+
+/**
+ * Какие ошибки доставки повторять: только отказы как спам, только адреса
+ * из этих доменов, только временные ('4') или постоянные ('5') ошибки
+ */
+export interface RetryFilter {
+  domains?: string[];
+  spam?: boolean;
+  status?: '4' | '5';
+}
+
+export function matchesRetryFilter (receiver: FailedReceiver, filter: RetryFilter = {}) {
+  if (filter.spam && !receiver.spam) {
+    return false;
+  }
+  if (filter.status && !(receiver.status || '').startsWith(filter.status)) {
+    return false;
+  }
+  if (filter.domains && filter.domains.length) {
+    const domain = receiver.email.slice(receiver.email.lastIndexOf('@') + 1).toLowerCase();
+    if (!filter.domains.some(item => item.trim().toLowerCase() === domain)) {
+      return false;
+    }
+  }
+  return true;
+}
 
 
 export function createRetryMailing (
@@ -21,7 +48,14 @@ export function createRetryMailing (
       return;
     }
 
-    const sourceFailedReceivers = await failureCounter.getFailedReceivers(sourceMailing);
+    // Исключённые mail-sorter адреса не возвращаем: их отсеяли намеренно
+    const sourceFailedReceivers = (await failureCounter.getFailedReceivers(sourceMailing))
+      .filter(receiver => !receiver.excluded && matchesRetryFilter(receiver, req.body.filter));
+    // dryRun — только посчитать, сколько адресов попадёт в повтор
+    if (req.body.dryRun) {
+      res.json(success({ count: sourceFailedReceivers.length }));
+      return;
+    }
 
     const properties = {
       extraData: sourceMailing.extraData,
@@ -38,13 +72,11 @@ export function createRetryMailing (
     };
 
     // Получатели переносятся целиком (имя, код, расписание, extraData), иначе
-    // письмо повтора отличалось бы от исходного. Исключённые mail-sorter адреса
-    // не возвращаем: их отсеяли намеренно, в списке рассылки их уже нет
+    // письмо повтора отличалось бы от исходного
     const sourceReceivers = new Map(
       (await mailingRepository.getReceivers(sourceMailing.id)).map(r => [r.email, r])
     );
     const receivers = sourceFailedReceivers
-      .filter(receiver => !receiver.excluded)
       .map(receiver => sourceReceivers.get(receiver.email) || { email: receiver.email });
 
     const mailing = await mailingRepository.create(properties, receivers);
@@ -67,6 +99,30 @@ export const requestBodyJsonSchema = {
   type: 'object',
   additionalProperties: false,
   properties: {
+    dryRun: {
+      type: 'boolean',
+      description: 'Только посчитать адреса (ответ { count }), рассылку не создавать'
+    },
+    filter: {
+      type: 'object',
+      additionalProperties: false,
+      description: 'Какие ошибки повторять; без фильтра — все, кроме исключённых адресов',
+      properties: {
+        domains: {
+          type: 'array',
+          items: { type: 'string', minLength: 1 },
+          description: 'Только адреса из этих доменов, например ["mail.ru", "list.ru"]'
+        },
+        spam: {
+          type: 'boolean',
+          description: 'Только отказы как спам'
+        },
+        status: {
+          enum: ['4', '5'],
+          description: '4 — только временные ошибки (4.x.x), 5 — только постоянные (5.x.x)'
+        }
+      }
+    },
     sourceId: {
       type: 'number'
     }

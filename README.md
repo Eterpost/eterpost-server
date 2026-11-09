@@ -304,7 +304,12 @@ marked as excluded (`excluded: true`, the fourth CSV column). Each error has
 its time (`date`, the fifth CSV column) and the mailing it came from
 (`mailingId`, the sixth column; unknown for errors recorded before this field
 appeared). "Retry" creates a new mailing with the same text for these
-addresses, except the excluded ones.
+addresses, except the excluded ones. In the "Ошибки доставки" tab a retry can
+take only part of the errors: rejections as spam, addresses from the chosen
+domains (e.g. mail.ru, list.ru, bk.ru, inbox.ru after a block is lifted), only
+temporary or only permanent errors; the number of addresses is shown at once.
+In the API this is `filter: {spam, domains, status: "4" | "5"}` of
+`POST /mailings/create-retry`, and `dryRun: true` only counts the addresses.
 
 An address excluded by mistake (the mailbox works again, the person confirmed
 the address) can be put back: the ↺ button at the address or "Вернуть

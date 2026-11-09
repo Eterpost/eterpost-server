@@ -181,6 +181,36 @@ describe('FailureCounter', { skip: redisSkip }, () => {
     assert.deepEqual(await mailingRepository.getFailures(mailing.id), new Map());
   });
 
+  it('should create a retry only for the errors matching the filter', async () => {
+    const addresses = ['spam@mail.ru', 'gone@mail.ru', 'busy@mail.ru', 'spam@gmail.com'];
+    const mailing = await mailingRepository.create({
+      html: '<p>Test</p>', name: 'test', subject: 'test', undeliveredCount: 0
+    }, addresses.map(email => ({ email })));
+    const failure = (email: string, status: string, spam: boolean) => mailingRepository.setFailure(
+      mailing.id, { date: new Date().toISOString(), email, spam, status }
+    );
+    await failure('spam@mail.ru', '5.7.1', true);
+    await failure('gone@mail.ru', '5.1.1', false);
+    await failure('busy@mail.ru', '4.2.2', false);
+    await failure('spam@gmail.com', '5.7.1', true);
+    const config = { server: { mail: { listIdDomain: 'example.com' } } };
+    const retry = (filter: object, dryRun = false) => call(createRetryMailing(
+      config, mailingRepository, logger, failureCounter
+    ), { dryRun, filter, sourceId: mailing.id });
+
+    const counted = await retry({ domains: ['mail.ru', 'LIST.RU'], spam: true }, true);
+    assert.equal(counted.data.count, 1);
+    assert.equal(counted.data.id, undefined);
+
+    const created = await retry({ domains: ['mail.ru'], status: '5' });
+    const receivers = await mailingRepository.getReceivers(created.data.id);
+    assert.deepEqual(receivers.map(r => r.email), ['spam@mail.ru', 'gone@mail.ru']);
+    assert.equal((await retry({ status: '4' }, true)).data.count, 1);
+
+    await mailingRepository.remove(mailing);
+    await mailingRepository.remove((await mailingRepository.getById(created.data.id))!);
+  });
+
   it('should report the date and the mailing of an error', async () => {
     const mailing = await mailingRepository.create({
       creationDate: new Date(Date.now() - 1000),
