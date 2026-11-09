@@ -34,6 +34,7 @@ import { RedisSorterStatusRepository } from './RedisSorterStatusRepository';
 import { openApiDocument, swaggerUiHtml, swaggerUiInit } from './openapi';
 import { ApiKeyRepository } from './ApiKeyRepository';
 import { apiKeyAuth } from './middleware/apiKeyAuth';
+import { SpaceRepository } from './SpaceRepository';
 
 
 export function setupRoutes (
@@ -42,9 +43,12 @@ export function setupRoutes (
   subscriptionRepository: SubscriptionRequestRepository, sender: MailSender,
   subscribeTemplate: Template<SubscribeTemplateContext>, receiverListFilter: ReceiverListFilter,
   sorterStatusRepository: RedisSorterStatusRepository, apiKeyRepository: ApiKeyRepository,
-  addressStatsRepository: AddressStatsRepository
+  addressStatsRepository: AddressStatsRepository, spaceRepository: SpaceRepository,
+  admins: string[]
 ) {
-  app.use(apiKeyAuth(apiKeyRepository, logger, config.server.auth || {}, isApiDocsRequest));
+  app.use(apiKeyAuth(
+    apiKeyRepository, logger, config.server.auth || {}, isApiDocsRequest, spaceRepository, admins
+  ));
   app.get('/mailings', getMailings(repository));
   app.get('/mailings/:id', getMailing(repository));
   app.post('/mailings', addMailing(config, repository, logger, receiverListFilter));

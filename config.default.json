@@ -10,6 +10,7 @@
   },
   "server": {
     "auth": {
+      "admins": [],
       "required": false
     },
     "corsWhitelist": [],

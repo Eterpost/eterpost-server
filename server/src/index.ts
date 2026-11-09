@@ -16,6 +16,7 @@ import { RedisSubscriptionRequestRepository } from './RedisSubscriptionRequestRe
 import { RedisSorterStatusRepository } from './RedisSorterStatusRepository';
 import { readHandlebarsTemplate } from './templates/readTemplate';
 import { ApiKeyRepository } from './ApiKeyRepository';
+import { SpaceRepository } from './SpaceRepository';
 
 
 async function main () {
@@ -39,6 +40,9 @@ async function main () {
     redisConnectionPool, config.server.redis.prefixes
   );
   const apiKeyRepository = new ApiKeyRepository(
+    redisConnectionPool, config.server.redis.prefixes
+  );
+  const spaceRepository = new SpaceRepository(
     redisConnectionPool, config.server.redis.prefixes
   );
   const failureCounter = new FailureCounter(mailingRepository, addressStatsRepository);
@@ -77,7 +81,8 @@ async function main () {
   setupRoutes(
     config, app, mailingRepository, stateManager, logger, executor, failureCounter,
     subscriptionRepository, sender, readHandlebarsTemplate('confirm-subscription.hbs'),
-    receiverListFilter, sorterStatusRepository, apiKeyRepository, addressStatsRepository
+    receiverListFilter, sorterStatusRepository, apiKeyRepository, addressStatsRepository,
+    spaceRepository, config.server.auth?.admins ?? []
   );
   const { host, port } = config.server;
   await new Promise<void>((resolve, reject) => {

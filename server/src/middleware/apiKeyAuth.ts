@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { ApiKeyRecord, ApiKeyRepository } from '../ApiKeyRepository';
+import { ApiKeyRecord, ApiKeyRepository, isLegacyKey } from '../ApiKeyRepository';
 import { Logger } from '../Logger';
+import { SpaceRepository } from '../SpaceRepository';
 import { error } from '../utils/response';
+import { resolveSpaceAccess, SpaceForbiddenError } from './spaceAccess';
 
 
 export interface ApiAuthConfig {
@@ -26,6 +28,8 @@ const TOUCH_INTERVAL = 60 * 1000;
 // Запрос без ключа с того же адреса к тому же методу записывается раз в 10 минут
 const ANONYMOUS_LOG_INTERVAL = 10 * 60 * 1000;
 const MAX_REMEMBERED_ANONYMOUS = 1000;
+// Предупреждение о ключе без роли — раз в 10 минут на ключ
+const LEGACY_KEY_LOG_INTERVAL = 10 * 60 * 1000;
 
 export function getActor (res: Response): Actor {
   return res.locals.actor || {};
@@ -40,14 +44,17 @@ export function describeActor (actor: Actor): string {
 
 /**
  * Проверка ключа API: Authorization: Bearer <ключ> или X-API-Key: <ключ>.
+ * Определяет доступные запросу пространства (res.locals.spaceAccess, см.
+ * getSpaceAccess); пространство без доступа в X-Eterpost-Space — ответ 403.
  * Изменяющие запросы записываются в журнал с именем ключа и пользователя
  */
 export function apiKeyAuth (
   repository: ApiKeyRepository, logger: Logger, config: ApiAuthConfig,
-  isPublic: (req: Request) => boolean
+  isPublic: (req: Request) => boolean, spaces: SpaceRepository, admins: string[]
 ) {
   const touchedAt = new Map<string, number>();
   const anonymousLoggedAt = new Map<string, number>();
+  const legacyLoggedAt = new Map<string, number>();
 
   function touch (record: ApiKeyRecord) {
     const now = Date.now();
@@ -72,6 +79,15 @@ export function apiKeyAuth (
     logger.warn(`Request without API key: ${route}`);
   }
 
+  function logLegacy (record: ApiKeyRecord) {
+    const now = Date.now();
+    if (now - (legacyLoggedAt.get(record.name) || 0) < LEGACY_KEY_LOG_INTERVAL) {
+      return;
+    }
+    legacyLoggedAt.set(record.name, now);
+    logger.warn(`API key "${record.name}" has no role`);
+  }
+
   return async function (req: Request, res: Response, next: NextFunction) {
     if (req.method === 'OPTIONS' || isPublic(req)) {
       next();
@@ -79,8 +95,10 @@ export function apiKeyAuth (
     }
 
     const key = getRequestKey(req);
+    let record: ApiKeyRecord | null = null;
+    let user: string | undefined;
     if (key) {
-      const record = await repository.findByKey(key);
+      record = await repository.findByKey(key);
       if (!record) {
         logger.warn(`Invalid API key from ${req.ip}: ${req.method} ${req.path}`);
         res.status(401).set('WWW-Authenticate', 'Bearer').json(
@@ -89,7 +107,10 @@ export function apiKeyAuth (
         return;
       }
       touch(record);
-      const user = record.proxy ? headerValue(req, 'x-remote-user') : undefined;
+      if (isLegacyKey(record)) {
+        logLegacy(record);
+      }
+      user = record.proxy ? headerValue(req, 'x-remote-user') : undefined;
       res.locals.actor = { key: record.name, user } as Actor;
     } else if (config.required) {
       res.status(401).set('WWW-Authenticate', 'Bearer').json(
@@ -98,6 +119,18 @@ export function apiKeyAuth (
       return;
     } else {
       logAnonymous(req);
+    }
+
+    try {
+      res.locals.spaceAccess = await resolveSpaceAccess(
+        record, user, headerValue(req, 'x-eterpost-space'), spaces, admins
+      );
+    } catch (err) {
+      if (err instanceof SpaceForbiddenError) {
+        res.status(403).json(error('No access to the space', 'SPACE_FORBIDDEN'));
+        return;
+      }
+      throw err;
     }
 
     if (req.method !== 'GET' && req.method !== 'HEAD') {

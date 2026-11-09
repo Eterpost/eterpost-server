@@ -7,6 +7,8 @@ import { createFakeLogger, getTestingRedisConnectionPool, redisSkip } from './te
 import { RedisConnectionPool } from '../src/RedisConnectionPool';
 import { ApiKeyRepository, hashApiKey } from '../src/ApiKeyRepository';
 import { apiKeyAuth, getActor } from '../src/middleware/apiKeyAuth';
+import { getSpaceAccess } from '../src/middleware/spaceAccess';
+import { SpaceRepository } from '../src/SpaceRepository';
 import { bodyParser } from '../src/middleware/bodyParser';
 import { Logger } from '../src/Logger';
 
@@ -81,6 +83,8 @@ describe('apiKeyAuth', { skip: redisSkip }, () => {
   let logger: Logger;
   let siteKey: string;
   let frontKey: string;
+  let salesKey: string;
+  let oldKey: string;
   const config = { required: false };
 
   before(async () => {
@@ -88,14 +92,22 @@ describe('apiKeyAuth', { skip: redisSkip }, () => {
     repository = new ApiKeyRepository(pool);
     siteKey = (await repository.add('site'))!;
     frontKey = (await repository.add('front', { proxy: true }))!;
+    salesKey = (await repository.add('sales-site', { space: 'sales' }))!;
+    oldKey = (await repository.add('old-site'))!;
+    const spaces = new SpaceRepository(pool);
+    await spaces.add({ name: 'sales' });
+    await spaces.add({ name: 'news' });
+    await spaces.addMember('news', 'ivan');
     logger = createFakeLogger();
 
     const app = express();
     app.post('/{*path}', bodyParser());
     app.put('/{*path}', bodyParser());
-    app.use(apiKeyAuth(repository, logger, config, req => req.path === '/openapi.json'));
+    app.use(apiKeyAuth(
+      repository, logger, config, req => req.path === '/openapi.json', spaces, ['lav']
+    ));
     app.all('/{*path}', (req: Request, res: Response) => {
-      res.json({ actor: getActor(res) });
+      res.json({ access: res.locals.spaceAccess && getSpaceAccess(res), actor: getActor(res) });
     });
     server = app.listen(0);
     await new Promise(resolve => server.once('listening', resolve));
@@ -180,6 +192,52 @@ describe('apiKeyAuth', { skip: redisSkip }, () => {
 
     await request('/mailings', { headers: { Authorization: `Bearer ${siteKey}` } });
     assert.equal((logger.info as any).mock.calls.length, 1, 'GET is not logged');
+  });
+
+  it('should work out the spaces of a request', async () => {
+    const sales = await request('/mailings', { headers: { Authorization: `Bearer ${salesKey}` } });
+    assert.deepEqual(sales.body.access, { allowed: ['sales'], current: 'sales' });
+
+    const front = await request('/mailings', {
+      headers: { Authorization: `Bearer ${frontKey}`, 'X-Remote-User': 'ivan' }
+    });
+    assert.deepEqual(front.body.access, { allowed: ['news'] });
+
+    const admin = await request('/mailings', {
+      headers: {
+        Authorization: `Bearer ${frontKey}`, 'X-Eterpost-Space': 'sales', 'X-Remote-User': 'lav'
+      }
+    });
+    assert.deepEqual(admin.body.access, { allowed: 'all', current: 'sales' });
+
+    const anonymous = await request('/mailings');
+    assert.deepEqual(anonymous.body.access, { allowed: 'all', legacy: true });
+
+    const open = await request('/openapi.json', { headers: { 'X-Eterpost-Space': 'nope' } });
+    assert.equal(open.response.status, 200);
+  });
+
+  it('should refuse a space the request has no access to', async () => {
+    const cases: Array<Record<string, string>> = [
+      { Authorization: `Bearer ${salesKey}`, 'X-Eterpost-Space': 'news' },
+      { Authorization: `Bearer ${frontKey}`, 'X-Eterpost-Space': 'sales', 'X-Remote-User': 'ivan' },
+      { Authorization: `Bearer ${frontKey}`, 'X-Eterpost-Space': 'nope', 'X-Remote-User': 'ivan' },
+      { Authorization: `Bearer ${frontKey}`, 'X-Eterpost-Space': 'news' },
+      { Authorization: `Bearer ${siteKey}`, 'X-Eterpost-Space': 'nope' }
+    ];
+    for (const headers of cases) {
+      const { body, response } = await request('/mailings', { headers, method: 'DELETE' });
+      assert.equal(response.status, 403, JSON.stringify(headers));
+      assert.equal(body.code, 'SPACE_FORBIDDEN');
+      assert.equal(body.success, false);
+    }
+  });
+
+  it('should warn about an old key without a role once in a while', async () => {
+    await request('/mailings', { headers: { Authorization: `Bearer ${oldKey}` } });
+    await request('/mailings', { headers: { Authorization: `Bearer ${oldKey}` } });
+    const warnings = (logger.warn as any).mock.calls.map((call: any) => call.arguments[0]);
+    assert.deepEqual(warnings, ['API key "old-site" has no role']);
   });
 
   it('should record the last use of a key', async () => {
