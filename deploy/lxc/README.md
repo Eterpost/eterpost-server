@@ -42,7 +42,7 @@ LXC-контейнер (или ВМ) с ALT Linux. Docker не нужен: пр�
 | IMAP-ящик для ответов (тот же `noreply@`) | `imap.example.com:993`, логин, пароль | `imapConnection` в `mail-sorter.json`, пароль — `IMAP_PASSWORD` в `mail-sorter.env` |
 | Куда пересылать письма от людей | `support@example.com` | `forwardTo` в `mail-sorter.json` |
 | Сервис картинок для редактора (если есть) | `https://images.example.com` | `client.imageServiceUrl` в `mail-server.json` |
-| HTTPS для страниц подписки | внешний обратный прокси или сертификат здесь | nginx |
+| HTTPS для страниц подписки | внешний обратный прокси или сертификат здесь | nginx; на внешнем прокси нужны те же пути, что в публичном блоке: `/subscribe`, `/unsubscribe` и `/t/` (отслеживание), иначе снаружи они отвечают 404 |
 
 ## 3. Установка
 
