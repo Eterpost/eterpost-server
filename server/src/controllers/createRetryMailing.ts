@@ -24,9 +24,11 @@ export function createRetryMailing (
     const sourceFailedReceivers = await failureCounter.getFailedReceivers(sourceMailing);
 
     const properties = {
+      extraData: sourceMailing.extraData,
       html: sourceMailing.html,
       listUnsubscribe: sourceMailing.listUnsubscribe,
       name: sourceMailing.name + ': повтор по ошибкам доставки',
+      openForSubscription: sourceMailing.openForSubscription,
       from: sourceMailing.from,
       replyTo: sourceMailing.replyTo,
       sentCount: 0,
@@ -35,10 +37,15 @@ export function createRetryMailing (
       undeliveredCount: 0
     };
 
-    // Исключённые mail-sorter адреса не возвращаем: их отсеяли намеренно
+    // Получатели переносятся целиком (имя, код, расписание, extraData), иначе
+    // письмо повтора отличалось бы от исходного. Исключённые mail-sorter адреса
+    // не возвращаем: их отсеяли намеренно, в списке рассылки их уже нет
+    const sourceReceivers = new Map(
+      (await mailingRepository.getReceivers(sourceMailing.id)).map(r => [r.email, r])
+    );
     const receivers = sourceFailedReceivers
       .filter(receiver => !receiver.excluded)
-      .map(receiver => ({ email: receiver.email }));
+      .map(receiver => sourceReceivers.get(receiver.email) || { email: receiver.email });
 
     const mailing = await mailingRepository.create(properties, receivers);
     logger.info(`Created retry mailing ${properties.name} with ID #${mailing.id}`);

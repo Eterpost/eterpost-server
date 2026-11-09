@@ -86,6 +86,41 @@ describe('FailureCounter', { skip: redisSkip }, () => {
     assert.deepEqual(await mailingRepository.getExcludedEmails(mailing.id), []);
   });
 
+  it('should keep receivers and mailing data in the retry mailing', async () => {
+    const extraData = { theme: 'autumn' };
+    const mailing = await mailingRepository.create({
+      creationDate: new Date(Date.now() - 1000),
+      extraData,
+      html: '<p>{{receiver.name}} {{receiver.code}} {{receiver.extraData.city}}</p>',
+      name: 'test',
+      openForSubscription: true,
+      subject: 'test',
+      undeliveredCount: 0
+    }, [{
+      code: 'c0de', email: failed, extraData: { city: 'Москва' }, name: 'Иван',
+      periodicDate: '15'
+    }]);
+    await statsRepository.create({
+      email: failed, lastStatus: '5.7.1', lastStatusDate: new Date()
+    });
+
+    const config = { server: { mail: { listIdDomain: 'example.com' } } };
+    const retry = await call(createRetryMailing(
+      config, mailingRepository, logger, failureCounter
+    ), { sourceId: mailing.id });
+
+    const [receiver] = await mailingRepository.getReceivers(retry.data.id);
+    assert.deepEqual(
+      [receiver.email, receiver.name, receiver.code, receiver.periodicDate, receiver.extraData],
+      [failed, 'Иван', 'c0de', '15', { city: 'Москва' }]
+    );
+    const retryMailing = (await mailingRepository.getById(retry.data.id))!;
+    assert.deepEqual(retryMailing.extraData, extraData);
+    assert.equal(retryMailing.openForSubscription, true);
+    await mailingRepository.remove(mailing);
+    await mailingRepository.remove(retryMailing);
+  });
+
   it('should report the date and the mailing of an error', async () => {
     const mailing = await mailingRepository.create({
       creationDate: new Date(Date.now() - 1000),
