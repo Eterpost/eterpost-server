@@ -16,6 +16,7 @@ import { createRetryMailing } from '../../actions/createRetryMailing';
 import { loadReceivers } from '../../actions/loadReceivers';
 import { removeReceiver } from '../../actions/removeReceiver';
 import { AppDispatch } from '../../types';
+import { RetryFilter } from '../../api';
 
 
 function mapStateToProps (state: RootState) {
@@ -30,7 +31,9 @@ function mapStateToProps (state: RootState) {
 function mapDispatchToProps (dispatch: AppDispatch) {
   return {
     onClone: (mailing: Mailing) => dispatch(cloneMailing(mailing)),
-    onCreateRetry: (mailing: Mailing) => dispatch(createRetryMailing(mailing)),
+    onCreateRetry: (mailing: Mailing, filter?: RetryFilter) => dispatch(
+      createRetryMailing(mailing, filter)
+    ),
     onDelete: (mailing: Mailing) => dispatch(deleteMailing(mailing.id)),
     onRefresh: (mailing: Mailing) => dispatch(reloadSingleMailing(mailing.id)),
     onRefreshFailedReceivers: (mailing: Mailing) => dispatch(

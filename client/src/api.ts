@@ -57,8 +57,26 @@ export async function createMailing (mailing: MailingCreateData): Promise<Create
   return apiRequest('/mailings', 'POST', null, mailing);
 }
 
-export function createRetryMailing (sourceId: number): Promise<CreateResponse> {
-  return apiRequest('/mailings/create-retry', 'POST', null, { sourceId });
+export interface RetryFilter {
+  domains?: string[];
+  spam?: boolean;
+  status?: '4' | '5';
+}
+
+export function createRetryMailing (
+  sourceId: number, filter?: RetryFilter
+): Promise<CreateResponse> {
+  return apiRequest('/mailings/create-retry', 'POST', null, { filter, sourceId });
+}
+
+// Сколько адресов попадёт в повтор с этим фильтром
+export async function countRetryReceivers (
+  sourceId: number, filter?: RetryFilter
+): Promise<number> {
+  const { count } = await apiRequest('/mailings/create-retry', 'POST', null, {
+    dryRun: true, filter, sourceId
+  });
+  return count;
 }
 
 export function deleteMailing (id: number): Promise<void> {

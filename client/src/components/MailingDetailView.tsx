@@ -13,7 +13,7 @@ import { ReceiverList } from './ReceiverList';
 import { FailureList } from './FailureList';
 import { Checkbox } from './elements/Checkbox';
 import { formatDate } from '../formatDate';
-import { EmailPreview } from '../api';
+import { EmailPreview, RetryFilter } from '../api';
 import { EmailPreviewView } from './EmailPreviewView';
 
 
@@ -49,7 +49,7 @@ export interface MailingEditData {
 export interface MailingDetailViewProps {
   mailing: Mailing;
   onClone?: (mailing: Mailing) => void;
-  onCreateRetry?: (mailing: Mailing) => void;
+  onCreateRetry?: (mailing: Mailing, filter?: RetryFilter) => void;
   onDelete: (mailing: Mailing) => void;
   onRefresh?: (mailing: Mailing) => void;
   onRefreshReceiversList?: (mailing: Mailing) => void;
@@ -148,6 +148,7 @@ export class MailingDetailView extends React.Component<
         content: (
           <FailureList
             mailing={mailing} onReload={this.refreshFailedReceivers}
+            onCreateRetry={this.props.onCreateRetry && canEdit ? this.createRetry : undefined}
             onRestore={this.props.onRestoreExcluded ? this.restoreExcluded : undefined} />
         ),
         name: 'Ошибки доставки' + count(mailing.failedReceiversCount)
@@ -345,6 +346,12 @@ export class MailingDetailView extends React.Component<
   private handleClone = () => {
     if (this.props.onClone) {
       this.props.onClone(this.props.mailing);
+    }
+  };
+
+  private createRetry = (filter: RetryFilter) => {
+    if (this.props.onCreateRetry) {
+      this.props.onCreateRetry(this.props.mailing, filter);
     }
   };
 

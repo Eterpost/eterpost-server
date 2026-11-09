@@ -1,10 +1,14 @@
 import * as React from 'react';
 import { ReceiverList, ReceiverListButton } from './ReceiverList';
 import { Mailing, Receiver } from '../reducers/mailings';
+import { RetryFilter } from '../api';
+import { RetryFilterForm } from './RetryFilterForm';
 
 
 export interface FailureListProps {
   mailing: Mailing;
+  // Создать повтор по ошибкам, подходящим под фильтр
+  onCreateRetry?: (filter: RetryFilter) => void;
   onReload: () => Promise<void> | void;
   // Вернуть в рассылку исключённые адреса: все (без аргумента) или один
   onRestore?: (emails?: string[]) => void;
@@ -38,14 +42,21 @@ export class FailureList extends React.Component<FailureListProps> {
     if (this.props.onRestore && hasExcluded) {
       buttons.push({ onClick: this.restoreAll, text: 'Вернуть исключённых' });
     }
+    const hasFailures = Boolean(mailing.failedReceiversCount);
     return (
-      <ReceiverList receivers={mailing.failedReceivers || []}
-                    receiversCount={mailing.failedReceiversCount}
-                    loading={mailing.loadingFailedReceivers}
-                    mailingId={mailing.id}
-                    emptyText='Ошибок доставки нет'
-                    onRestore={this.props.onRestore ? this.restoreOne : undefined}
-                    title='Ошибки доставки' buttons={buttons} />
+      <div className='failure-list'>
+        <ReceiverList receivers={mailing.failedReceivers || []}
+                      receiversCount={mailing.failedReceiversCount}
+                      loading={mailing.loadingFailedReceivers}
+                      mailingId={mailing.id}
+                      emptyText='Ошибок доставки нет'
+                      onRestore={this.props.onRestore ? this.restoreOne : undefined}
+                      title='Ошибки доставки' buttons={buttons} />
+        {this.props.onCreateRetry && hasFailures ? (
+          <RetryFilterForm mailingId={mailing.id} failuresCount={mailing.failedReceiversCount}
+                           onCreate={this.props.onCreateRetry} />
+        ) : null}
+      </div>
     );
   }
 
