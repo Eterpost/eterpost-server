@@ -8,6 +8,7 @@ import { reloadSingleMailing } from '../../actions/reloadSingleMailing';
 import { deleteMailing } from '../../actions/deleteMailing';
 import { sendTestEmail } from '../../actions/sendTestEmail';
 import { previewEmail } from '../../actions/previewEmail';
+import { restoreExcluded } from '../../actions/restoreExcluded';
 import { cloneMailing } from '../../actions/cloneMailing';
 import { updateMailingOnServer } from '../../actions/updateMailingOnServer';
 import { reloadFailedReceivers } from '../../actions/reloadFailedReceivers';
@@ -34,6 +35,9 @@ function mapDispatchToProps (dispatch: AppDispatch) {
     onRefresh: (mailing: Mailing) => dispatch(reloadSingleMailing(mailing.id)),
     onRefreshFailedReceivers: (mailing: Mailing) => dispatch(
       reloadFailedReceivers(mailing.id)
+    ),
+    onRestoreExcluded: (mailing: Mailing, emails?: string[]) => dispatch(
+      restoreExcluded(mailing.id, emails)
     ),
     onRefreshReceiversList: (mailing: Mailing) => dispatch(
       loadReceivers(mailing.id)

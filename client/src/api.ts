@@ -112,6 +112,12 @@ export function previewEmail (mailingId: number, email: string): Promise<EmailPr
   return apiRequest(`/mailings/${mailingId}/preview`, 'POST', null, { email });
 }
 
+export function restoreExcluded (
+  mailingId: number, emails?: string[]
+): Promise<{ restored: string[] }> {
+  return apiRequest(`/mailings/${mailingId}/restore-excluded`, 'POST', null, { emails });
+}
+
 export function sendTestEmail (mailingId: number, email: string): Promise<void> {
   return apiRequest(`/mailings/${mailingId}/send-test-email`, 'POST', null, {
     email

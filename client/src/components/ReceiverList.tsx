@@ -27,6 +27,8 @@ export interface ReceiverListProps {
   loading?: boolean;
   onChange?: (receivers: Receiver[]) => void;
   onRemove?: (receiver: Receiver) => void;
+  // Для исключённых из-за ошибок доставки: вернуть адрес в рассылку
+  onRestore?: (receiver: Receiver) => void;
   receivers: Receiver[];
   receiversCount?: number;
   emptyText?: string;
@@ -70,6 +72,12 @@ export class ReceiverList extends React.Component<ReceiverListProps> {
           ✗
         </ConfirmationButton>
       ) : null;
+      const restoreButton = this.props.onRestore && receiver.excluded ? (
+        <ConfirmationButton onClick={this.restoreReceiver(receiver)}
+                            label={'Вернуть ' + receiver.email + ' в рассылку'}>
+          ↺
+        </ConfirmationButton>
+      ) : null;
       const details = [];
       if (receiver.name) {
         details.push(receiver.name);
@@ -100,6 +108,7 @@ export class ReceiverList extends React.Component<ReceiverListProps> {
               <span className='receiver-diagnostic'>{receiver.diagnosticCode}</span>
             ) : null}
           </div>
+          {restoreButton}
           {removeButton}
         </li>
       );
@@ -130,6 +139,12 @@ export class ReceiverList extends React.Component<ReceiverListProps> {
       </div>
     );
   }
+
+  private restoreReceiver = (receiver: Receiver) => () => {
+    if (this.props.onRestore) {
+      this.props.onRestore(receiver);
+    }
+  };
 
   private changeFile = async (event: React.FormEvent<HTMLInputElement>) => {
     const file = event.currentTarget.files && event.currentTarget.files[0];

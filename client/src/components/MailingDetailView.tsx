@@ -54,6 +54,7 @@ export interface MailingDetailViewProps {
   onRefresh?: (mailing: Mailing) => void;
   onRefreshReceiversList?: (mailing: Mailing) => void;
   onRefreshFailedReceivers?: (mailing: Mailing) => Promise<void>;
+  onRestoreExcluded?: (mailing: Mailing, emails?: string[]) => Promise<void>;
   onRemoveReceiver?: (mailing: Mailing, receiver: Receiver) => void;
   onPreview?: (mailing: Mailing, address: string) => Promise<EmailPreview | null>;
   onSendTestEmail?: (mailing: Mailing, address: string) => void;
@@ -145,7 +146,9 @@ export class MailingDetailView extends React.Component<
       },
       {
         content: (
-          <FailureList mailing={mailing} onReload={this.refreshFailedReceivers} />
+          <FailureList
+            mailing={mailing} onReload={this.refreshFailedReceivers}
+            onRestore={this.props.onRestoreExcluded ? this.restoreExcluded : undefined} />
         ),
         name: 'Ошибки доставки' + count(mailing.failedReceiversCount)
       }
@@ -402,6 +405,14 @@ export class MailingDetailView extends React.Component<
           receiversCount: this.props.mailing.receiversCount!
         }
       });
+    }
+  };
+
+  private restoreExcluded = async (emails?: string[]) => {
+    if (this.props.onRestoreExcluded) {
+      await this.props.onRestoreExcluded(this.props.mailing, emails);
+      // Вкладка «Получатели» показывает копию списка в форме: обновляем её
+      await this.refreshReceiversList();
     }
   };
 

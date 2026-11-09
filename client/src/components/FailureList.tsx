@@ -1,11 +1,13 @@
 import * as React from 'react';
-import { ReceiverList } from './ReceiverList';
-import { Mailing } from '../reducers/mailings';
+import { ReceiverList, ReceiverListButton } from './ReceiverList';
+import { Mailing, Receiver } from '../reducers/mailings';
 
 
 export interface FailureListProps {
   mailing: Mailing;
   onReload: () => Promise<void> | void;
+  // Вернуть в рассылку исключённые адреса: все (без аргумента) или один
+  onRestore?: (emails?: string[]) => void;
 }
 
 export class FailureList extends React.Component<FailureListProps> {
@@ -31,15 +33,33 @@ export class FailureList extends React.Component<FailureListProps> {
       onClick: this.reload,
       text: 'Обновить'
     };
+    const buttons: ReceiverListButton[] = [reloadFailuresButton, downloadButton];
+    const hasExcluded = (mailing.failedReceivers || []).some(receiver => receiver.excluded);
+    if (this.props.onRestore && hasExcluded) {
+      buttons.push({ onClick: this.restoreAll, text: 'Вернуть исключённых' });
+    }
     return (
       <ReceiverList receivers={mailing.failedReceivers || []}
                     receiversCount={mailing.failedReceiversCount}
                     loading={mailing.loadingFailedReceivers}
                     mailingId={mailing.id}
                     emptyText='Ошибок доставки нет'
-                    title='Ошибки доставки' buttons={[ reloadFailuresButton, downloadButton ]} />
+                    onRestore={this.props.onRestore ? this.restoreOne : undefined}
+                    title='Ошибки доставки' buttons={buttons} />
     );
   }
+
+  private restoreAll = () => {
+    if (this.props.onRestore) {
+      this.props.onRestore();
+    }
+  };
+
+  private restoreOne = (receiver: Receiver) => {
+    if (this.props.onRestore) {
+      this.props.onRestore([receiver.email]);
+    }
+  };
 
   private reload = async (force: boolean = true) => {
     const { mailing } = this.props;
