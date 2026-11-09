@@ -346,6 +346,24 @@ describe('MailingExecutor', { skip: redisSkip }, () => {
         assert.match(stats!.diagnosticCode!, /User unknown/);
       });
 
+      it('should mark a receiver rejected as spam', async () => {
+        const testMailing = await createMailing(emails.map(email => ({ email })));
+        onSend(email => {
+          if (email === 'b@example.com') {
+            throw smtpError(
+              554, 'RCPT TO', '554 5.7.1 [2] Message rejected under suspicion of SPAM'
+            );
+          }
+          if (email === 'c@example.com') {
+            throw smtpError(550, 'RCPT TO', '550 5.1.1 <c@example.com>: User unknown');
+          }
+        });
+        assert.equal(await run(testMailing), null);
+
+        assert.equal((await addressStatsRepository.getByEmail('b@example.com'))!.spam, true);
+        assert.equal((await addressStatsRepository.getByEmail('c@example.com'))!.spam, false);
+      });
+
       it('should record a temporary rejection of a receiver and go on', async () => {
         const testMailing = await createMailing(emails.map(email => ({ email })));
         onSend(email => {

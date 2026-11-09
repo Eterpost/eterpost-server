@@ -152,6 +152,7 @@ comments below are for explanation only):
     "pauseDuration": 600,              // ...for this many seconds (both must be set)
     "sendRetryDelays": [10, 60, 300],  // optional: pauses (s) before retrying a temporary SMTP error
     "rcptRetryDelays": [60, 300, 900, 3600],  // optional: pauses (s) before retrying a receiver rejected with 4xx at RCPT TO; [] — no retries
+    "spamPatterns": ["\\bspam", "unsolicited"],  // optional: regular expressions for a server reply rejecting the letter as spam; a built-in set by default, as in mail-sorter
     "sorterStatusMaxAge": 7200,        // optional: warn if mail-sorter had no successful run for this long (s)
     "redis": {
       "host": "localhost",             // or "url": "redis://user:password@host:6379/0"
@@ -224,7 +225,11 @@ Receivers are added in the web client from a CSV file without a header, one
 receiver per line: `email,name,extraData`, where `extraData` is an optional JSON
 object, e.g. `ivan@example.com,Ivan,{"city": "Moscow"}`. Invalid addresses and
 addresses whose last delivery status was a permanent error (5.x.x) are rejected
-when a mailing is created.
+when a mailing is created. A rejection as spam is the exception: the letter was
+refused because of its content or the sender (spam, blocklists, reputation,
+SPF/DKIM/DMARC), not the address, so the address stays. This is detected from
+the server reply (`server.spamPatterns`) both when sending and in mail-sorter
+from DSNs.
 
 ### Letter templates
 

@@ -15,7 +15,8 @@ export class ReceiverListFilter {
     const failedReceivers: string[] = [];
     for await (const receiversStats of this.getStatsStream(withValidEmails)) { 
       for(const stats of receiversStats) {
-        if (stats && stats.lastStatus && stats.lastStatus[0] === '5') {
+        // Отказ как спам — не ошибка адреса: ящик существует
+        if (stats && stats.lastStatus && stats.lastStatus[0] === '5' && !stats.spam) {
           failedReceivers.push(stats.email);
         } 
       }

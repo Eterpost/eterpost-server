@@ -11,6 +11,7 @@ import { AddressStatsProperties } from './AddressStats';
 import { isEmail } from 'validator';
 import { sleep } from './utils/sleep';
 import { ComposedMessage, composeMessage } from './composeMessage';
+import { createSpamDetector } from './spamDetection';
 
 
 // Паузы перед повторами при временной ошибке SMTP (секунды), если не заданы
@@ -24,6 +25,7 @@ const DEFAULT_RCPT_RETRY_DELAYS = [60, 300, 900, 3600];
 
 export class MailingExecutor extends EventEmitter {
   private executionStates: Map<number, MailingExecutionState> = new Map();
+  private isSpam: (response?: string) => boolean;
 
   constructor (
     private mailer: MailSender,
@@ -33,6 +35,7 @@ export class MailingExecutor extends EventEmitter {
     private config: any
   ) {
     super();
+    this.isSpam = createSpamDetector(config.server.spamPatterns);
   }
 
   async pauseExecution (mailing: Mailing): Promise<void> {
@@ -350,6 +353,7 @@ export class MailingExecutor extends EventEmitter {
         stats.lastMailingId = mailingId;
         stats.lastStatus = status;
         stats.lastStatusDate = new Date();
+        stats.spam = this.isSpam(response);
         if (temporary) {
           stats.temporaryFailureCount = (stats.temporaryFailureCount || 0) + 1;
         }
