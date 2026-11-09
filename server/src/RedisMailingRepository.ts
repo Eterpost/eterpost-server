@@ -1,7 +1,9 @@
 import { Mailing, MailingProperties } from './Mailing';
 import { MailingState } from './MailingState';
 import { Receiver, ReceiverProperties } from './Receiver';
-import { MailingFailure, MailingRepository, RcptRetry } from './MailingRepository';
+import {
+  MailingFailure, MailingRepository, RcptRetry, TrackedLetter, TrackingStats
+} from './MailingRepository';
 import { BaseRedisRepository } from './BaseRedisRepository';
 import { RedisClient, RedisConnectionPool } from './RedisConnectionPool';
 
@@ -11,6 +13,10 @@ export interface RedisMailingRepositoryConfig {
   excludedReceiversKeyPrefix: string;
   excludedReceiverDataKeyPrefix: string;
   failuresKeyPrefix: string;
+  trackedLettersKeyPrefix: string;
+  opensKeyPrefix: string;
+  clicksKeyPrefix: string;
+  linkClicksKeyPrefix: string;
   idCounterKey: string;
   receiversListKeyPrefix: string;
   rcptRetriesKeyPrefix: string;
@@ -25,6 +31,12 @@ const defaultConfig: RedisMailingRepositoryConfig = {
   // Ошибки доставки рассылки: хеш адрес → { date, diagnosticCode, spam, status }.
   // Пишет и mail-sorter (src/services/RedisRepositories.js)
   failuresKeyPrefix: 'MAILING_FAILURES_',
+  // Отслеживание: токен письма → { email, links }; адрес → дата первого
+  // открытия и первого перехода; ссылка → число переходов
+  trackedLettersKeyPrefix: 'MAILING_TRACKED_LETTERS_',
+  opensKeyPrefix: 'MAILING_OPENS_',
+  clicksKeyPrefix: 'MAILING_CLICKS_',
+  linkClicksKeyPrefix: 'MAILING_LINK_CLICKS_',
   idCounterKey: 'MAILING_ID_COUNTER',
   receiversListKeyPrefix: 'MAILING_RECEIVER_LIST_',
   rcptRetriesKeyPrefix: 'MAILING_RCPT_RETRIES_'
@@ -71,6 +83,7 @@ implements MailingRepository {
       sentCount: 0,
       state: MailingState.NEW,
       subject: properties.subject,
+      tracking: properties.tracking,
       undeliveredCount: 0
     };
     const jsonString = this.serializeEntity(data);
@@ -164,6 +177,61 @@ implements MailingRepository {
     });
   }
 
+  async setTrackedLetter (id: number, token: string, letter: TrackedLetter): Promise<void> {
+    return this.redisConnectionPool.runWithConnection(async redisClient => {
+      await redisClient.hSet(
+        this.config.trackedLettersKeyPrefix + id, token, JSON.stringify(letter)
+      );
+    });
+  }
+
+  async getTrackedLetter (id: number, token: string): Promise<TrackedLetter | null> {
+    return this.redisConnectionPool.runWithConnection(async redisClient => {
+      const json = await redisClient.hGet(this.config.trackedLettersKeyPrefix + id, token);
+      return json ? JSON.parse(json) : null;
+    });
+  }
+
+  async recordOpen (id: number, email: string, date: Date): Promise<void> {
+    return this.redisConnectionPool.runWithConnection(async redisClient => {
+      await redisClient.hSetNX(this.config.opensKeyPrefix + id, email, date.toISOString());
+    });
+  }
+
+  async recordClick (id: number, email: string, url: string, date: Date): Promise<void> {
+    return this.redisConnectionPool.runWithConnection(async redisClient => {
+      const multi = redisClient.multi();
+      multi.hSetNX(this.config.clicksKeyPrefix + id, email, date.toISOString());
+      multi.hIncrBy(this.config.linkClicksKeyPrefix + id, url, 1);
+      await multi.exec();
+    });
+  }
+
+  async getTrackingStats (id: number): Promise<TrackingStats> {
+    return this.redisConnectionPool.runWithConnection(async redisClient => {
+      const [opens, clicks, linkClicks] = await Promise.all([
+        redisClient.hGetAll(this.config.opensKeyPrefix + id),
+        redisClient.hGetAll(this.config.clicksKeyPrefix + id),
+        redisClient.hGetAll(this.config.linkClicksKeyPrefix + id)
+      ]);
+      return {
+        clicks: new Map(Object.entries(clicks)),
+        linkClicks: new Map(Object.entries(linkClicks).map(([url, n]) => [url, Number(n)])),
+        opens: new Map(Object.entries(opens))
+      };
+    });
+  }
+
+  async getTrackingCounts (id: number): Promise<{ clicked: number, opened: number }> {
+    return this.redisConnectionPool.runWithConnection(async redisClient => {
+      const [opened, clicked] = await Promise.all([
+        redisClient.hLen(this.config.opensKeyPrefix + id),
+        redisClient.hLen(this.config.clicksKeyPrefix + id)
+      ]);
+      return { clicked, opened };
+    });
+  }
+
   async getReceiverCount (id: number): Promise<number> {
     return this.redisConnectionPool.runWithConnection(async redisClient => {
       const key = this.config.receiversListKeyPrefix + id;
@@ -181,6 +249,12 @@ implements MailingRepository {
       multi.del(this.getExcludedReceiversKey(mailing.id));
       multi.del(this.getExcludedReceiverDataKey(mailing.id));
       multi.del(this.getFailuresKey(mailing.id));
+      for (const prefix of [
+        this.config.trackedLettersKeyPrefix, this.config.opensKeyPrefix,
+        this.config.clicksKeyPrefix, this.config.linkClicksKeyPrefix
+      ]) {
+        multi.del(prefix + mailing.id);
+      }
       multi.del(this.getRetriesKey(mailing.id));
       await multi.exec();
     });
@@ -417,6 +491,7 @@ implements MailingRepository {
       sentCount: properties.sentCount,
       state: properties.state,
       subject: properties.subject,
+      tracking: properties.tracking,
       undeliveredCount: properties.undeliveredCount
     });
   }

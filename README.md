@@ -174,6 +174,9 @@ comments below are for explanation only):
       "url": "https://subscribe.example.com",  // subscription-facade pages, for the confirmation link
       "subject": "Подписка на рассылку",  // subject of the confirmation letter
       "replyTo": "support@example.com" // optional
+    },
+    "tracking": {                      // optional: tracking of opens and clicks
+      "url": "https://subscribe.example.com"  // public address of subscription-facade serving /t/...
     }
   }
 }
@@ -281,6 +284,31 @@ changes in the editor are not included.
 Other programs (admin panels and so on) should not render the letter with their
 own copy of Handlebars: the service builds the plain text version and headers
 itself, and a copy may differ from it — use the preview to show the letter.
+
+### Tracking of opens and clicks
+
+Off by default. It is turned on for a mailing with the "Отслеживать открытия и
+переходы по ссылкам" checkbox (`tracking: true` in the API); the server needs
+`server.tracking.url`, the public address of subscription-facade.
+
+When sending, every letter gets a random token. Links http(s) in the HTML go
+through `<tracking.url>/t/c/<mailing>/<token>/<number>`, and the image
+`<tracking.url>/t/o/<mailing>/<token>` is added at the end of the letter.
+subscription-facade reports the event to mail-server (`POST /tracking/open`,
+`/tracking/click`) and serves the image or redirects to the original link,
+whose address is kept on the server, so the service cannot be used to redirect
+to an arbitrary address. Links to subscription-facade pages (subscribe,
+unsubscribe) and `mailto:` are not wrapped, and the plain text version keeps
+the original links. The preview and the test letter are built without
+tracking: links in them lead straight to the target.
+
+The mailing card shows how many addresses opened the letter and clicked a link
+(`opened`, `clicked` in `GET /mailings/:id`).
+
+The data is approximate: many mail programs do not load images or load them in
+advance through their proxy (Gmail, Apple Mail), and a link may be followed by
+an antivirus. Opens and clicks are personal data of the receivers: mention the
+tracking in the mailing text or the privacy policy.
 
 ### Periodic receivers
 

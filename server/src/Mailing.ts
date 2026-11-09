@@ -37,6 +37,10 @@ export interface MailingProperties {
   state?: MailingState;
   sentCount?: number;
   subject: string;
+  /**
+   * Отслеживать открытия и переходы по ссылкам (server.tracking.url)
+   */
+  tracking?: boolean;
   undeliveredCount: number;
 }
 
@@ -68,6 +72,7 @@ export class Mailing implements MailingProperties {
   public state: MailingState;
   public sentCount: number;
   public subject: string;
+  public tracking: boolean;
   public undeliveredCount: number;
   private _htmlTemplate?: AsyncTemplate<MailingTemplateContext>;
   private _subjectTemplate?: AsyncTemplate<MailingTemplateContext>;
@@ -95,6 +100,7 @@ export class Mailing implements MailingProperties {
     // Рассылки, сохранённые до появления position, продолжаются с sentCount
     this.position = properties.position ?? this.sentCount;
     this.subject = properties.subject;
+    this.tracking = properties.tracking || false;
     this.undeliveredCount = properties.undeliveredCount || 0;
   }
 

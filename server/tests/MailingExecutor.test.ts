@@ -12,6 +12,7 @@ import { Mailing } from '../src/Mailing';
 import { Email } from '../src/Email';
 import { Receiver } from '../src/Receiver';
 import { once } from 'node:events';
+import { trackClick, trackOpen } from '../src/controllers/tracking';
 
 
 const testHtml = '<h1>Test</h1>';
@@ -31,7 +32,8 @@ describe('MailingExecutor', { skip: redisSkip }, () => {
         listUnsubscribe: ''
       },
       rcptRetryDelays: [0.01, 0.01] as number[],
-      sendRetryDelays: [0.01, 0.01]
+      sendRetryDelays: [0.01, 0.01],
+      tracking: { url: 'https://lists.example.com' }
     }
   };
 
@@ -116,6 +118,84 @@ describe('MailingExecutor', { skip: redisSkip }, () => {
       assert.deepEqual(message.to, [{ address: 'ivan@example.com', name: 'Иван' }]);
       assert.equal(message.headers['List-Id'], 'list.etersoft.ru');
       assert.equal(message.headers.Precedence, 'bulk');
+    });
+  });
+
+  describe('tracking', () => {
+    const html = '<p><a href="https://example.com/offer?a=1&amp;b=2">Offer</a> ' +
+      '<a href="https://lists.example.com/unsubscribe?code=1">Unsubscribe</a></p>';
+
+    afterEach(() => {
+      mailer.sendEmail.mock.mockImplementation(async () => {});
+      mailer.sendEmail.mock.resetCalls();
+    });
+
+    async function sendAll (tracking: boolean) {
+      const testMailing = await mailingRepository.create({
+        html, name: testName, subject: testSubject, tracking, undeliveredCount: 0
+      }, [{ email: 'reader@example.com' }]);
+      const finished = once(executor, 'finished');
+      await executor.startExecution(testMailing);
+      await finished;
+      const [email] = mailer.sendEmail.mock.calls[0].arguments as unknown as [Email];
+      return { email, testMailing };
+    }
+
+    it('should wrap links and count opens and clicks of a mailing with tracking', async () => {
+      const { email, testMailing } = await sendAll(true);
+      const match = /href="https:\/\/lists\.example\.com\/t\/c\/(\d+)\/([\w-]+)\/0"/
+        .exec(email.html!);
+      assert.ok(match, email.html);
+      assert.equal(Number(match[1]), testMailing.id);
+      const token = match[2];
+      assert.ok(email.html!.includes('href="https://lists.example.com/unsubscribe?code=1"'));
+      const pixel = `src="https://lists.example.com/t/o/${testMailing.id}/${token}"`;
+      assert.ok(email.html!.includes(pixel));
+      // В текстовой версии — исходная ссылка
+      assert.match(email.text!, /Offer \[https:\/\/example\.com\/offer\?a=1&b=2\]/);
+
+      const call = async (handlers: unknown, body: object) => {
+        let status = 200;
+        let result: any;
+        const res: any = {
+          json: (data: any) => { result = data; return res; },
+          status: (code: number) => { status = code; return res; }
+        };
+        await (handlers as any[])[1]({ body }, res);
+        return { result, status };
+      };
+      const open = await call(trackOpen(mailingRepository), { mailingId: testMailing.id, token });
+      assert.equal(open.result.data.recorded, true);
+      const click = await call(trackClick(mailingRepository), {
+        link: 0, mailingId: testMailing.id, token
+      });
+      assert.equal(click.result.data.url, 'https://example.com/offer?a=1&b=2');
+      assert.equal((await call(trackClick(mailingRepository), {
+        link: 5, mailingId: testMailing.id, token
+      })).status, 404);
+      assert.equal((await call(trackOpen(mailingRepository), {
+        mailingId: testMailing.id, token: 'unknown'
+      })).result.data.recorded, false);
+
+      const stats = await mailingRepository.getTrackingStats(testMailing.id);
+      assert.deepEqual([...stats.opens.keys()], ['reader@example.com']);
+      assert.deepEqual([...stats.clicks.keys()], ['reader@example.com']);
+      assert.deepEqual([...stats.linkClicks], [['https://example.com/offer?a=1&b=2', 1]]);
+    });
+
+    it('should not track a mailing without tracking, a test letter or a preview', async () => {
+      const { email, testMailing } = await sendAll(false);
+      assert.equal(email.html, html);
+
+      const tracked = await mailingRepository.create({
+        html, name: testName, subject: testSubject, tracking: true, undeliveredCount: 0
+      }, []);
+      await executor.sendTestEmail(tracked, 'me@example.com');
+      const [testEmail] = mailer.sendEmail.mock.calls[1].arguments as unknown as [Email];
+      assert.equal(testEmail.html, html);
+      const preview = await executor.previewEmail(tracked, new Receiver('me@example.com'));
+      assert.equal(preview.html, html);
+      assert.equal(testMailing.tracking, false);
     });
   });
 

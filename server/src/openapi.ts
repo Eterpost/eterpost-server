@@ -6,6 +6,7 @@ import {
 import { requestBodyJsonSchema as previewDraftBody } from './controllers/previewDraft';
 import { requestBodyJsonSchema as previewEmailBody } from './controllers/previewEmail';
 import { requestBodyJsonSchema as restoreExcludedBody } from './controllers/restoreExcluded';
+import { clickBodyJsonSchema, openBodyJsonSchema } from './controllers/tracking';
 import { requestBodyJsonSchema as sendTestEmailBody } from './controllers/sendTestEmail';
 import { requestBodyJsonSchema as subscribeBody } from './controllers/subscribe';
 import { requestBodyJsonSchema as unsubscribeBody } from './controllers/unsubscribe';
@@ -113,7 +114,11 @@ export const openApiDocument = {
     { name: 'mailings', description: 'Рассылки' },
     { name: 'receivers', description: 'Получатели рассылки' },
     { name: 'subscription', description: 'Подписка и отписка (используется subscription-facade)' },
-    { name: 'mail-sorter', description: 'Используется mail-sorter' }
+    { name: 'mail-sorter', description: 'Используется mail-sorter' },
+    {
+      name: 'tracking',
+      description: 'Отслеживание открытий и переходов (используется subscription-facade)'
+    }
   ],
   paths: {
     '/mailings': {
@@ -409,6 +414,36 @@ export const openApiDocument = {
         }
       }
     },
+    '/tracking/open': {
+      post: {
+        tags: ['tracking'],
+        summary: 'Открытие письма',
+        description:
+          'Вызывает subscription-facade, когда загружена картинка-счётчик из письма ' +
+          '(`/t/o/<рассылка>/<токен>`). Отмечает первое открытие адреса; неизвестный ' +
+          'токен — `recorded: false`.',
+        requestBody: body(openBodyJsonSchema, { mailingId: 1, token: 'k3Jd9Q' }),
+        responses: {
+          200: ok({ type: 'object', properties: { recorded: { type: 'boolean' } } }),
+          400: badRequest
+        }
+      }
+    },
+    '/tracking/click': {
+      post: {
+        tags: ['tracking'],
+        summary: 'Переход по ссылке из письма',
+        description:
+          'Вызывает subscription-facade при переходе по `/t/c/<рассылка>/<токен>/<номер>`. ' +
+          'Возвращает исходный адрес ссылки, отмечает переход и открытие.',
+        requestBody: body(clickBodyJsonSchema, { mailingId: 1, token: 'k3Jd9Q', link: 0 }),
+        responses: {
+          200: ok({ type: 'object', properties: { url: { type: 'string' } } }),
+          400: badRequest,
+          404: failure('Неизвестный токен или номер ссылки')
+        }
+      }
+    },
     '/sorter/status': {
       get: {
         tags: ['mail-sorter'],
@@ -532,6 +567,19 @@ export const openApiDocument = {
             description: 'Добавлять заголовок List-Unsubscribe (server.mail.listUnsubscribe): ' +
               'по нему почтовые программы показывают кнопку «Отписаться». ' +
               'По умолчанию true'
+          },
+          tracking: {
+            type: 'boolean',
+            description: 'Отслеживать открытия и переходы по ссылкам (нужен ' +
+              'server.tracking.url). По умолчанию false'
+          },
+          opened: {
+            type: 'integer',
+            description: 'Сколько адресов открыло письмо (только в GET /mailings/{id} при tracking)'
+          },
+          clicked: {
+            type: 'integer',
+            description: 'Сколько адресов перешло по ссылкам (там же)'
           },
           from: { type: 'string', description: 'Пусто — адрес сервиса (server.mail.from)' },
           replyTo: { type: 'string' },

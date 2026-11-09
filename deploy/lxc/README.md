@@ -8,7 +8,7 @@ LXC-контейнер (или ВМ) с ALT Linux. Docker не нужен: пр�
 ```
                  nginx :80
    внутренняя сеть ──> mailing.<домен>   ── /api ──> mail-server 127.0.0.1:8000 ──> Redis 127.0.0.1:6379
-   интернет ─────────> subscribe.<домен> ── /subscribe, /unsubscribe ──> subscription-facade 127.0.0.1:8001
+   интернет ─────────> subscribe.<домен> ── /subscribe, /unsubscribe, /t/ ──> subscription-facade 127.0.0.1:8001
                                    mail-server, mail-sorter ── SMTP 587 ──> почтовый сервер организации ──> получатели
    systemd-таймер (раз в час) ──> mail-sorter ── IMAP ──> ящик noreply@ (тот же почтовый сервер)
 ```
@@ -33,7 +33,7 @@ LXC-контейнер (или ВМ) с ALT Linux. Docker не нужен: пр�
 |---|---|---|
 | Имя для веб-интерфейса (внутреннее) | `mailing.office.example` | `server_name` первого блока в nginx-конфиге |
 | Подсети, из которых доступен интерфейс | `10.0.0.0/8` | `allow` в nginx-конфиге (второй рубеж: доступ к API — по ключам, см. [«Ключи API»](#ключи-api)) |
-| Публичное имя страниц подписки | `subscribe.example.com` | `server_name` второго блока; `server.subscription.url` в `mail-server.json` (ссылка в письме подтверждения); ссылки отписки в тексте рассылок |
+| Публичное имя страниц подписки | `subscribe.example.com` | `server_name` второго блока; `server.subscription.url` в `mail-server.json` (ссылка в письме подтверждения); `server.tracking.url` (отслеживание открытий и переходов, если нужно); ссылки отписки в тексте рассылок |
 | Адрес отправителя рассылок | `noreply@example.com` | `server.mail.from` в `mail-server.json`, `mailer.from` в `mail-sorter.json` |
 | Домен для `List-Id` | `example.com` | `server.mail.listIdDomain` |
 | Почтовый сервер для отправки | `mail.example.com:587` (STARTTLS), логин и пароль, если нужны | `server.smtp` в `mail-server.json` и `mailer` в `mail-sorter.json`, пароль — `SMTP_PASSWORD` в `mail-server.env` и `mail-sorter.env` |

@@ -26,6 +26,7 @@ export function previewDraft (config: any, executor: MailingExecutor) {
       from: body.from,
       html: body.html,
       listUnsubscribe: body.listUnsubscribe,
+      tracking: body.tracking,
       name: body.name || '',
       openForSubscription: body.openForSubscription,
       replyTo: body.replyTo,
@@ -68,6 +69,9 @@ export const requestBodyJsonSchema = {
       minLength: 1
     },
     listUnsubscribe: {
+      type: 'boolean'
+    },
+    tracking: {
       type: 'boolean'
     },
     name: {

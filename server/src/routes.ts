@@ -14,6 +14,7 @@ import { sendTestEmail } from './controllers/sendTestEmail';
 import { previewEmail } from './controllers/previewEmail';
 import { previewDraft } from './controllers/previewDraft';
 import { restoreExcluded } from './controllers/restoreExcluded';
+import { trackClick, trackOpen } from './controllers/tracking';
 import { AddressStatsRepository } from './AddressStatsRepository';
 import { getFailedReceivers } from './controllers/getFailedReceivers';
 import { FailureCounter } from './FailureCounter';
@@ -74,6 +75,8 @@ export function setupRoutes (
     repository, logger
   ));
   app.get('/sorter/status', getSorterStatus(sorterStatusRepository, config));
+  app.post('/tracking/open', trackOpen(repository));
+  app.post('/tracking/click', trackClick(repository));
 
   setupApiDocs(app);
 }

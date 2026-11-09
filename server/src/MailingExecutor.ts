@@ -10,7 +10,8 @@ import { AddressStatsRepository } from './AddressStatsRepository';
 import { AddressStatsProperties } from './AddressStats';
 import { isEmail } from 'validator';
 import { sleep } from './utils/sleep';
-import { ComposedMessage, composeMessage } from './composeMessage';
+import { ComposedMessage, composeMessage, htmlToText } from './composeMessage';
+import { applyTracking, createTrackingToken } from './tracking';
 import { createSpamDetector } from './spamDetection';
 
 
@@ -117,7 +118,12 @@ export class MailingExecutor extends EventEmitter {
     return receiver.shouldSendAt(startedAt);
   }
 
-  private async createEmail (mailing: Mailing, receiver: Receiver) {
+  /**
+   * track — настоящая отправка: у рассылки с отслеживанием ссылки оборачиваются
+   * и добавляется счётчик открытия. Предпросмотр и пробное письмо собираются
+   * без отслеживания: ссылки в них ведут прямо на место, открытия не считаются
+   */
+  private async createEmail (mailing: Mailing, receiver: Receiver, track = false) {
     const headers: Headers = {};
     if (mailing.listId) {
       headers['List-Id'] = mailing.listId;
@@ -126,12 +132,27 @@ export class MailingExecutor extends EventEmitter {
       headers['List-Unsubscribe'] = this.config.server.mail.listUnsubscribe;
     }
     headers.Precedence = 'bulk';
-    const html = await mailing.getHtmlForReceiver(receiver);
+    let html = await mailing.getHtmlForReceiver(receiver);
+    let text: string | undefined;
+    const trackingUrl: string | undefined = this.config.server.tracking?.url;
+    if (track && mailing.tracking && trackingUrl) {
+      const token = createTrackingToken();
+      // Страницы подписки и отписки (facade) не оборачиваются
+      const skip = [trackingUrl, this.config.server.subscription?.url].filter(Boolean);
+      const tracked = applyTracking(html, trackingUrl, mailing.id, token, skip);
+      await this.mailingRepository.setTrackedLetter(mailing.id, token, {
+        email: receiver.email, links: tracked.links
+      });
+      // В текстовой версии — исходные ссылки
+      text = htmlToText(html);
+      html = tracked.html;
+    }
     const subject = await mailing.getSubjectForReceiver(receiver);
     return new Email({
       from: mailing.from,
       headers,
       html: html,
+      text,
       receivers: [receiver],
       replyTo: mailing.replyTo,
       subject
@@ -170,7 +191,7 @@ export class MailingExecutor extends EventEmitter {
         continue;
       }
 
-      const email = await this.createEmail(generalInfoMailing, receiver);
+      const email = await this.createEmail(generalInfoMailing, receiver, true);
       this.logger.debug(`#${mailingId}: sending email to ${email.receivers.join(',')}`);
       this.logger.debug(`${receiver.email}: periodicDate = ${receiver.periodicDate}`);
       const { result, error } = await this.sendWithRetry(mailingId, email);
@@ -248,7 +269,7 @@ export class MailingExecutor extends EventEmitter {
           await this.mailingRepository.removeRetry(mailingId, retry.email);
           continue;
         }
-        const email = await this.createEmail(mailing, receiver);
+        const email = await this.createEmail(mailing, receiver, true);
         this.logger.debug(`#${mailingId}: retry ${retry.attempts + 1} to ${retry.email}`);
         const { result, error } = await this.sendWithRetry(mailingId, email);
         if (result === SendResult.STOPPED) {

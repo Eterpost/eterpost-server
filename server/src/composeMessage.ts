@@ -11,6 +11,13 @@ const htmlToTextOptions = {
 };
 
 
+/**
+ * Текстовая версия письма из HTML
+ */
+export function htmlToText (html: string): string {
+  return convert(html, htmlToTextOptions);
+}
+
 export interface MessageAddress {
   address: string;
   name: string;
@@ -48,7 +55,7 @@ export function composeMessage (email: Email, serviceFrom: string): ComposedMess
     // даже если у рассылки свой From
     sender: email.from ? serviceFrom : undefined,
     subject: email.subject,
-    text: email.text || (email.html ? convert(email.html, htmlToTextOptions) : undefined),
+    text: email.text || (email.html ? htmlToText(email.html) : undefined),
     // В заголовке «Кому» — с именем, nodemailer сам закодирует кириллицу
     to: email.receivers.map(receiver =>
       receiver.name ? { address: receiver.email, name: receiver.name } : receiver.email

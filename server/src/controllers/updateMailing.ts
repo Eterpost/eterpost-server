@@ -31,7 +31,8 @@ export function updateMailing (
       }
 
       const fields = [
-        'extraData', 'from', 'listUnsubscribe', 'name', 'openForSubscription', 'replyTo', 'subject'
+        'extraData', 'from', 'listUnsubscribe', 'name', 'openForSubscription', 'replyTo', 'subject',
+        'tracking'
       ];
 
       for (const field of fields) {
@@ -116,6 +117,9 @@ export const requestBodyJsonSchema = {
       minLength: 1
     },
     listUnsubscribe: {
+      type: 'boolean'
+    },
+    tracking: {
       type: 'boolean'
     },
     name: {

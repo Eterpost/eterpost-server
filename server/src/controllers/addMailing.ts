@@ -36,6 +36,7 @@ export function addMailing (config: any, mailingRepository: MailingRepository, l
       extraData: source.extraData,
       html: source.html,
       listUnsubscribe: source.listUnsubscribe,
+      tracking: source.tracking,
       name: source.name + (isClone ? ' (копия)' : ''),
       openForSubscription: source.openForSubscription,
       from: source.from,
@@ -84,6 +85,9 @@ export const requestBodyJsonSchema = {
           minLength: 1
         },
         listUnsubscribe: {
+          type: 'boolean'
+        },
+        tracking: {
           type: 'boolean'
         },
         name: {

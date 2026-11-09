@@ -61,6 +61,7 @@ export function createRetryMailing (
       extraData: sourceMailing.extraData,
       html: sourceMailing.html,
       listUnsubscribe: sourceMailing.listUnsubscribe,
+      tracking: sourceMailing.tracking,
       name: sourceMailing.name + ': повтор по ошибкам доставки',
       openForSubscription: sourceMailing.openForSubscription,
       from: sourceMailing.from,

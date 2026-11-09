@@ -31,6 +31,8 @@ export function getMailing (mailingRepository: MailingRepository) {
         new Date(mailing.autoResumeAt).toISOString() : undefined,
       listId: mailing.listId,
       listUnsubscribe: mailing.listUnsubscribe,
+      tracking: mailing.tracking,
+      ...(mailing.tracking ? await mailingRepository.getTrackingCounts(mailing.id) : {}),
       name: mailing.name,
       openForSubscription: mailing.openForSubscription,
       from: mailing.from,

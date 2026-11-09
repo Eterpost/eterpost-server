@@ -33,6 +33,24 @@ export interface MailingFailure {
 }
 
 /**
+ * Письмо получателю с отслеживанием: адрес и исходные ссылки по номерам
+ */
+export interface TrackedLetter {
+  email: string;
+  links: string[];
+}
+
+/**
+ * Открытия и переходы по рассылке: дата первого события по адресам и число
+ * переходов по каждой ссылке
+ */
+export interface TrackingStats {
+  clicks: Map<string, string>;
+  linkClicks: Map<string, number>;
+  opens: Map<string, string>;
+}
+
+/**
  * Интерфейс хранилища, содержащего информацию о рассылках (как выполненных,
  * так и выполняющихся)
  */
@@ -55,6 +73,18 @@ export interface MailingRepository {
    */
   getFailures (id: number): Promise<Map<string, MailingFailure>>;
   setFailure (id: number, failure: MailingFailure): Promise<void>;
+  /**
+   * Отслеживание: токен письма → адрес и ссылки, события открытия и перехода
+   */
+  setTrackedLetter (id: number, token: string, letter: TrackedLetter): Promise<void>;
+  getTrackedLetter (id: number, token: string): Promise<TrackedLetter | null>;
+  recordOpen (id: number, email: string, date: Date): Promise<void>;
+  recordClick (id: number, email: string, url: string, date: Date): Promise<void>;
+  getTrackingStats (id: number): Promise<TrackingStats>;
+  /**
+   * Сколько адресов открыло письмо и сколько перешло по ссылкам
+   */
+  getTrackingCounts (id: number): Promise<{ clicked: number, opened: number }>;
   /**
    * Получение списка получателей
    */
