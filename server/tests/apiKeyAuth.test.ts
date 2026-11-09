@@ -43,13 +43,13 @@ describe('ApiKeyRepository', { skip: redisSkip }, () => {
   });
 
   it('should refuse a duplicate or invalid name', async () => {
-    assert.ok(await repository.add('front', true));
+    assert.ok(await repository.add('front', { proxy: true }));
     assert.equal(await repository.add('front'), null);
     await assert.rejects(repository.add('with space'), /Invalid key name/);
   });
 
   it('should list keys with the last use and revoke them', async () => {
-    const key = await repository.add('front', true);
+    const key = await repository.add('front', { proxy: true });
     await repository.add('another');
     await repository.touch('front', new Date('2026-11-02T10:00:00Z'));
     const list = await repository.list();
@@ -87,7 +87,7 @@ describe('apiKeyAuth', { skip: redisSkip }, () => {
     pool = await getTestingRedisConnectionPool();
     repository = new ApiKeyRepository(pool);
     siteKey = (await repository.add('site'))!;
-    frontKey = (await repository.add('front', true))!;
+    frontKey = (await repository.add('front', { proxy: true }))!;
     logger = createFakeLogger();
 
     const app = express();
