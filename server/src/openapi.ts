@@ -5,6 +5,7 @@ import {
 } from './controllers/requestSubscription';
 import { requestBodyJsonSchema as previewDraftBody } from './controllers/previewDraft';
 import { requestBodyJsonSchema as previewEmailBody } from './controllers/previewEmail';
+import { requestBodyJsonSchema as restoreExcludedBody } from './controllers/restoreExcluded';
 import { requestBodyJsonSchema as sendTestEmailBody } from './controllers/sendTestEmail';
 import { requestBodyJsonSchema as subscribeBody } from './controllers/subscribe';
 import { requestBodyJsonSchema as unsubscribeBody } from './controllers/unsubscribe';
@@ -326,6 +327,29 @@ export const openApiDocument = {
             'Ошибка проверки тела или шаблона (`TEMPLATE_ERROR`: поле и сообщение Handlebars)'
           ),
           502: failure('Не удалось получить внешнее содержимое (`EXTERNAL_CONTENT_ERROR`)')
+        }
+      }
+    },
+    '/mailings/{id}/restore-excluded': {
+      post: {
+        tags: ['receivers'],
+        summary: 'Вернуть в рассылку адреса, исключённые из-за ошибок доставки',
+        description:
+          'Возвращает в конец списка получателей все исключённые адреса или только ' +
+          '`emails`, с именем, кодом и `extraData` (у исключённых до появления этого ' +
+          'метода — только адрес). Ошибки в статистике адреса сбрасываются, иначе ' +
+          'его снова отбросило бы при создании рассылок. Завершённая рассылка ' +
+          'ставится на паузу: продолжение отправит письма только возвращённым. ' +
+          'Из других рассылок адрес остаётся исключённым.',
+        parameters: [mailingId()],
+        requestBody: body(restoreExcludedBody, { emails: ['user@example.com'] }),
+        responses: {
+          200: ok({
+            type: 'object',
+            properties: { restored: { type: 'array', items: { type: 'string' } } }
+          }),
+          400: badRequest,
+          404: notFound
         }
       }
     },

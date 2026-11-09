@@ -51,6 +51,10 @@ export interface MailingRepository {
   setReceivers (id: number, receivers: Receiver[]): Promise<void>;
   remove (mailing: Mailing): Promise<void>;
   removeReceiver (id: number, receiver: Receiver, excluded?: boolean): Promise<boolean>;
+  /**
+   * Вернуть в рассылку адреса, исключённые из-за ошибок доставки (все или emails)
+   */
+  restoreExcluded (id: number, emails?: string[]): Promise<string[]>;
   update (mailing: Mailing): Promise<void>;
   updateInTransaction (
     mailingId: number, scenario: (mailing: Mailing) => Promise<void> | void

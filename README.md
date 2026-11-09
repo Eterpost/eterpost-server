@@ -302,6 +302,15 @@ its time (`date`, the fifth CSV column) and the mailing it came from
 appeared). "Retry" creates a new mailing with the same text for these
 addresses, except the excluded ones.
 
+An address excluded by mistake (the mailbox works again, the person confirmed
+the address) can be put back: the ↺ button at the address or "Вернуть
+исключённых" for all of them, `POST /mailings/:id/restore-excluded` with
+`{emails}` in the API (all of them without the field). The address goes back to
+the end of the receiver list with its name, code and `extraData`, and the errors
+in its statistics are cleared, otherwise it would be dropped again when a
+mailing is created. A finished mailing is paused: "Continue" sends letters only
+to the restored addresses. In other mailings the address stays excluded.
+
 SMTP errors while sending: a receiver rejected at `RCPT TO` gets a delivery
 status in its statistics and the mailing goes on with the next receiver. Many
 relays check the address right away and reject it there, so no bounce (DSN)
@@ -367,6 +376,7 @@ every route is documented.
 | `GET /mailings/:id/receivers` | Receivers, `?limit=N`, `?format=csv` |
 | `DELETE /mailings/:id/receivers/:email` | Remove a receiver |
 | `GET /mailings/:id/failed-receivers` | Receivers with delivery errors, `?limit=N`, `?format=csv` |
+| `POST /mailings/:id/restore-excluded` | Put back addresses excluded for delivery errors `{emails?}`, returns `{restored}` |
 | `POST /mailings/:id/send-test-email` | Send the letter to `{email}` |
 | `POST /mailings/:id/preview` | Build the letter for receiver `{email}` without sending it: subject, HTML, plain text and headers as the service sends them |
 | `POST /preview` | The same without a mailing: from mailing fields and `receivers` (up to 100), returns an array of letters |

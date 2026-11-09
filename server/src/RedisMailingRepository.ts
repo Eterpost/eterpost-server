@@ -9,6 +9,7 @@ import { RedisClient, RedisConnectionPool } from './RedisConnectionPool';
 export interface RedisMailingRepositoryConfig {
   commonDataKeyPrefix: string;
   excludedReceiversKeyPrefix: string;
+  excludedReceiverDataKeyPrefix: string;
   idCounterKey: string;
   receiversListKeyPrefix: string;
   rcptRetriesKeyPrefix: string;
@@ -17,6 +18,9 @@ export interface RedisMailingRepositoryConfig {
 const defaultConfig: RedisMailingRepositoryConfig = {
   commonDataKeyPrefix: 'MAILING_COMMON_DATA_',
   excludedReceiversKeyPrefix: 'MAILING_EXCLUDED_RECEIVERS_',
+  // Данные исключённых получателей (имя, код, extraData), чтобы вернуть их в
+  // рассылку целиком: хеш адрес → получатель в формате списка
+  excludedReceiverDataKeyPrefix: 'MAILING_EXCLUDED_RECEIVER_DATA_',
   idCounterKey: 'MAILING_ID_COUNTER',
   receiversListKeyPrefix: 'MAILING_RECEIVER_LIST_',
   rcptRetriesKeyPrefix: 'MAILING_RCPT_RETRIES_'
@@ -156,6 +160,7 @@ implements MailingRepository {
       multi.del(key);
       multi.del(receiversListKey);
       multi.del(this.getExcludedReceiversKey(mailing.id));
+      multi.del(this.getExcludedReceiverDataKey(mailing.id));
       multi.del(this.getRetriesKey(mailing.id));
       await multi.exec();
     });
@@ -247,6 +252,7 @@ implements MailingRepository {
         multi.lRem(listKey, 0, json);
         if (excluded) {
           multi.sAdd(this.getExcludedReceiversKey(id), receiver.email);
+          multi.hSet(this.getExcludedReceiverDataKey(id), receiver.email, json);
         }
         if (mailing && removedBeforePosition) {
           mailing.position -= removedBeforePosition;
@@ -256,6 +262,56 @@ implements MailingRepository {
       }
     );
     return Boolean(removed);
+  }
+
+  /**
+   * Возвращает в конец списка получателей адреса, исключённые из-за ошибок
+   * доставки (все или только emails), с их данными. Завершённая рассылка
+   * ставится на паузу: продолжение отправит письма только возвращённым.
+   * Возвращает восстановленные адреса
+   */
+  async restoreExcluded (id: number, emails?: string[]): Promise<string[]> {
+    const mailingKey = this.getRedisKey(id);
+    const listKey = this.getReceiversListKey(id);
+    const excludedKey = this.getExcludedReceiversKey(id);
+    const dataKey = this.getExcludedReceiverDataKey(id);
+    let mailing: Mailing | null = null;
+    let restored: string[] = [];
+    let toAppend: string[] = [];
+    const result = await this.genericTransaction(
+      [mailingKey, listKey, excludedKey, dataKey],
+      async redisClient => {
+        mailing = await this.getByKey(id, redisClient);
+        if (!mailing) {
+          return false;
+        }
+        const excluded = await redisClient.sMembers(excludedKey);
+        restored = emails ? excluded.filter(email => emails.includes(email)) : excluded;
+        if (!restored.length) {
+          return false;
+        }
+        const data = await redisClient.hGetAll(dataKey);
+        const inList = new Set((await redisClient.lRange(listKey, 0, -1))
+          .map(json => this.parseReceiver(json).email));
+        // Исключённые до сохранения данных получателей возвращаются только с адресом
+        toAppend = restored.filter(email => !inList.has(email))
+          .map(email => data[email] || this.serializeReceiver(new Receiver(email)));
+        return true;
+      },
+      multi => {
+        multi.sRem(excludedKey, restored);
+        multi.hDel(dataKey, restored);
+        if (toAppend.length) {
+          multi.rPush(listKey, toAppend);
+          if (mailing!.state === MailingState.FINISHED) {
+            mailing!.state = MailingState.PAUSED;
+            multi.set(mailingKey, this.serializeEntity(mailing!));
+          }
+        }
+        return restored;
+      }
+    );
+    return result || [];
   }
 
   async getRetries (id: number): Promise<RcptRetry[]> {
@@ -346,6 +402,10 @@ implements MailingRepository {
 
   private getExcludedReceiversKey (id: number): string {
     return this.config.excludedReceiversKeyPrefix + id;
+  }
+
+  private getExcludedReceiverDataKey (id: number): string {
+    return this.config.excludedReceiverDataKeyPrefix + id;
   }
 
   private getRetriesKey (id: number): string {

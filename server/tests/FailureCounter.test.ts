@@ -7,13 +7,16 @@ import { RedisAddressStatsRepository } from '../src/RedisAddressStatsRepository'
 import { FailureCounter } from '../src/FailureCounter';
 import { unsubscribeFromAll } from '../src/controllers/unsubscribeFromAll';
 import { createRetryMailing } from '../src/controllers/createRetryMailing';
+import { restoreExcluded } from '../src/controllers/restoreExcluded';
 
 
 const bounced = 'failure-counter-bounced@example.com';
 const failed = 'failure-counter-failed@example.com';
 const unsubscribed = 'failure-counter-unsubscribed@example.com';
 
-async function call (handlers: unknown, body: Record<string, unknown>) {
+async function call (
+  handlers: unknown, body: Record<string, unknown>, params: Record<string, string> = {}
+) {
   let result: any;
   const res = {
     json (data: any) {
@@ -24,7 +27,7 @@ async function call (handlers: unknown, body: Record<string, unknown>) {
       return res;
     }
   };
-  await (handlers as any[])[1]({ body, params: {} }, res);
+  await (handlers as any[])[1]({ body, params }, res);
   return result;
 }
 
@@ -119,6 +122,30 @@ describe('FailureCounter', { skip: redisSkip }, () => {
     assert.equal(retryMailing.openForSubscription, true);
     await mailingRepository.remove(mailing);
     await mailingRepository.remove(retryMailing);
+  });
+
+  it('should restore an excluded receiver and clear its errors', async () => {
+    const mailing = await mailingRepository.create({
+      html: '<p>Test</p>', name: 'test', subject: 'test', undeliveredCount: 0
+    }, [{ email: bounced, name: 'Иван' }]);
+    await statsRepository.create({
+      email: bounced, lastStatus: '5.1.1', lastStatusDate: new Date(), sentCount: 3,
+      temporaryFailureCount: 2
+    });
+    await call(unsubscribeFromAll(mailingRepository, logger), { email: bounced });
+    assert.deepEqual(await mailingRepository.getReceivers(mailing.id), []);
+
+    const result = await call(
+      restoreExcluded(mailingRepository, statsRepository, logger), {}, { id: String(mailing.id) }
+    );
+    assert.deepEqual(result.data.restored, [bounced]);
+    const [receiver] = await mailingRepository.getReceivers(mailing.id);
+    assert.equal(receiver.name, 'Иван');
+    const stats = await statsRepository.getByEmail(bounced);
+    assert.equal(stats!.lastStatus, undefined);
+    assert.equal(stats!.temporaryFailureCount, 0);
+    assert.equal(stats!.sentCount, 3);
+    await mailingRepository.remove(mailing);
   });
 
   it('should report the date and the mailing of an error', async () => {

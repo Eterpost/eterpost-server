@@ -77,7 +77,7 @@ async function main () {
   setupRoutes(
     config, app, mailingRepository, stateManager, logger, executor, failureCounter,
     subscriptionRepository, sender, readHandlebarsTemplate('confirm-subscription.hbs'),
-    receiverListFilter, sorterStatusRepository, apiKeyRepository
+    receiverListFilter, sorterStatusRepository, apiKeyRepository, addressStatsRepository
   );
   const { host, port } = config.server;
   await new Promise<void>((resolve, reject) => {

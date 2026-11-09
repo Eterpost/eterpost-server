@@ -13,6 +13,8 @@ import { deleteMailing } from './controllers/deleteMailing';
 import { sendTestEmail } from './controllers/sendTestEmail';
 import { previewEmail } from './controllers/previewEmail';
 import { previewDraft } from './controllers/previewDraft';
+import { restoreExcluded } from './controllers/restoreExcluded';
+import { AddressStatsRepository } from './AddressStatsRepository';
 import { getFailedReceivers } from './controllers/getFailedReceivers';
 import { FailureCounter } from './FailureCounter';
 import { ReceiverListFilter } from './ReceiverListFilter';
@@ -37,7 +39,8 @@ export function setupRoutes (
   logger: Logger, executor: MailingExecutor, failureCounter: FailureCounter,
   subscriptionRepository: SubscriptionRequestRepository, sender: MailSender,
   subscribeTemplate: Template<SubscribeTemplateContext>, receiverListFilter: ReceiverListFilter,
-  sorterStatusRepository: RedisSorterStatusRepository, apiKeyRepository: ApiKeyRepository
+  sorterStatusRepository: RedisSorterStatusRepository, apiKeyRepository: ApiKeyRepository,
+  addressStatsRepository: AddressStatsRepository
 ) {
   app.use(apiKeyAuth(apiKeyRepository, logger, config.server.auth || {}, isApiDocsRequest));
   app.get('/mailings', getMailings(repository));
@@ -53,6 +56,9 @@ export function setupRoutes (
   app.post('/mailings/:id/send-test-email', sendTestEmail(repository, executor, logger));
   app.post('/mailings/:id/preview', previewEmail(repository, executor));
   app.post('/preview', previewDraft(config, executor));
+  app.post('/mailings/:id/restore-excluded', restoreExcluded(
+    repository, addressStatsRepository, logger
+  ));
   app.delete('/mailings/:id', deleteMailing(repository, logger));
   app.post('/mailings/:mailingId/requestSubscription', requestSubscription(
     subscriptionRepository, repository, logger, sender, subscribeTemplate,

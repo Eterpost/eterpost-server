@@ -114,6 +114,60 @@ describe('RedisMailingRepository', { skip: redisSkip }, () => {
     });
   });
 
+  describe('#restoreExcluded', () => {
+    const receiver = new Receiver('excluded@example.com', 'Иван', 'c0de', '15', { city: 'Москва' });
+
+    async function createWithExcluded (state: MailingState) {
+      const mailing = await repositoryOne.create({
+        html: testHtml, name: testName, subject: testSubject, undeliveredCount: 0
+      }, [{ email: 'kept@example.com' }, receiver]);
+      await repositoryOne.updateInTransaction(mailing.id, m => {
+        m.position = 2;
+        m.state = state;
+      });
+      assert.equal(await repositoryOne.removeReceiver(mailing.id, receiver, true), true);
+      return mailing.id;
+    }
+
+    it('should put an excluded receiver back with all its data', async () => {
+      const id = await createWithExcluded(MailingState.PAUSED);
+      assert.deepEqual(await repositoryOne.getExcludedEmails(id), ['excluded@example.com']);
+
+      assert.deepEqual(await repositoryTwo.restoreExcluded(id), ['excluded@example.com']);
+      assert.deepEqual(await repositoryOne.getExcludedEmails(id), []);
+      const receivers = await repositoryOne.getReceivers(id);
+      assert.deepEqual(receivers.map(r => r.email), ['kept@example.com', 'excluded@example.com']);
+      assert.deepEqual(receivers[1], receiver);
+      // Возвращённый стоит после позиции: продолжение отправит ему письмо
+      assert.equal((await repositoryOne.getById(id))!.position, 1);
+    });
+
+    it('should restore only the given addresses', async () => {
+      const id = await createWithExcluded(MailingState.PAUSED);
+      assert.deepEqual(await repositoryOne.restoreExcluded(id, ['other@example.com']), []);
+      assert.deepEqual(await repositoryOne.getExcludedEmails(id), ['excluded@example.com']);
+    });
+
+    it('should pause a finished mailing to send to the restored receivers', async () => {
+      const id = await createWithExcluded(MailingState.FINISHED);
+      await repositoryOne.restoreExcluded(id);
+      assert.equal((await repositoryOne.getById(id))!.state, MailingState.PAUSED);
+    });
+
+    it('should restore addresses excluded before receiver data was kept', async () => {
+      const mailing = await repositoryOne.create({
+        html: testHtml, name: testName, subject: testSubject, undeliveredCount: 0
+      }, []);
+      await redisConnectionPoolOne.runWithConnection(client => client.sAdd(
+        'MAILING_EXCLUDED_RECEIVERS_' + mailing.id, 'old@example.com'
+      ));
+      assert.deepEqual(await repositoryOne.restoreExcluded(mailing.id), ['old@example.com']);
+      const [restored] = await repositoryOne.getReceivers(mailing.id);
+      assert.equal(restored.email, 'old@example.com');
+      assert.equal(restored.name, undefined);
+    });
+  });
+
   describe('position', () => {
     const emails = ['a@example.com', 'b@example.com', 'c@example.com', 'd@example.com'];
 
