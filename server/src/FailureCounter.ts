@@ -1,5 +1,6 @@
-import { MailingRepository } from './MailingRepository';
+import { MailingFailure, MailingRepository } from './MailingRepository';
 import { AddressStatsRepository } from './AddressStatsRepository';
+import { AddressStats } from './AddressStats';
 import { Mailing } from './Mailing';
 
 
@@ -15,14 +16,22 @@ export interface FailedReceiver {
    */
   excluded?: boolean;
   /**
-   * Рассылка, в которой возникла ошибка, если известна: у повторной рассылки
-   * это может быть исходная
+   * Рассылка, в которой возникла ошибка, если известна: у исключённого адреса
+   * это может быть другая рассылка
    */
   mailingId?: number;
   spam: boolean;
   status: string;
 }
 
+/**
+ * Ошибки доставки рассылки. Основной источник — список ошибок самой рассылки
+ * (mail-sorter по List-Id из DSN, отказы на RCPT TO). Для адресов без записи
+ * в нём — последняя ошибка адреса, если она случилась в этой рассылке или
+ * рассылка неизвестна (DSN без List-Id, ошибки, записанные до появления
+ * списка) и она новее рассылки. Исключённые адреса показываются с последней
+ * ошибкой, где бы она ни случилась: их можно вернуть в рассылку
+ */
 export class FailureCounter {
   constructor (
     private mailingRepository: MailingRepository,
@@ -36,33 +45,59 @@ export class FailureCounter {
     const excluded = (await this.mailingRepository.getExcludedEmails(mailing.id))
       .filter(email => !inList.has(email));
     emails.push(...excluded);
+    const failures = await this.mailingRepository.getFailures(mailing.id);
 
-    // Получаем статистику для всех адресов из рассылки, включая исключённые
     const statsList: FailedReceiver[] = [];
     const actualLimit = limit ? Math.min(limit, emails.length) : emails.length;
     for (let i = 0; i < actualLimit; i++) {
-      const stats = await this.statsRepository.getByEmail(emails[i]);
-      // Если записи нет - то с этим email всё в порядке.
-      // Если поле lastStatus не заполнено - то это "битая" запись.
-      if (!stats || !stats.lastStatus) {
-        continue;
+      const email = emails[i];
+      const isExcluded = !inList.has(email);
+      const failure = failures.get(email);
+      const item = failure ?
+        fromFailure(failure, mailing.id) :
+        fromStats(await this.statsRepository.getByEmail(email), mailing, isExcluded);
+      if (item) {
+        statsList.push(isExcluded ? { ...item, excluded: true } : item);
       }
-      // Если есть дата создания рассылки и рассылка создана позже записи - то не учитываем
-      if (mailing.creationDate && stats.lastStatusDate &&
-          mailing.creationDate > stats.lastStatusDate) {
-        continue;
-      }
-      statsList.push({
-        date: stats.lastStatusDate && stats.lastStatusDate.toISOString(),
-        diagnosticCode: stats!.diagnosticCode,
-        email: stats!.email,
-        ...(inList.has(emails[i]) ? {} : { excluded: true }),
-        mailingId: stats.lastMailingId,
-        spam: stats!.spam,
-        status: stats!.lastStatus!
-      });
     }
 
     return statsList;
   }
+}
+
+function fromFailure (failure: MailingFailure, mailingId: number): FailedReceiver {
+  return {
+    date: failure.date,
+    diagnosticCode: failure.diagnosticCode,
+    email: failure.email,
+    mailingId,
+    spam: failure.spam,
+    status: failure.status
+  };
+}
+
+function fromStats (
+  stats: AddressStats | null, mailing: Mailing, excluded: boolean
+): FailedReceiver | null {
+  // Нет записи — с адресом всё в порядке; нет lastStatus — «битая» запись
+  if (!stats || !stats.lastStatus) {
+    return null;
+  }
+  // Ошибка до создания рассылки — не её
+  if (mailing.creationDate && stats.lastStatusDate &&
+      mailing.creationDate > stats.lastStatusDate) {
+    return null;
+  }
+  // Ошибка другой рассылки
+  if (!excluded && stats.lastMailingId && stats.lastMailingId !== mailing.id) {
+    return null;
+  }
+  return {
+    date: stats.lastStatusDate && stats.lastStatusDate.toISOString(),
+    diagnosticCode: stats.diagnosticCode,
+    email: stats.email,
+    mailingId: stats.lastMailingId,
+    spam: stats.spam,
+    status: stats.lastStatus
+  };
 }

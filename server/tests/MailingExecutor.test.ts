@@ -344,6 +344,9 @@ describe('MailingExecutor', { skip: redisSkip }, () => {
         assert.equal(stats!.lastStatus, '5.1.1');
         assert.equal(stats!.lastMailingId, testMailing.id);
         assert.match(stats!.diagnosticCode!, /User unknown/);
+        const failure = (await mailingRepository.getFailures(testMailing.id)).get('b@example.com');
+        assert.equal(failure!.status, '5.1.1');
+        assert.match(failure!.diagnosticCode!, /User unknown/);
       });
 
       it('should mark a receiver rejected as spam', async () => {

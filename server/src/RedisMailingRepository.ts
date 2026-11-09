@@ -1,7 +1,7 @@
 import { Mailing, MailingProperties } from './Mailing';
 import { MailingState } from './MailingState';
 import { Receiver, ReceiverProperties } from './Receiver';
-import { MailingRepository, RcptRetry } from './MailingRepository';
+import { MailingFailure, MailingRepository, RcptRetry } from './MailingRepository';
 import { BaseRedisRepository } from './BaseRedisRepository';
 import { RedisClient, RedisConnectionPool } from './RedisConnectionPool';
 
@@ -10,6 +10,7 @@ export interface RedisMailingRepositoryConfig {
   commonDataKeyPrefix: string;
   excludedReceiversKeyPrefix: string;
   excludedReceiverDataKeyPrefix: string;
+  failuresKeyPrefix: string;
   idCounterKey: string;
   receiversListKeyPrefix: string;
   rcptRetriesKeyPrefix: string;
@@ -21,6 +22,9 @@ const defaultConfig: RedisMailingRepositoryConfig = {
   // Данные исключённых получателей (имя, код, extraData), чтобы вернуть их в
   // рассылку целиком: хеш адрес → получатель в формате списка
   excludedReceiverDataKeyPrefix: 'MAILING_EXCLUDED_RECEIVER_DATA_',
+  // Ошибки доставки рассылки: хеш адрес → { date, diagnosticCode, spam, status }.
+  // Пишет и mail-sorter (src/services/RedisRepositories.js)
+  failuresKeyPrefix: 'MAILING_FAILURES_',
   idCounterKey: 'MAILING_ID_COUNTER',
   receiversListKeyPrefix: 'MAILING_RECEIVER_LIST_',
   rcptRetriesKeyPrefix: 'MAILING_RCPT_RETRIES_'
@@ -145,6 +149,21 @@ implements MailingRepository {
     });
   }
 
+  async getFailures (id: number): Promise<Map<string, MailingFailure>> {
+    return this.redisConnectionPool.runWithConnection(async redisClient => {
+      const data = await redisClient.hGetAll(this.getFailuresKey(id));
+      return new Map(Object.entries(data).map(([email, json]) => [
+        email, { ...JSON.parse(json), email }
+      ]));
+    });
+  }
+
+  async setFailure (id: number, { email, ...failure }: MailingFailure): Promise<void> {
+    return this.redisConnectionPool.runWithConnection(async redisClient => {
+      await redisClient.hSet(this.getFailuresKey(id), email, JSON.stringify(failure));
+    });
+  }
+
   async getReceiverCount (id: number): Promise<number> {
     return this.redisConnectionPool.runWithConnection(async redisClient => {
       const key = this.config.receiversListKeyPrefix + id;
@@ -161,6 +180,7 @@ implements MailingRepository {
       multi.del(receiversListKey);
       multi.del(this.getExcludedReceiversKey(mailing.id));
       multi.del(this.getExcludedReceiverDataKey(mailing.id));
+      multi.del(this.getFailuresKey(mailing.id));
       multi.del(this.getRetriesKey(mailing.id));
       await multi.exec();
     });
@@ -301,6 +321,8 @@ implements MailingRepository {
       multi => {
         multi.sRem(excludedKey, restored);
         multi.hDel(dataKey, restored);
+        // Ошибки возвращённых больше не показываются в этой рассылке
+        multi.hDel(this.getFailuresKey(id), restored);
         if (toAppend.length) {
           multi.rPush(listKey, toAppend);
           if (mailing!.state === MailingState.FINISHED) {
@@ -402,6 +424,10 @@ implements MailingRepository {
 
   private getExcludedReceiversKey (id: number): string {
     return this.config.excludedReceiversKeyPrefix + id;
+  }
+
+  private getFailuresKey (id: number): string {
+    return this.config.failuresKeyPrefix + id;
   }
 
   private getExcludedReceiverDataKey (id: number): string {

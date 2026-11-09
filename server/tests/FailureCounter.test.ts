@@ -148,6 +148,39 @@ describe('FailureCounter', { skip: redisSkip }, () => {
     await mailingRepository.remove(mailing);
   });
 
+  it('should take errors from the list of the mailing', async () => {
+    const other = 'failure-counter-other@example.com';
+    const mailing = await mailingRepository.create({
+      creationDate: new Date(Date.now() - 1000),
+      html: '<p>Test</p>', name: 'test', subject: 'test', undeliveredCount: 0
+    }, [{ email: failed }, { email: bounced }, { email: other }]);
+    const date = new Date();
+    // failed: ошибка этой рассылки записана в её списке, а последняя ошибка
+    // адреса — уже из другой рассылки
+    await mailingRepository.setFailure(mailing.id, {
+      date: date.toISOString(), diagnosticCode: '550 5.1.1 User unknown', email: failed,
+      spam: false, status: '5.1.1'
+    });
+    await statsRepository.create({
+      email: failed, lastMailingId: mailing.id + 100, lastStatus: '4.2.2', lastStatusDate: date
+    });
+    // bounced: ошибка в другой рассылке после создания этой — не её ошибка
+    await statsRepository.create({
+      email: bounced, lastMailingId: mailing.id + 100, lastStatus: '5.1.1', lastStatusDate: date
+    });
+    // other: ошибка без известной рассылки (DSN без List-Id) — по-старому, по дате
+    await statsRepository.create({ email: other, lastStatus: '5.2.2', lastStatusDate: date });
+
+    const report = await failureCounter.getFailedReceivers(mailing);
+    assert.deepEqual(report.map(r => [r.email, r.status, r.mailingId]), [
+      [failed, '5.1.1', mailing.id], [other, '5.2.2', undefined]
+    ]);
+    assert.equal(report[0].diagnosticCode, '550 5.1.1 User unknown');
+
+    await mailingRepository.remove(mailing);
+    assert.deepEqual(await mailingRepository.getFailures(mailing.id), new Map());
+  });
+
   it('should report the date and the mailing of an error', async () => {
     const mailing = await mailingRepository.create({
       creationDate: new Date(Date.now() - 1000),
@@ -157,13 +190,14 @@ describe('FailureCounter', { skip: redisSkip }, () => {
       undeliveredCount: 0
     }, [{ email: failed }]);
     const date = new Date();
+    // Записано до появления списка ошибок рассылки: берётся из статистики адреса
     await statsRepository.create({
-      email: failed, lastMailingId: 7, lastStatus: '4.1.1', lastStatusDate: date
+      email: failed, lastMailingId: mailing.id, lastStatus: '4.1.1', lastStatusDate: date
     });
 
     const [report] = await failureCounter.getFailedReceivers(mailing);
     assert.equal(report.date, date.toISOString());
-    assert.equal(report.mailingId, 7);
+    assert.equal(report.mailingId, mailing.id);
     await mailingRepository.remove(mailing);
   });
 });

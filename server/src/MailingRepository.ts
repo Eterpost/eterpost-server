@@ -18,6 +18,21 @@ export interface RcptRetry {
 
 
 /**
+ * Ошибка доставки письма рассылки получателю. Записывается mail-sorter (по
+ * List-Id из DSN) и mail-server (отказ на RCPT TO)
+ */
+export interface MailingFailure {
+  /**
+   * Когда записана (ISO)
+   */
+  date: string;
+  diagnosticCode?: string;
+  email: string;
+  spam: boolean;
+  status: string;
+}
+
+/**
  * Интерфейс хранилища, содержащего информацию о рассылках (как выполненных,
  * так и выполняющихся)
  */
@@ -35,6 +50,11 @@ export interface MailingRepository {
    * Адреса, исключённые из рассылки из-за ошибок доставки
    */
   getExcludedEmails (id: number): Promise<string[]>;
+  /**
+   * Ошибки доставки писем этой рассылки по адресам
+   */
+  getFailures (id: number): Promise<Map<string, MailingFailure>>;
+  setFailure (id: number, failure: MailingFailure): Promise<void>;
   /**
    * Получение списка получателей
    */

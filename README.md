@@ -292,9 +292,13 @@ mailing.
 
 ### Failed receivers and retry
 
-"Delivery errors" in the web client lists receivers with a delivery status
-recorded by mail-sorter after the mailing was created
-(`GET /mailings/:id/failed-receivers`, also as CSV). Addresses that mail-sorter
+"Delivery errors" in the web client lists receivers whose letters from this
+mailing were not delivered (`GET /mailings/:id/failed-receivers`, also as CSV). Each mailing has its own
+list of errors: mail-sorter attributes a DSN to a mailing by `List-Id`, and
+mail-server records rejections while sending. For addresses without an entry
+there (a DSN without `List-Id`, errors from before the list appeared) the last
+delivery status of the address is used if it was recorded after the mailing
+was created and does not belong to another mailing. Addresses that mail-sorter
 has already removed from the mailing for delivery errors stay in this list
 marked as excluded (`excluded: true`, the fourth CSV column). Each error has
 its time (`date`, the fifth CSV column) and the mailing it came from

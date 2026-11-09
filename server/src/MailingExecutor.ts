@@ -366,6 +366,13 @@ export class MailingExecutor extends EventEmitter {
         update(stats);
         await this.addressStatsRepository.create(stats);
       }
+      await this.mailingRepository.setFailure(mailingId, {
+        date: new Date().toISOString(),
+        diagnosticCode: response,
+        email: address,
+        spam: this.isSpam(response),
+        status
+      });
     }
     await this.mailingRepository.updateInTransaction(mailingId, mailing => {
       mailing.undeliveredCount++;
