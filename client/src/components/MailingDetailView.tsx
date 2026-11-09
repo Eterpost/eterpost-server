@@ -13,6 +13,8 @@ import { ReceiverList } from './ReceiverList';
 import { FailureList } from './FailureList';
 import { Checkbox } from './elements/Checkbox';
 import { formatDate } from '../formatDate';
+import { EmailPreview } from '../api';
+import { EmailPreviewView } from './EmailPreviewView';
 
 
 const REFRESH_INTERVAL = 1000;
@@ -53,6 +55,7 @@ export interface MailingDetailViewProps {
   onRefreshReceiversList?: (mailing: Mailing) => void;
   onRefreshFailedReceivers?: (mailing: Mailing) => Promise<void>;
   onRemoveReceiver?: (mailing: Mailing, receiver: Receiver) => void;
+  onPreview?: (mailing: Mailing, address: string) => Promise<EmailPreview | null>;
   onSendTestEmail?: (mailing: Mailing, address: string) => void;
   onStart?: (mailing: Mailing) => void;
   onStop?: (mailing: Mailing) => void;
@@ -63,6 +66,8 @@ interface MailingDetailViewState {
   changed: boolean;
   fields: MailingEditData;
   mailingId: number;
+  preview?: EmailPreview;
+  previewEmail: string;
   testEmail: string;
 }
 
@@ -71,6 +76,8 @@ function initState (mailing: Mailing) {
     changed: false,
     fields: pick(mailing, keys) as MailingEditData,
     mailingId: mailing.id,
+    preview: undefined,
+    previewEmail: '',
     testEmail: ''
   };
 }
@@ -245,7 +252,28 @@ export class MailingDetailView extends React.Component<
               </Button>
             </div>
           </FormGroup>
+          <FormGroup inline title='Предпросмотр для' htmlFor={id('preview-email')}>
+            <div className='horizontal-group'>
+              <TextInput id={id('preview-email')} type='email' value={this.state.previewEmail}
+                         onChange={this.handleChangePreviewEmail}
+                         placeholder='адрес получателя' />
+              <Button disabled={!this.state.previewEmail.length}
+                      onClick={this.handlePreview}>
+                Показать
+              </Button>
+            </div>
+          </FormGroup>
+          {this.state.changed ? (
+            <p className='hint'>
+              Сервер собирает сохранённое письмо: несохранённые изменения в предпросмотр
+              и пробное письмо не попадут.
+            </p>
+          ) : null}
         </div>
+
+        {this.state.preview ? (
+          <EmailPreviewView preview={this.state.preview} onClose={this.handleClosePreview} />
+        ) : null}
       </div>
     );
   }
@@ -280,6 +308,30 @@ export class MailingDetailView extends React.Component<
       }
     };
   }
+
+  private handleChangePreviewEmail = (value: string) => {
+    this.setState({
+      previewEmail: value
+    });
+  };
+
+  private handleClosePreview = () => {
+    this.setState({
+      preview: undefined
+    });
+  };
+
+  private handlePreview = async () => {
+    if (!this.props.onPreview) {
+      return;
+    }
+    const mailingId = this.props.mailing.id;
+    const preview = await this.props.onPreview(this.props.mailing, this.state.previewEmail);
+    // Пока собиралось письмо, могли выбрать другую рассылку
+    if (preview && this.state.mailingId === mailingId) {
+      this.setState({ preview });
+    }
+  };
 
   private handleChangeTestEmail = (value: string) => {
     this.setState({

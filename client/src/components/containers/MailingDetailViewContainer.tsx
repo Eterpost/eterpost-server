@@ -7,6 +7,7 @@ import { stopMailing } from '../../actions/stopMailing';
 import { reloadSingleMailing } from '../../actions/reloadSingleMailing';
 import { deleteMailing } from '../../actions/deleteMailing';
 import { sendTestEmail } from '../../actions/sendTestEmail';
+import { previewEmail } from '../../actions/previewEmail';
 import { cloneMailing } from '../../actions/cloneMailing';
 import { updateMailingOnServer } from '../../actions/updateMailingOnServer';
 import { reloadFailedReceivers } from '../../actions/reloadFailedReceivers';
@@ -40,6 +41,7 @@ function mapDispatchToProps (dispatch: AppDispatch) {
     onRemoveReceiver: (mailing: Mailing, receiver: Receiver) => dispatch(
       removeReceiver(mailing, receiver)
     ),
+    onPreview: (mailing: Mailing, email: string) => dispatch(previewEmail(mailing, email)),
     onSendTestEmail: (mailing: Mailing, email: string) => dispatch(
       sendTestEmail(mailing, email)
     ),

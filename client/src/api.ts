@@ -95,6 +95,23 @@ export function getReceivers (id: number): Promise<ReceiverList> {
   return apiRequest(`/mailings/${id}/receivers?limit=${MAX_RECEIVERS}`);
 }
 
+export interface EmailPreview {
+  from: string;
+  headers: { [name: string]: string };
+  html?: string;
+  receiver: { email: string; name?: string };
+  receiverFound: boolean;
+  replyTo?: string;
+  sender?: string;
+  subject: string;
+  text?: string;
+  to: Array<string | { address: string; name: string }>;
+}
+
+export function previewEmail (mailingId: number, email: string): Promise<EmailPreview> {
+  return apiRequest(`/mailings/${mailingId}/preview`, 'POST', null, { email });
+}
+
 export function sendTestEmail (mailingId: number, email: string): Promise<void> {
   return apiRequest(`/mailings/${mailingId}/send-test-email`, 'POST', null, {
     email

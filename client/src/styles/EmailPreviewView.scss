@@ -1,0 +1,52 @@
+@use 'tokens' as *;
+
+.email-preview {
+  border: 1px solid $border;
+  border-radius: 4px;
+  margin: 8px 20px;
+  padding: 8px 12px;
+
+  .email-preview-bar {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+
+    h3 {
+      font-size: 16px;
+      margin: 0;
+    }
+  }
+
+  .email-preview-fields {
+    display: grid;
+    font-size: 14px;
+    gap: 4px 16px;
+    grid-template-columns: max-content 1fr;
+    margin: 8px 0;
+
+    dt {
+      color: $muted;
+    }
+
+    dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  // Письмо — на белом фоне, как у получателей со светлой темой
+  .email-preview-html {
+    background: #fff;
+    border: 1px solid $border;
+    height: 500px;
+    width: 100%;
+  }
+
+  .email-preview-text {
+    font-size: 14px;
+    margin: 0;
+    max-height: 500px;
+    overflow: auto;
+    white-space: pre-wrap;
+  }
+}
