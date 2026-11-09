@@ -52,6 +52,7 @@ implements MailingRepository {
     properties = { ...properties, listUnsubscribe: properties.listUnsubscribe ?? true };
     const data = {
       creationDate: properties.creationDate,
+      extraData: properties.extraData,
       html: properties.html,
       listUnsubscribe: properties.listUnsubscribe,
       name: properties.name,

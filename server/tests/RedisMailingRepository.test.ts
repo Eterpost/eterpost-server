@@ -159,6 +159,14 @@ describe('RedisMailingRepository', { skip: redisSkip }, () => {
       assert.equal((await repositoryOne.getById(mailingId))!.listUnsubscribe, true);
     });
 
+    it('should save the mailing extraData on create', async () => {
+      const extraData = { textAfterSubscribe: 'Спасибо', theme: 'autumn' };
+      const created = await repositoryOne.create({
+        extraData, html: testHtml, name: testName, subject: testSubject, undeliveredCount: 0
+      }, []);
+      assert.deepEqual((await repositoryTwo.getById(created.id))!.extraData, extraData);
+    });
+
     it('should continue from sentCount for mailings saved without position', async () => {
       // Так выглядят рассылки, сохранённые старой версией
       await redisConnectionPoolOne.runWithConnection(async client => {
