@@ -11,6 +11,7 @@ import { MailingStateManager } from './MailingStateManager';
 import { getReceivers } from './controllers/getReceivers';
 import { deleteMailing } from './controllers/deleteMailing';
 import { sendTestEmail } from './controllers/sendTestEmail';
+import { previewEmail } from './controllers/previewEmail';
 import { getFailedReceivers } from './controllers/getFailedReceivers';
 import { FailureCounter } from './FailureCounter';
 import { ReceiverListFilter } from './ReceiverListFilter';
@@ -49,6 +50,7 @@ export function setupRoutes (
   app.get('/mailings/:id/receivers', getReceivers(repository));
   app.get('/mailings/:id/failed-receivers', getFailedReceivers(repository, failureCounter));
   app.post('/mailings/:id/send-test-email', sendTestEmail(repository, executor, logger));
+  app.post('/mailings/:id/preview', previewEmail(repository, executor));
   app.delete('/mailings/:id', deleteMailing(repository, logger));
   app.post('/mailings/:mailingId/requestSubscription', requestSubscription(
     subscriptionRepository, repository, logger, sender, subscribeTemplate,

@@ -89,6 +89,36 @@ describe('MailingExecutor', { skip: redisSkip }, () => {
     });
   });
 
+  describe('#previewEmail', () => {
+    afterEach(() => {
+      mailer.sendEmail.mock.resetCalls();
+    });
+
+    it('should build the letter for the receiver without sending it', async () => {
+      const testMailing = await mailingRepository.create({
+        from: 'Sales <sales@etersoft.ru>',
+        html: '<h1>Hello, {{receiver.name}}</h1><p>Code {{receiver.code}}</p>',
+        listId: 'list.etersoft.ru',
+        name: testName,
+        subject: 'For {{receiver.name}}',
+        undeliveredCount: 0
+      }, [{ code: '42', email: 'ivan@example.com', name: 'Иван' }]);
+      const receiver = (await testMailing.getReceiverByEmail('ivan@example.com'))!;
+
+      const message = await executor.previewEmail(testMailing, receiver);
+
+      assert.equal(mailer.sendEmail.mock.callCount(), 0);
+      assert.equal(message.subject, 'For Иван');
+      assert.equal(message.html, '<h1>Hello, Иван</h1><p>Code 42</p>');
+      assert.match(message.text!, /^HELLO, ИВАН$/m);
+      assert.match(message.text!, /^Code 42$/m);
+      assert.equal(message.from, 'Sales <sales@etersoft.ru>');
+      assert.deepEqual(message.to, [{ address: 'ivan@example.com', name: 'Иван' }]);
+      assert.equal(message.headers['List-Id'], 'list.etersoft.ru');
+      assert.equal(message.headers.Precedence, 'bulk');
+    });
+  });
+
   describe('List-Unsubscribe', () => {
     const header = '<mailto:noreply+unsubscribe@etersoft.ru>';
 

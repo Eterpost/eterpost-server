@@ -3,6 +3,7 @@ import { requestBodyJsonSchema as createRetryMailingBody } from './controllers/c
 import {
   requestBodyJsonSchema as requestSubscriptionBody
 } from './controllers/requestSubscription';
+import { requestBodyJsonSchema as previewEmailBody } from './controllers/previewEmail';
 import { requestBodyJsonSchema as sendTestEmailBody } from './controllers/sendTestEmail';
 import { requestBodyJsonSchema as subscribeBody } from './controllers/subscribe';
 import { requestBodyJsonSchema as unsubscribeBody } from './controllers/unsubscribe';
@@ -280,6 +281,25 @@ export const openApiDocument = {
         }
       }
     },
+    '/mailings/{id}/preview': {
+      post: {
+        tags: ['mailings'],
+        summary: 'Предпросмотр письма получателю без отправки',
+        description:
+          'Собирает письмо тем же кодом, что и отправка: шаблоны темы и HTML ' +
+          'с данными получателя (имя, код, extraData, внешнее содержимое), ' +
+          'текстовая версия из HTML, From/Sender/To и заголовки. Если адреса нет ' +
+          'в рассылке, письмо собирается для получателя только с адресом, как ' +
+          'тестовое (`receiverFound: false`).',
+        parameters: [mailingId()],
+        requestBody: body(previewEmailBody, { email: 'user@example.com' }),
+        responses: {
+          200: ok(ref('EmailPreview')),
+          400: badRequest,
+          404: notFound
+        }
+      }
+    },
     '/mailings/{mailingId}/requestSubscription': {
       post: {
         tags: ['subscription'],
@@ -375,6 +395,46 @@ export const openApiDocument = {
           code: { type: 'string' }
         },
         required: ['success', 'error']
+      },
+      EmailPreview: {
+        type: 'object',
+        properties: {
+          from: { type: 'string', description: 'From: адрес рассылки или server.mail.from' },
+          sender: {
+            type: 'string',
+            description: 'Sender: адрес сервиса, если у рассылки свой From'
+          },
+          replyTo: { type: 'string' },
+          to: {
+            type: 'array',
+            items: {
+              oneOf: [
+                { type: 'string' },
+                {
+                  type: 'object',
+                  properties: { address: { type: 'string' }, name: { type: 'string' } }
+                }
+              ]
+            },
+            description: 'To: адрес, с именем получателя, если оно есть'
+          },
+          headers: {
+            type: 'object',
+            additionalProperties: { type: 'string' },
+            description: 'Дополнительные заголовки: List-Id, List-Unsubscribe, Precedence'
+          },
+          subject: { type: 'string' },
+          html: { type: 'string' },
+          text: { type: 'string', description: 'Текстовая версия, собранная из HTML' },
+          receiver: {
+            type: 'object',
+            properties: { email: { type: 'string' }, name: { type: 'string' } }
+          },
+          receiverFound: {
+            type: 'boolean',
+            description: 'Есть ли адрес среди получателей рассылки'
+          }
+        }
       },
       MailingState: {
         type: 'integer',

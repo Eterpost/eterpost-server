@@ -330,6 +330,7 @@ every route is documented.
 | `DELETE /mailings/:id/receivers/:email` | Remove a receiver |
 | `GET /mailings/:id/failed-receivers` | Receivers with delivery errors, `?limit=N`, `?format=csv` |
 | `POST /mailings/:id/send-test-email` | Send the letter to `{email}` |
+| `POST /mailings/:id/preview` | Build the letter for receiver `{email}` without sending it: subject, HTML, plain text and headers as the service sends them |
 | `POST /mailings/create-retry` | New mailing for failed receivers of `{sourceId}` |
 | `POST /mailings/:id/requestSubscription` | Subscription request, see above |
 | `POST /mailings/:id/subscribe` | Confirm subscription `{email, code}` |

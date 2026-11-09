@@ -331,6 +331,7 @@ mail-sorter записал после создания рассылки (`GET /m
 | `DELETE /mailings/:id/receivers/:email` | Удалить получателя |
 | `GET /mailings/:id/failed-receivers` | Получатели с ошибками доставки, `?limit=N`, `?format=csv` |
 | `POST /mailings/:id/send-test-email` | Отправить письмо на `{email}` |
+| `POST /mailings/:id/preview` | Собрать письмо получателю `{email}` без отправки: тема, HTML, текстовая версия и заголовки — так, как их отправит сервис |
 | `POST /mailings/create-retry` | Новая рассылка по ошибочным адресам рассылки `{sourceId}` |
 | `POST /mailings/:id/requestSubscription` | Запрос подписки, см. выше |
 | `POST /mailings/:id/subscribe` | Подтвердить подписку `{email, code}` |

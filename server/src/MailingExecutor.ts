@@ -10,6 +10,7 @@ import { AddressStatsRepository } from './AddressStatsRepository';
 import { AddressStatsProperties } from './AddressStats';
 import { isEmail } from 'validator';
 import { sleep } from './utils/sleep';
+import { ComposedMessage, composeMessage } from './composeMessage';
 
 
 // Паузы перед повторами при временной ошибке SMTP (секунды), если не заданы
@@ -50,6 +51,15 @@ export class MailingExecutor extends EventEmitter {
         state.stopping = true;
       }
     });
+  }
+
+  /**
+   * Письмо получателю так, как его соберёт отправка, но без отправки: тема,
+   * HTML и текстовая версия, заголовки
+   */
+  async previewEmail (mailing: Mailing, receiver: Receiver): Promise<ComposedMessage> {
+    const email = await this.createEmail(mailing, receiver);
+    return composeMessage(email, this.config.server.mail.from);
   }
 
   async sendTestEmail (mailing: Mailing, address: string) {
