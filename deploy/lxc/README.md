@@ -371,11 +371,37 @@ systemd (`StateDirectory=eterfund-mail` в юните mail-server), иначе �
 Размер загрузки ограничивает и nginx: `client_max_body_size` в `location /api/`
 (в примере — 50m) должен быть не меньше `server.attachments.maxSize`.
 
+### Картинки в письмах (ipfs-images)
+
+Картинки, вставленные в редакторе рассылки, хранит
+[ipfs-images](https://github.com/Eterpost/ipfs-images): служба `ipfs-images` на
+`127.0.0.1:8002`, файлы в `/var/lib/eterfund-mail/images`, метаданные в том же
+Redis (ключи `IMAGES_*`). Редактор загружает картинку через веб-интерфейс
+(`/images/` во внутреннем сервере nginx), а в письмо вставляет публичный адрес
+`client.imagePublicUrl` (`https://<имя страниц подписки>/images/dl/...`).
+
+Подключение на работающей установке:
+
+1. Конфиг: `install -m 640 -g mailing deploy/lxc/config/ipfs-images.json
+   /etc/eterfund-mail/` (порт, каталог, `headers.origin` — адрес веб-интерфейса).
+2. Юнит: `install -m 644 deploy/lxc/systemd/ipfs-images.service
+   /etc/systemd/system/ && systemctl daemon-reload && systemctl enable ipfs-images`.
+3. nginx: в сервер веб-интерфейса — `location /images/`, в сервер страниц
+   подписки — только `location /images/dl/` (см. `deploy/lxc/nginx/eterfund-mail.conf`);
+   `nginx -t && systemctl reload nginx`. Если страницы подписки открыты наружу
+   через отдельный фронт, путь `/images/dl/` нужно добавить и там.
+4. `update.sh ipfs-images` — сборка и запуск службы.
+5. В `/etc/eterfund-mail/mail-server.json` — `client.imagePublicUrl`, затем
+   `update.sh mail-server` (значения `client.*` встраиваются при сборке).
+
+Проверка: `curl -sI https://<имя страниц подписки>/images/dl/<id>/x.png` — 200
+с `X-Content-Type-Options: nosniff`, а `POST .../images/ul` снаружи — 404.
+
 ## 6. Эксплуатация
 
-- Журналы: `journalctl -u mail-server`, `-u subscription-facade`, `-u mail-sorter`.
+- Журналы: `journalctl -u mail-server`, `-u subscription-facade`, `-u mail-sorter`, `-u ipfs-images`.
 - Резервное копирование: данные рассылок — в Redis, `/var/lib/redis/`
-  (AOF и RDB), файлы вложений — в `/var/lib/eterfund-mail/attachments`; плюс
+  (AOF и RDB), файлы вложений и картинок — в `/var/lib/eterfund-mail/`; плюс
   `/etc/eterfund-mail/`.
 - Расписание mail-sorter: `systemctl edit mail-sorter.timer` (`OnCalendar=`).
 

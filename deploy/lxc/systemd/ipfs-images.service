@@ -1,0 +1,26 @@
+[Unit]
+Description=ipfs-images: images of mailing letters
+Documentation=https://github.com/Eterpost/ipfs-images
+After=network-online.target redis.service
+Wants=network-online.target
+Requires=redis.service
+
+[Service]
+Type=simple
+User=mailing
+Group=mailing
+# config.json в каталоге релиза — ссылка на /etc/eterfund-mail/ipfs-images.json
+WorkingDirectory=/opt/eterfund-mail/ipfs-images
+ExecStart=/usr/bin/node server.js
+Environment=NODE_ENV=production
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+# /var/lib/eterfund-mail/images: файлы картинок (server.storage.options.basePath)
+StateDirectory=eterfund-mail
+
+[Install]
+WantedBy=multi-user.target

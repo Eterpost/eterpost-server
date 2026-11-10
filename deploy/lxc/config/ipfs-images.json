@@ -1,0 +1,34 @@
+{
+  "logging": {
+    "transports": [
+      { "type": "console", "level": "info" }
+    ]
+  },
+  "redis": {
+    "url": "redis://127.0.0.1:6379",
+    "options": {},
+    "prefix": { "attachments": "IMAGES_" },
+    "index": { "datetime": "IMAGES.DATETIME.INDEX" }
+  },
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8002,
+    "auth": {
+      "type": "partial",
+      "allowedIPs": ["127\\.0\\.0\\.1", "::1", "::ffff:127\\.0\\.0\\.1"]
+    },
+    "allowedTypes": ["image/png", "image/jpeg", "image/gif", "image/webp"],
+    "cache": 2592000,
+    "size": 5242880,
+    "storage": {
+      "type": "filesystem",
+      "options": { "basePath": "/var/lib/eterfund-mail/images" }
+    },
+    "headers": { "origin": "https://mailing.example.com" }
+  },
+  "thumbnails": {
+    "cache": false,
+    "path": "/var/lib/eterfund-mail/thumbnails",
+    "sizes": [64, 128, 256]
+  }
+}

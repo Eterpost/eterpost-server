@@ -2,6 +2,7 @@
   "client": {
     "apiUrl": "/api",
     "imageServiceUrl": "/images",
+    "imagePublicUrl": "https://subscribe.example.com/images",
     "staticUrl": "/"
   },
   "server": {

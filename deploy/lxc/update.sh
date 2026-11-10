@@ -1,5 +1,5 @@
 #!/bin/sh
-# Выкладка обновлений mail-server, subscription-facade и mail-sorter.
+# Выкладка обновлений mail-server, subscription-facade, mail-sorter и ipfs-images.
 #
 #   ./update.sh all|<проект> [ref]     собрать новый релиз (по умолчанию master)
 #   ./update.sh --rollback <проект>     вернуть предыдущий релиз без сборки
@@ -8,7 +8,8 @@
 #   REPO_BASE=git@gitlab.eterfund.ru:eterfund ./update.sh all   сменить git-сервер
 #
 # Проекты называются по-старому (каталоги, службы), а репозитории Почтаря
-# на GitHub — eterpost-server, eterpost-subscription-facade и eterpost-sorter.
+# на GitHub — eterpost-server, eterpost-subscription-facade, eterpost-sorter и
+# ipfs-images (сервер картинок писем).
 #
 # Код собирается от пользователя mailing-build в новый каталог
 # /opt/eterfund-mail/releases/<проект>/<дата>-<коммит>, затем ссылка
@@ -24,7 +25,7 @@ APP_USER=mailing
 BUILD_USER=mailing-build
 BUILD_HOME=/var/lib/eterfund-mail-build
 RELEASES=$PREFIX/releases
-PROJECTS="mail-server subscription-facade mail-sorter"
+PROJECTS="mail-server subscription-facade mail-sorter ipfs-images"
 # сколько последних релизов хранить (текущий не удаляется никогда)
 KEEP=${KEEP:-3}
 SYSTEMCTL=${SYSTEMCTL:-systemctl}
@@ -54,7 +55,7 @@ as_build () {
 # Сервис-зависимая часть: какая служба у проекта и что проверяет сборку
 service_of () {
     case "$1" in
-        mail-server|subscription-facade) echo "$1" ;;
+        mail-server|subscription-facade|ipfs-images) echo "$1" ;;
         # oneshot по таймеру: следующий запуск возьмёт новый релиз
         mail-sorter) ;;
     esac
@@ -80,7 +81,9 @@ build_project () {
             as_build "cd '$bdir' && npm ci --ignore-scripts --no-audit --no-fund \
                 && npm run build && npm prune --omit=dev --no-audit"
             ;;
-        mail-sorter)
+        mail-sorter|ipfs-images)
+            # ipfs-images: sharp ставит готовую сборку libvips пакетом @img/*,
+            # скрипты установки не нужны
             as_build "cd '$bdir' && npm ci --omit=dev --ignore-scripts --no-audit --no-fund"
             ;;
     esac
@@ -261,6 +264,7 @@ repo_name () {
         mail-server) echo eterpost-server ;;
         subscription-facade) echo eterpost-subscription-facade ;;
         mail-sorter) echo eterpost-sorter ;;
+        ipfs-images) echo ipfs-images ;;
     esac
 }
 

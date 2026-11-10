@@ -47,7 +47,7 @@ fi
 log "Configuration in $ETC"
 install -d -m 750 -g "$APP_USER" "$ETC" "$ETC/templates" "$ETC/templates/subscription-facade"
 for name in mail-server.json mail-server.env subscription-facade.json mail-sorter.json \
-        mail-sorter.env; do
+        mail-sorter.env ipfs-images.json; do
     if [ ! -e "$ETC/$name" ]; then
         install -m 640 -g "$APP_USER" "$HERE/config/$name" "$ETC/$name"
         echo "created $ETC/$name — edit it"
@@ -96,9 +96,10 @@ log "Start"
 systemctl daemon-reload
 systemctl enable --now redis nginx
 [ -z "$REDIS_CHANGED" ] || systemctl restart redis
-systemctl enable mail-server subscription-facade mail-sorter.timer
-systemctl restart mail-server subscription-facade
+systemctl enable mail-server subscription-facade ipfs-images mail-sorter.timer
+systemctl restart mail-server subscription-facade ipfs-images
 systemctl start mail-sorter.timer
 nginx -t && systemctl reload nginx
-systemctl --no-pager --lines=0 status mail-server subscription-facade mail-sorter.timer || :
+systemctl --no-pager --lines=0 status mail-server subscription-facade ipfs-images \
+    mail-sorter.timer || :
 log "Done"
