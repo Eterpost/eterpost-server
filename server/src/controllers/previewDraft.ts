@@ -7,6 +7,7 @@ import { Mailing } from '../Mailing';
 import { Receiver } from '../Receiver';
 import { getListId } from '../getListId';
 import { generateUniqueCode } from '../utils/codes';
+import { getSpaceAccess, spaceForNewMailing } from '../middleware/spaceAccess';
 import { formatPreview, sendPreviewError } from './previewEmail';
 
 
@@ -34,6 +35,8 @@ export function previewDraft (config: any, executor: MailingExecutor) {
       undeliveredCount: 0
     }, null as any);
     mailing.listId = getListId(config, mailing);
+    // From пространства, в которое попала бы рассылка; неясно в какое — From сервера
+    mailing.space = spaceForNewMailing(getSpaceAccess(res)) ?? '';
 
     const letters = [];
     for (const item of body.receivers) {

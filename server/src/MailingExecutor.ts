@@ -13,6 +13,7 @@ import { sleep } from './utils/sleep';
 import { ComposedMessage, composeMessage, htmlToText } from './composeMessage';
 import { applyTracking, createTrackingToken } from './tracking';
 import { createSpamDetector } from './spamDetection';
+import { SpaceRepository } from './SpaceRepository';
 
 
 // Паузы перед повторами при временной ошибке SMTP (секунды), если не заданы
@@ -32,6 +33,7 @@ export class MailingExecutor extends EventEmitter {
     private mailer: MailSender,
     private mailingRepository: MailingRepository,
     private addressStatsRepository: AddressStatsRepository,
+    private spaceRepository: SpaceRepository,
     private logger: Logger,
     private config: any
   ) {
@@ -150,8 +152,11 @@ export class MailingExecutor extends EventEmitter {
       html = tracked.html;
     }
     const subject = await mailing.getSubjectForReceiver(receiver);
+    // From: адрес рассылки, иначе адрес пространства; если и его нет — composeMessage
+    // подставит server.mail.from
+    const from = mailing.from || (await this.spaceRepository.get(mailing.space))?.from;
     return new Email({
-      from: mailing.from,
+      from,
       headers,
       html: html,
       text,

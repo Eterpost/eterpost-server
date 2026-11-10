@@ -68,6 +68,7 @@ async function main () {
     sender,
     mailingRepository,
     addressStatsRepository,
+    spaceRepository,
     logger,
     config
   );

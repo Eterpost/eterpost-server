@@ -12,6 +12,7 @@ import { MailingState } from '../src/MailingState';
 import { Mailing } from '../src/Mailing';
 import { Email } from '../src/Email';
 import { Receiver } from '../src/Receiver';
+import { SpaceRepository } from '../src/SpaceRepository';
 import { once } from 'node:events';
 import { trackClick, trackOpen } from '../src/controllers/tracking';
 
@@ -27,6 +28,7 @@ describe('MailingExecutor', { skip: redisSkip }, () => {
   let mailingRepository: RedisMailingRepository;
   let addressStatsRepository: RedisAddressStatsRepository;
   let executor: MailingExecutor;
+  let spaceRepository: SpaceRepository;
   const fakeConfig = {
     server: {
       mail: {
@@ -49,10 +51,12 @@ describe('MailingExecutor', { skip: redisSkip }, () => {
       new RedisMailingRepository(redisConnectionPool),
       new RedisAddressStatsRepository(redisConnectionPool)
     ];
+    spaceRepository = new SpaceRepository(redisConnectionPool);
     executor = new MailingExecutor(
       mailer,
       mailingRepository,
       addressStatsRepository,
+      spaceRepository,
       logger,
       fakeConfig
     );
@@ -89,6 +93,61 @@ describe('MailingExecutor', { skip: redisSkip }, () => {
       const testAddress = 'address@example.com';
       await executor.sendTestEmail(mailing, testAddress);
       assert.equal(mailer.sendEmail.mock.callCount(), 1);
+    });
+  });
+
+  describe('space From', () => {
+    const serviceFrom = 'no-reply@etersoft.ru';
+    let spaceExecutor: MailingExecutor;
+
+    before(async () => {
+      await redisConnectionPool.runWithConnection(client => client.del('SPACES'));
+      await spaceRepository.add({ from: 'Sales <sales@example.com>', name: 'sales' });
+      await spaceRepository.add({ name: 'plain' });
+      spaceExecutor = new MailingExecutor(
+        mailer, mailingRepository, addressStatsRepository, spaceRepository, logger,
+        { server: { ...fakeConfig.server, mail: { from: serviceFrom, listUnsubscribe: '' } } }
+      );
+    });
+
+    after(async () => {
+      await redisConnectionPool.runWithConnection(client => client.del('SPACES'));
+      mailer.sendEmail.mock.resetCalls();
+    });
+
+    async function preview (properties: { from?: string, space: string }) {
+      const testMailing = await mailingRepository.create({
+        html: testHtml, name: testName, subject: testSubject, undeliveredCount: 0, ...properties
+      }, [{ code: '1', email: testReceiver }]);
+      const receiver = (await testMailing.getReceiverByEmail(testReceiver))!;
+      return spaceExecutor.previewEmail(testMailing, receiver);
+    }
+
+    it('should send from the space address when the mailing has no From', async () => {
+      const message = await preview({ space: 'sales' });
+      assert.equal(message.from, 'Sales <sales@example.com>');
+      assert.equal(message.sender, serviceFrom);
+    });
+
+    it('should prefer the From of the mailing', async () => {
+      const message = await preview({ from: 'Boss <boss@example.com>', space: 'sales' });
+      assert.equal(message.from, 'Boss <boss@example.com>');
+    });
+
+    it('should use the server From when the space has none', async () => {
+      assert.equal((await preview({ space: 'plain' })).from, serviceFrom);
+      assert.equal((await preview({ space: 'gone' })).from, serviceFrom);
+    });
+
+    it('should hand the space From to the mailer in a test email', async () => {
+      mailer.sendEmail.mock.resetCalls();
+      const testMailing = await mailingRepository.create({
+        html: testHtml, name: testName, space: 'sales', subject: testSubject,
+        undeliveredCount: 0
+      }, [{ code: '1', email: testReceiver }]);
+      await spaceExecutor.sendTestEmail(testMailing, 'address@example.com');
+      const email = (mailer.sendEmail.mock.calls[0] as any).arguments[0] as Email;
+      assert.equal(email.from, 'Sales <sales@example.com>');
     });
   });
 

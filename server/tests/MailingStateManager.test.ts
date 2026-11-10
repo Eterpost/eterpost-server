@@ -6,6 +6,7 @@ import {
 import { RedisConnectionPool } from '../src/RedisConnectionPool';
 import { RedisMailingRepository } from '../src/RedisMailingRepository';
 import { RedisAddressStatsRepository } from '../src/RedisAddressStatsRepository';
+import { SpaceRepository } from '../src/SpaceRepository';
 import { MailingExecutor } from '../src/MailingExecutor';
 import { MailingStateManager } from '../src/MailingStateManager';
 import { MailingState } from '../src/MailingState';
@@ -45,6 +46,7 @@ describe('MailingStateManager', { skip: redisSkip }, () => {
       mailer,
       mailingRepository,
       addressStatsRepository,
+      new SpaceRepository(redisConnectionPool),
       logger,
       fakeConfig
     );

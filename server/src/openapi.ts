@@ -143,6 +143,22 @@ export const openApiDocument = {
     }
   ],
   paths: withSpace({
+    '/spaces': {
+      get: {
+        tags: ['mailings'],
+        summary: 'Пространства, доступные запросу',
+        description:
+          'Пространства, которыми может пользоваться ключ или пользователь, по имени. ' +
+          '`from` — адрес отправителя пространства (если задан). Пространство `default` ' +
+          'в списке есть всегда, когда оно доступно, даже если не заведено. С ' +
+          '`X-Eterpost-Space` — только выбранное.',
+        parameters: [spaceHeader],
+        responses: {
+          200: ok({ type: 'array', items: ref('Space') }),
+          403: spaceForbidden
+        }
+      }
+    },
     '/mailings': {
       get: {
         tags: ['mailings'],
@@ -586,6 +602,15 @@ export const openApiDocument = {
       apiKeyHeader: { type: 'apiKey', in: 'header', name: 'X-API-Key' }
     },
     schemas: {
+      Space: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', example: 'sales' },
+          title: { type: 'string', example: 'Отдел продаж' },
+          from: { type: 'string', example: 'Продажи <sales@example.com>' }
+        },
+        required: ['name']
+      },
       Error: {
         type: 'object',
         properties: {

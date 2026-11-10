@@ -13,6 +13,7 @@ import { deleteMailing } from './controllers/deleteMailing';
 import { sendTestEmail } from './controllers/sendTestEmail';
 import { previewEmail } from './controllers/previewEmail';
 import { previewDraft } from './controllers/previewDraft';
+import { getSpaces } from './controllers/getSpaces';
 import { restoreExcluded } from './controllers/restoreExcluded';
 import { trackClick, trackOpen } from './controllers/tracking';
 import { getResults } from './controllers/getResults';
@@ -54,6 +55,7 @@ export function setupRoutes (
   // проверяет пространство рассылки
   const mailing = loadMailing(repository);
   const mailingById = loadMailing(repository, 'mailingId');
+  app.get('/spaces', getSpaces(spaceRepository));
   app.get('/mailings', getMailings(repository));
   app.get('/mailings/:id', mailing, getMailing(repository));
   app.post('/mailings', addMailing(config, repository, logger, receiverListFilter));

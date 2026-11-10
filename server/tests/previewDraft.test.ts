@@ -20,16 +20,22 @@ const config = {
 };
 
 const mailer = { sendEmail: mock.fn(async () => {}) };
+const spaces = {
+  get: async (name: string) => name === 'sales' ? { from: 'Sales <sales@etersoft.ru>', name } : null
+};
 const executor = new MailingExecutor(
-  mailer, {} as any, {} as any, createFakeLogger(), config
+  mailer, {} as any, {} as any, spaces as any, createFakeLogger(), config
 );
 
 // Прогоняет обработчики express по очереди, как это сделал бы маршрут
-async function call (handlers: unknown[], body: unknown, params: Record<string, string> = {}) {
+async function call (
+  handlers: unknown[], body: unknown, params: Record<string, string> = {},
+  spaceAccess: object = { allowed: 'all', system: true }
+) {
   let status = 200;
   let result: any;
   const res = {
-    locals: { spaceAccess: { allowed: 'all', system: true } },
+    locals: { spaceAccess },
     json (data: any) {
       result = data;
       return res;
@@ -83,6 +89,27 @@ describe('POST /preview', () => {
     assert.equal(letters[0].headers.Precedence, 'bulk');
     assert.equal(letters[1].subject, 'Привет, Анна');
     assert.equal(letters[1].html, toEmailDocument('<h1>Анна</h1><p>Казань, осень</p>'));
+  });
+
+  it('should use the From of the space of the request', async () => {
+    const receivers = [{ email: 'ivan@example.com' }];
+    const inSales = await call(
+      previewDraft(config, executor), { ...draft, receivers }, {},
+      { allowed: ['sales'], current: 'sales' }
+    );
+    assert.equal(inSales.body.data[0].from, 'Sales <sales@etersoft.ru>');
+    assert.equal(inSales.body.data[0].sender, 'no-reply@etersoft.ru');
+    const own = await call(
+      previewDraft(config, executor), { ...draft, from: 'Own <own@etersoft.ru>', receivers }, {},
+      { allowed: ['sales'], current: 'sales' }
+    );
+    assert.equal(own.body.data[0].from, 'Own <own@etersoft.ru>');
+    // пространство неясно (несколько доступных, текущее не выбрано) — From сервера
+    const unclear = await call(
+      previewDraft(config, executor), { ...draft, receivers }, {},
+      { allowed: ['sales', 'news'] }
+    );
+    assert.equal(unclear.body.data[0].from, 'no-reply@etersoft.ru');
   });
 
   it('should use From, Reply-To and listUnsubscribe of the draft', async () => {
