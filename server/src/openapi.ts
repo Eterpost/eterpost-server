@@ -220,7 +220,7 @@ export const openApiDocument = {
           'С `mailingId` (номер из адреса отписки, подстановка `{id}` в ' +
           '`server.mail.listUnsubscribe`) адрес исключается только из рассылок ' +
           'пространства этой рассылки; без него или с несуществующим номером — из ' +
-          'всех пространств. Только служебный ключ, иначе 403 (FORBIDDEN).',
+          'всех пространств. Только системный или старый (без роли) ключ, иначе 403 (FORBIDDEN).',
         requestBody: body(unsubscribeFromAllBody, {
           email: 'reader@example.com', listUnsubscribe: true, mailingId: 7
         }),
@@ -232,7 +232,7 @@ export const openApiDocument = {
             }
           }),
           400: badRequest,
-          403: failure('Ключ не служебный (FORBIDDEN)')
+          403: failure('Ключ не системный и не старый (FORBIDDEN)')
         }
       }
     },
