@@ -16,6 +16,7 @@ import { formatDate } from '../formatDate';
 import { EmailPreview, RetryFilter } from '../api';
 import { EmailPreviewView } from './EmailPreviewView';
 import { fromPlaceholder } from './AddForm';
+import { AttachmentList } from './AttachmentList';
 
 
 const REFRESH_INTERVAL = 1000;
@@ -53,6 +54,8 @@ export interface MailingEditData {
 
 export interface MailingDetailViewProps {
   mailing: Mailing;
+  onAddAttachments?: (mailing: Mailing, files: File[]) => Promise<void>;
+  onDeleteAttachment?: (mailing: Mailing, id: string) => void;
   onClone?: (mailing: Mailing) => void;
   onCreateRetry?: (mailing: Mailing, filter?: RetryFilter) => void;
   onDelete: (mailing: Mailing) => void;
@@ -268,6 +271,14 @@ export class MailingDetailView extends React.Component<
           </FormGroup>
         </div>
 
+        <div className='attachments'>
+          <AttachmentList attachments={mailing.attachments || []} mailingId={mailing.id}
+                          maxSize={mailing.attachmentsMaxSize}
+                          readOnly={!canEdit || !this.props.onAddAttachments}
+                          onUpload={this.handleAddAttachments}
+                          onDelete={this.handleDeleteAttachment} />
+        </div>
+
         <div className='test-email'>
           <FormGroup inline title='Пробное письмо на адрес' htmlFor={id('test-email')}>
             <div className='horizontal-group'>
@@ -306,6 +317,14 @@ export class MailingDetailView extends React.Component<
     );
   }
 
+
+  private handleAddAttachments = async (files: File[]) => {
+    await this.props.onAddAttachments?.(this.props.mailing, files);
+  };
+
+  private handleDeleteAttachment = (id: string) => {
+    this.props.onDeleteAttachment?.(this.props.mailing, id);
+  };
 
   private canEdit () {
     return !this.props.mailing.locked && this.props.mailing.state !== MailingState.RUNNING;

@@ -2,6 +2,7 @@ import { Mailing } from '../reducers/mailings';
 import { sendTestEmail as sendTestEmailApi } from '../api';
 import { notifyAboutError, notifySuccess } from './notify';
 import { AppDispatch } from '../types';
+import { describeAttachmentError } from './attachments';
 
 
 export function sendTestEmail (mailing: Mailing, email: string) {
@@ -10,7 +11,9 @@ export function sendTestEmail (mailing: Mailing, email: string) {
       await sendTestEmailApi(mailing.id, email);
       dispatch(notifySuccess('Тестовое письмо отправлено.'));
     } catch (error) {
-      dispatch(notifyAboutError('Не удалось отправить тестовое письмо.'));
+      dispatch(notifyAboutError(describeAttachmentError(
+        error, 'Не удалось отправить тестовое письмо.'
+      )));
     }
   };
 }

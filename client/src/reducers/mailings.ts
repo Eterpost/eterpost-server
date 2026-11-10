@@ -1,3 +1,4 @@
+import type { AttachmentInfo } from '../../../server/src/attachments';
 import { MailingState } from '../../../server/src/MailingState';
 import { Action } from '../types';
 import { ActionTypes } from '../ActionTypes';
@@ -13,6 +14,9 @@ export interface MailingListState {
 }
 
 export interface Mailing {
+  attachments?: AttachmentInfo[];
+  // Наибольший общий размер вложений (server.attachments.maxSize)
+  attachmentsMaxSize?: number;
   autoResumeAt?: string;
   creationDate?: Date;
   failedReceivers?: Receiver[];

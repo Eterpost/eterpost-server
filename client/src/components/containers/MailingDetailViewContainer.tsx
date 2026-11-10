@@ -18,6 +18,7 @@ import { removeReceiver } from '../../actions/removeReceiver';
 import { AppDispatch } from '../../types';
 import { RetryFilter } from '../../api';
 import { getCurrentSpace } from '../../reducers/ui';
+import { addAttachments, deleteAttachment } from '../../actions/attachments';
 
 
 function mapStateToProps (state: RootState) {
@@ -32,6 +33,12 @@ function mapStateToProps (state: RootState) {
 
 function mapDispatchToProps (dispatch: AppDispatch) {
   return {
+    onAddAttachments: (mailing: Mailing, files: File[]) => dispatch(
+      addAttachments(mailing.id, files)
+    ),
+    onDeleteAttachment: (mailing: Mailing, id: string) => dispatch(
+      deleteAttachment(mailing.id, id)
+    ),
     onClone: (mailing: Mailing) => dispatch(cloneMailing(mailing)),
     onCreateRetry: (mailing: Mailing, filter?: RetryFilter) => dispatch(
       createRetryMailing(mailing, filter)

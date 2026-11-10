@@ -3,6 +3,9 @@ import { Mailing, Receiver } from './reducers/mailings';
 import { MailingCreateData } from './components/AddForm';
 import { MAX_RECEIVERS } from './components/ReceiverList';
 import { SorterStatus } from '../../server/src/RedisSorterStatusRepository';
+import type { AttachmentInfo } from '../../server/src/attachments';
+
+export type { AttachmentInfo };
 
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -17,8 +20,11 @@ export function setCurrentSpace (space: string | undefined) {
 }
 
 // Ошибка ответа API: code — машинный код ошибки сервера (например, SPACE_FORBIDDEN)
+// detail — текст ошибки сервера, который можно показать человеку
 export class ApiError extends Error {
-  constructor (message: string, public status: number, public code?: string) {
+  constructor (
+    message: string, public status: number, public code?: string, public detail?: string
+  ) {
     super(message);
     this.name = 'ApiError';
   }
@@ -49,13 +55,17 @@ export async function apiRequest (
   }
 
   const response = await fetch(API_URL + endpoint, requestConfig);
+  return readResponse(endpoint, response);
+}
 
-  const jsonResponse = await response.json();
+async function readResponse (endpoint: string, response: Response): Promise<any> {
+  // Ответ не JSON (например, 413 от nginx) — ошибка со статусом
+  const jsonResponse = await response.json().catch(() => ({}));
 
   if (!response.ok || !jsonResponse.success) {
     const apiError = new ApiError(
       `Endpoint ${endpoint} replied with ${response.status}: ${jsonResponse.error}`,
-      response.status, jsonResponse.code
+      response.status, jsonResponse.code, jsonResponse.error
     );
     for (const listener of errorListeners) {
       listener(apiError);
@@ -195,4 +205,30 @@ export function sendTestEmail (mailingId: number, email: string): Promise<void> 
 
 export async function updateMailing (id: number, data: any): Promise<void> {
   await apiRequest('/mailings/' + id, 'PUT', null, data);
+}
+
+/**
+ * Приложить файл к рассылке: тело запроса — сам файл
+ */
+export async function uploadAttachment (mailingId: number, file: File): Promise<AttachmentInfo> {
+  const endpoint = `/mailings/${mailingId}/attachments?` +
+    queryString.stringify({ filename: file.name });
+  const headers: { [name: string]: string } = {
+    'content-type': file.type || 'application/octet-stream'
+  };
+  if (currentSpace) {
+    headers[SPACE_HEADER] = currentSpace;
+  }
+  const response = await fetch(API_URL + endpoint, {
+    body: file, credentials: 'include', headers, method: 'POST'
+  });
+  return readResponse(endpoint, response);
+}
+
+export function deleteAttachment (mailingId: number, id: string): Promise<void> {
+  return apiRequest(`/mailings/${mailingId}/attachments/${id}`, 'DELETE');
+}
+
+export function attachmentUrl (mailingId: number, id: string): string {
+  return API_URL + `/mailings/${mailingId}/attachments/${id}`;
 }

@@ -3,6 +3,7 @@ import { MailingState } from '../../../server/src/MailingState';
 import { updateMailing } from './updateMailing';
 import { notifyAboutError } from './notify';
 import { AppDispatch } from '../types';
+import { describeAttachmentError } from './attachments';
 
 
 export function startMailing (id: number) {
@@ -19,7 +20,7 @@ export function startMailing (id: number) {
         state: MailingState.RUNNING
       }));
     } catch (error) {
-      dispatch(notifyAboutError('Не удалось запустить рассылку.'));
+      dispatch(notifyAboutError(describeAttachmentError(error, 'Не удалось запустить рассылку.')));
       dispatch(updateMailing(id, {
         locked: false
       }));

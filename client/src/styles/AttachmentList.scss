@@ -1,0 +1,73 @@
+@use 'tokens' as *;
+
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  .attachment-list-header {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+  }
+
+  .attachment-list-title {
+    font-size: 15px;
+    margin: 0;
+  }
+
+  .attachment-items {
+    border: 1px solid $border;
+    border-radius: 4px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    li {
+      align-items: center;
+      border-bottom: 1px dotted $border;
+      display: flex;
+      gap: 12px;
+      padding: 5px 10px;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      a {
+        flex: 1;
+        overflow-wrap: anywhere;
+      }
+    }
+  }
+
+  .attachment-size {
+    color: $muted;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .attachment-delete {
+    background: none;
+    border: none;
+    border-radius: 4px;
+    color: $muted;
+    cursor: pointer;
+    font: inherit;
+    min-height: 28px;
+    min-width: 28px;
+
+    &:hover {
+      background-color: $hover;
+      color: $text;
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  .hint {
+    margin: 0;
+  }
+}
