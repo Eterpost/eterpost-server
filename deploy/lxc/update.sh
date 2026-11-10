@@ -52,7 +52,10 @@ as_build () {
 
 # Функции sh не имеют локальных переменных, поэтому у каждой свои имена
 
-# Сервис-зависимая часть: какая служба у проекта и что проверяет сборку
+# Сервис-зависимая часть: какая служба у проекта и что проверяет сборку.
+# Сборка без необязательных зависимостей (--omit=optional): так из npm не
+# приходят готовые бинарники (@parcel/watcher у sass и подобные); нативные
+# модули ставятся пакетами ALT
 service_of () {
     case "$1" in
         mail-server|subscription-facade|ipfs-images) echo "$1" ;;
@@ -73,18 +76,18 @@ build_project () {
                 fs.writeFileSync(process.argv[2], JSON.stringify({ client: config.client || {} }));
             ' "$ETC/mail-server.json" "$bdir/config.json"
             chown "$BUILD_USER:" "$bdir/config.json"
-            as_build "cd '$bdir' && npm ci --ignore-scripts --no-audit --no-fund \
+            as_build "cd '$bdir' && npm ci --omit=optional --ignore-scripts --no-audit --no-fund \
                 && npm run server:build && npm run client:build && npm prune --omit=dev --no-audit"
             rm -f "$bdir/config.json"
             ;;
         subscription-facade)
-            as_build "cd '$bdir' && npm ci --ignore-scripts --no-audit --no-fund \
+            as_build "cd '$bdir' && npm ci --omit=optional --ignore-scripts --no-audit --no-fund \
                 && npm run build && npm prune --omit=dev --no-audit"
             ;;
         mail-sorter|ipfs-images)
             # ipfs-images: sharp ставит готовую сборку libvips пакетом @img/*,
             # скрипты установки не нужны
-            as_build "cd '$bdir' && npm ci --omit=dev --ignore-scripts --no-audit --no-fund"
+            as_build "cd '$bdir' && npm ci --omit=dev --omit=optional --ignore-scripts --no-audit --no-fund"
             ;;
     esac
 }

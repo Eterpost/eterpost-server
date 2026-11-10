@@ -3,7 +3,7 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
+RUN npm ci --omit=optional --ignore-scripts
 COPY . .
 RUN rm -f config.json && npm run server:build && npm run client:build
 
@@ -13,7 +13,7 @@ FROM node:22-alpine AS server
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+RUN npm ci --omit=dev --omit=optional --ignore-scripts && npm cache clean --force
 COPY config.default.json ./
 COPY templates ./templates
 RUN [ -f templates/confirm-subscription.hbs ] || \
