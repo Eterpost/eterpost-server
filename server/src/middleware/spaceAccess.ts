@@ -65,15 +65,16 @@ async function resolveAllowed (
     return { allowed: 'all', system: true };
   }
   // Ключ прокси: пространства пользователя, вошедшего на фронте
-  if (!user) {
-    return { allowed: [] };
-  }
-  if (admins.includes(user)) {
+  if (user && admins.includes(user)) {
     return { allowed: 'all' };
   }
   // Пока участники не заведены, веб-интерфейс после обновления не должен опустеть
+  // (в том числе если фронт ещё не передаёт X-Remote-User)
   if (!await spaces.hasAnyMembers()) {
     return { allowed: [DEFAULT_SPACE] };
+  }
+  if (!user) {
+    return { allowed: [] };
   }
   return { allowed: [...await spaces.getSpacesOfUser(user)].sort() };
 }

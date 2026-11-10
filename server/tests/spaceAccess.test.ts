@@ -161,8 +161,13 @@ describe('resolveSpaceAccess', () => {
       resolveSpaceAccess(proxy, 'ivan', 'sales', empty, admins),
       SpaceForbiddenError
     );
+    // без X-Remote-User и без участников — тоже default; когда участники есть — ничего
     assert.deepEqual(
       await resolveSpaceAccess(proxy, undefined, undefined, empty, admins),
+      { allowed: ['default'] }
+    );
+    assert.deepEqual(
+      await resolveSpaceAccess(proxy, undefined, undefined, spaces, admins),
       { allowed: [] }
     );
   });
