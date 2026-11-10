@@ -7,6 +7,7 @@ import { catchPromise } from '../utils/catchPromise';
 import { getListId } from '../getListId';
 import { Logger } from '../Logger';
 import { FailedReceiver, FailureCounter } from '../FailureCounter';
+import { canSee, getSpaceAccess } from '../middleware/spaceAccess';
 
 
 /**
@@ -43,7 +44,7 @@ export function createRetryMailing (
   const handler = async function (req: Request, res: Response) {
     const sourceId = req.body.sourceId;
     const sourceMailing = await mailingRepository.getById(sourceId);
-    if (!sourceMailing) {
+    if (!sourceMailing || !canSee(getSpaceAccess(res), sourceMailing.space)) {
       res.status(404).json(error('Source mailing not found'));
       return;
     }
@@ -67,8 +68,11 @@ export function createRetryMailing (
       from: sourceMailing.from,
       replyTo: sourceMailing.replyTo,
       sentCount: 0,
+      // Повтор — в пространстве исходной рассылки
+      space: sourceMailing.space,
       state: MailingState.NEW,
       subject: sourceMailing.subject,
+      test: sourceMailing.test,
       undeliveredCount: 0
     };
 

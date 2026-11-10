@@ -35,6 +35,7 @@ import { openApiDocument, swaggerUiHtml, swaggerUiInit } from './openapi';
 import { ApiKeyRepository } from './ApiKeyRepository';
 import { apiKeyAuth } from './middleware/apiKeyAuth';
 import { SpaceRepository } from './SpaceRepository';
+import { loadMailing } from './middleware/loadMailing';
 
 
 export function setupRoutes (
@@ -49,37 +50,40 @@ export function setupRoutes (
   app.use(apiKeyAuth(
     apiKeyRepository, logger, config.server.auth || {}, isApiDocsRequest, spaceRepository, admins
   ));
+  // Каждый маршрут с номером рассылки получает её через loadMailing: он
+  // проверяет пространство рассылки
+  const mailing = loadMailing(repository);
+  const mailingById = loadMailing(repository, 'mailingId');
   app.get('/mailings', getMailings(repository));
-  app.get('/mailings/:id', getMailing(repository));
+  app.get('/mailings/:id', mailing, getMailing(repository));
   app.post('/mailings', addMailing(config, repository, logger, receiverListFilter));
   app.post('/mailings/unsubscribe', unsubscribeFromAll(repository, logger));
   app.post('/mailings/create-retry', createRetryMailing(
     config, repository, logger, failureCounter
   ));
-  app.put('/mailings/:id', updateMailing(repository, stateManager, logger, receiverListFilter));
-  app.get('/mailings/:id/receivers', getReceivers(repository));
-  app.get('/mailings/:id/failed-receivers', getFailedReceivers(repository, failureCounter));
-  app.get('/mailings/:id/results', getResults(repository, failureCounter));
-  app.post('/mailings/:id/send-test-email', sendTestEmail(repository, executor, logger));
-  app.post('/mailings/:id/preview', previewEmail(repository, executor));
+  app.put('/mailings/:id', mailing, updateMailing(
+    repository, stateManager, logger, receiverListFilter
+  ));
+  app.get('/mailings/:id/receivers', mailing, getReceivers(repository));
+  app.get('/mailings/:id/failed-receivers', mailing, getFailedReceivers(failureCounter));
+  app.get('/mailings/:id/results', mailing, getResults(repository, failureCounter));
+  app.post('/mailings/:id/send-test-email', mailing, sendTestEmail(executor, logger));
+  app.post('/mailings/:id/preview', mailing, previewEmail(executor));
   app.post('/preview', previewDraft(config, executor));
-  app.post('/mailings/:id/restore-excluded', restoreExcluded(
+  app.post('/mailings/:id/restore-excluded', mailing, restoreExcluded(
     repository, addressStatsRepository, logger
   ));
-  app.delete('/mailings/:id', deleteMailing(repository, logger));
-  app.post('/mailings/:mailingId/requestSubscription', requestSubscription(
-    subscriptionRepository, repository, logger, sender, subscribeTemplate,
-    config.server.subscription
+  app.delete('/mailings/:id', mailing, deleteMailing(repository, logger));
+  app.post('/mailings/:mailingId/requestSubscription', mailingById, requestSubscription(
+    subscriptionRepository, logger, sender, subscribeTemplate, config.server.subscription
   ));
-  app.post('/mailings/:mailingId/subscribe', subscribe(
+  app.post('/mailings/:mailingId/subscribe', mailingById, subscribe(
+    subscriptionRepository, logger
+  ));
+  app.post('/mailings/:mailingId/unsubscribe', mailingById, unsubscribe(
     subscriptionRepository, repository, logger
   ));
-  app.post('/mailings/:mailingId/unsubscribe', unsubscribe(
-    subscriptionRepository, repository, logger
-  ));
-  app.delete('/mailings/:mailingId/receivers/:receiverId', deleteReceiver(
-    repository, logger
-  ));
+  app.delete('/mailings/:mailingId/receivers/:receiverId', mailingById, deleteReceiver(logger));
   app.get('/sorter/status', getSorterStatus(sorterStatusRepository, config));
   app.post('/tracking/open', trackOpen(repository));
   app.post('/tracking/click', trackClick(repository));

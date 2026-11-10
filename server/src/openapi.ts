@@ -76,6 +76,25 @@ const csvList = {
   }
 };
 
+const spaceHeader = { $ref: '#/components/parameters/Space' };
+const spaceForbidden = failure('Нет доступа к пространству из X-Eterpost-Space (SPACE_FORBIDDEN)');
+
+/**
+ * Маршрутам рассылок — заголовок X-Eterpost-Space и ответ 403 на чужое пространство
+ */
+function withSpace<T extends Record<string, Record<string, any>>> (paths: T): T {
+  for (const [path, item] of Object.entries(paths)) {
+    if (!path.startsWith('/mailings')) {
+      continue;
+    }
+    for (const operation of Object.values(item)) {
+      operation.parameters = [...operation.parameters || [], spaceHeader];
+      operation.responses = { 403: spaceForbidden, ...operation.responses };
+    }
+  }
+  return paths;
+}
+
 const receiversList = (item: object) => ({
   type: 'object',
   properties: {
@@ -104,7 +123,10 @@ export const openApiDocument = {
       '`X-API-Key: <ключ>` (в этом окне — кнопка Authorize). Без ключа или с ' +
       'неизвестным ключом — 401; пока на сервере `server.auth.required` не включён, ' +
       'запросы без ключа пропускаются. Описание API (`/openapi.json`, `/docs/`) ' +
-      'открыто без ключа.'
+      'открыто без ключа.\n\n' +
+      'Рассылки разделены по пространствам. Ключ пространства видит только своё; ' +
+      'служебный ключ — все, а заголовком `X-Eterpost-Space` может выбрать одно. ' +
+      'Рассылка чужого пространства — 404, как несуществующая.'
   },
   security: [{ bearerAuth: [] }, { apiKeyHeader: [] }],
   // Относительный адрес: запросы идут туда же, откуда загружен этот документ
@@ -120,13 +142,22 @@ export const openApiDocument = {
       description: 'Отслеживание открытий и переходов (используется subscription-facade)'
     }
   ],
-  paths: {
+  paths: withSpace({
     '/mailings': {
       get: {
         tags: ['mailings'],
-        summary: 'Список рассылок',
+        summary: 'Список рассылок текущего пространства',
+        parameters: [
+          {
+            name: 'kind',
+            in: 'query',
+            schema: { enum: ['live', 'test', 'all'], default: 'all' },
+            description: 'live — только боевые, test — только пробные, all — все'
+          }
+        ],
         responses: {
-          200: ok({ type: 'array', items: ref('MailingSummary') })
+          200: ok({ type: 'array', items: ref('MailingSummary') }),
+          400: badRequest
         }
       },
       post: {
@@ -135,7 +166,9 @@ export const openApiDocument = {
         description:
           'Либо полное описание рассылки, либо `{sourceId}` — копия рассылки вместе ' +
           'с получателями. Адреса, отклонённые фильтром (некорректные, с постоянными ' +
-          'ошибками доставки), возвращаются в `rejectedReceivers`.',
+          'ошибками доставки), возвращаются в `rejectedReceivers`. Рассылка (и копия) ' +
+          'создаётся в текущем пространстве; если оно неясно (ключ прокси с несколькими ' +
+          'пространствами без `X-Eterpost-Space`) — 403 `SPACE_REQUIRED`.',
         requestBody: body(addMailingBody, {
           name: 'Новости для партнёров',
           subject: 'Новости, {{receiver.name}}',
@@ -154,6 +187,7 @@ export const openApiDocument = {
             }
           }),
           400: badRequest,
+          403: failure('Пространство не выбрано (SPACE_REQUIRED) или недоступно'),
           404: failure('Рассылка-источник не найдена')
         }
       }
@@ -529,8 +563,17 @@ export const openApiDocument = {
         }
       }
     }
-  },
+  }),
   components: {
+    parameters: {
+      Space: {
+        name: 'X-Eterpost-Space',
+        in: 'header',
+        schema: { type: 'string', pattern: '^[a-z0-9][a-z0-9-]{0,31}$' },
+        description: 'Текущее пространство рассылок. Ключу пространства не нужен; ' +
+          'служебному необязателен (без него — все пространства)'
+      }
+    },
     securitySchemes: {
       bearerAuth: { type: 'http', scheme: 'bearer', description: 'Ключ API' },
       apiKeyHeader: { type: 'apiKey', in: 'header', name: 'X-API-Key' }
@@ -663,7 +706,9 @@ export const openApiDocument = {
           from: { type: 'string', description: 'Пусто — адрес сервиса (server.mail.from)' },
           replyTo: { type: 'string' },
           sentCount: { type: 'integer', description: 'Сколько писем отправлено' },
+          space: { type: 'string', description: 'Пространство рассылки' },
           state: ref('MailingState'),
+          test: { type: 'boolean', description: 'Пробная рассылка' },
           undeliveredCount: { type: 'integer' }
         }
       },

@@ -1,27 +1,15 @@
-import { MailingRepository } from '../MailingRepository';
 import { Request, Response } from 'express';
 import { error, success } from '../utils/response';
 import { catchPromise } from '../utils/catchPromise';
 import { MailingState } from '../MailingState';
 import { Logger } from '../Logger';
+import { getLoadedMailing } from '../middleware/loadMailing';
 
 
-export function deleteReceiver (mailingRepository: MailingRepository, logger: Logger) {
+export function deleteReceiver (logger: Logger) {
   return catchPromise(async function (req: Request, res: Response) {
-    const mailingId = Number(req.params.mailingId);
+    const mailing = getLoadedMailing(res);
     const receiverId = String(req.params.receiverId);
-
-    if (!(mailingId > 0)) {
-      res.status(400).json(error('Invalid mailing ID'));
-      return;
-    }
-
-    const mailing = await mailingRepository.getById(mailingId);
-
-    if (!mailing) {
-      res.status(404).json(error('Mailing not found'));
-      return;
-    }
 
     if (mailing.state === MailingState.RUNNING) {
       res.status(400).json(error('Cannot delete a receiver from running mailing'));

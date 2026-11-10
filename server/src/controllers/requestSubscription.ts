@@ -1,4 +1,3 @@
-import { MailingRepository } from '../MailingRepository';
 import { Request, Response } from 'express';
 import { error, success } from '../utils/response';
 import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
@@ -12,6 +11,7 @@ import { SubscriptionRequest } from '../SubscriptionRequest';
 import { Email } from '../Email';
 import { Receiver } from '../Receiver';
 import { generateUniqueCode } from '../utils/codes';
+import { getLoadedMailing } from '../middleware/loadMailing';
 
 
 export interface SubscribeTemplateContext {
@@ -45,20 +45,14 @@ export function getConfirmUrl (baseUrl: string, request: SubscriptionRequest): s
 }
 
 export function requestSubscription (
-  subscriptionRepository: SubscriptionRequestRepository,
-  mailingRepository: MailingRepository, logger: Logger,
+  subscriptionRepository: SubscriptionRequestRepository, logger: Logger,
   sender: MailSender, subscribeTemplate: Template<SubscribeTemplateContext>,
   config: SubscriptionConfig
 ) {
   const handler = async function (req: Request, res: Response) {
-    const mailingId = Number(req.params.mailingId);
-    const mailing = await mailingRepository.getById(mailingId);
+    const mailing = getLoadedMailing(res);
+    const mailingId = mailing.id;
     const schedule = req.body.schedule || String(req.body.periodicDate);
-
-    if (!mailing) {
-      res.status(404).json(error('Mailing not found', 'NOT_FOUND'));
-      return;
-    }
 
     if (!mailing.openForSubscription) {
       res.status(400).json(

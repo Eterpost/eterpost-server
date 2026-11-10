@@ -9,17 +9,25 @@ import { Logger } from '../Logger';
 import { Receiver } from '../Receiver';
 import { ReceiverListFilter } from '../ReceiverListFilter';
 import { generateUniqueCode } from '../utils/codes';
+import { canSee, getSpaceAccess, spaceForNewMailing } from '../middleware/spaceAccess';
 
 
 export function addMailing (config: any, mailingRepository: MailingRepository, logger: Logger, 
   receiverListFilter: ReceiverListFilter) {
   const handler = async function (req: Request, res: Response) {
+    const access = getSpaceAccess(res);
+    // Копия тоже создаётся в текущем пространстве, а не в пространстве исходной
+    const space = spaceForNewMailing(access);
+    if (!space) {
+      res.status(403).json(error('Choose a space with X-Eterpost-Space', 'SPACE_REQUIRED'));
+      return;
+    }
     let receivers: Receiver[];
     let source;
     let isClone = false;
     if (req.body.sourceId) {
       const sourceMailing = await mailingRepository.getById(req.body.sourceId);
-      if (!sourceMailing) {
+      if (!sourceMailing || !canSee(access, sourceMailing.space)) {
         res.status(404).json(error('Source mailing not found'));
         return;
       }
@@ -42,8 +50,10 @@ export function addMailing (config: any, mailingRepository: MailingRepository, l
       from: source.from,
       replyTo: source.replyTo,
       sentCount: 0,
+      space,
       state: MailingState.NEW,
       subject: source.subject,
+      test: Boolean(source.test),
       undeliveredCount: 0
     };
     const validReceivers = await receiverListFilter.getValidReceivers(receivers);
@@ -100,6 +110,9 @@ export const requestBodyJsonSchema = {
         subject: {
           type: 'string',
           minLength: 1
+        },
+        test: {
+          type: 'boolean'
         },
         receivers: {
           type: 'array',

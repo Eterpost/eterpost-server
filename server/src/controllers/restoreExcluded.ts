@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import { MailingRepository } from '../MailingRepository';
 import { AddressStatsRepository } from '../AddressStatsRepository';
-import { success, error } from '../utils/response';
+import { success } from '../utils/response';
 import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
 import { catchPromise } from '../utils/catchPromise';
 import { Logger } from '../Logger';
+import { getLoadedMailing } from '../middleware/loadMailing';
 
 
 /**
@@ -16,15 +17,7 @@ export function restoreExcluded (
   mailingRepository: MailingRepository, statsRepository: AddressStatsRepository, logger: Logger
 ) {
   const handler = async function (req: Request, res: Response) {
-    const id = Number(req.params.id);
-    if (!(id > 0)) {
-      res.status(400).json(error('Invalid ID'));
-      return;
-    }
-    if (!await mailingRepository.getById(id)) {
-      res.status(404).json(error('Mailing not found'));
-      return;
-    }
+    const id = getLoadedMailing(res).id;
 
     const restored = await mailingRepository.restoreExcluded(id, req.body.emails);
     for (const email of restored) {

@@ -4,6 +4,7 @@ import { FailureCounter } from '../FailureCounter';
 import { success, error } from '../utils/response';
 import { catchPromise } from '../utils/catchPromise';
 import { serveCsv } from '../utils/serveCsv';
+import { getLoadedMailing } from '../middleware/loadMailing';
 
 
 export interface ReceiverResult {
@@ -52,19 +53,11 @@ export function getResults (
   mailingRepository: MailingRepository, failureCounter: FailureCounter
 ) {
   return catchPromise(async function (req: Request, res: Response) {
-    const id = Number(req.params.id);
-    if (!(id > 0)) {
-      res.status(400).json(error('Invalid ID'));
-      return;
-    }
+    const mailing = getLoadedMailing(res);
+    const id = mailing.id;
     const event = req.query.event;
     if (event !== undefined && !RESULT_EVENTS.includes(event as ResultEvent)) {
       res.status(400).json(error(`event must be one of: ${RESULT_EVENTS.join(', ')}`));
-      return;
-    }
-    const mailing = await mailingRepository.getById(id);
-    if (!mailing) {
-      res.status(404).json(error('Mailing not found'));
       return;
     }
 

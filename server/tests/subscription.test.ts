@@ -20,6 +20,8 @@ import { unsubscribe } from '../src/controllers/unsubscribe';
 import { unsubscribeFromAll } from '../src/controllers/unsubscribeFromAll';
 import { addMailing } from '../src/controllers/addMailing';
 import { ReceiverListFilter } from '../src/ReceiverListFilter';
+import { MailingRepository } from '../src/MailingRepository';
+import { loadMailing } from '../src/middleware/loadMailing';
 
 
 const testHtml = '<h1>Test</h1>';
@@ -38,6 +40,8 @@ type Controller = (req: FakeRequest, res: FakeResponse) => Promise<void>;
 
 function createFakeResponse () {
   const res = {
+    // служебный ключ, как у subscription-facade
+    locals: { spaceAccess: { allowed: 'all', system: true } } as Record<string, unknown>,
     status: mock.fn((code: number): FakeResponse => {
       void code;
       return res;
@@ -58,6 +62,21 @@ function createFakeRequest (properties: FakeRequest): FakeRequest {
 
 function toController (handlers: unknown[]): Controller {
   return handlers[1] as Controller;
+}
+
+// Обработчик маршрута /mailings/:mailingId/...: сначала loadMailing, как в routes
+function withMailing (repository: MailingRepository, handlers: unknown[]): Controller {
+  const load = loadMailing(repository, 'mailingId') as unknown as
+    (req: FakeRequest, res: FakeResponse, next: () => void) => Promise<void>;
+  return async (req, res) => {
+    let loaded = false;
+    await load(req, res, () => {
+      loaded = true;
+    });
+    if (loaded) {
+      await toController(handlers)(req, res);
+    }
+  };
 }
 
 describe('subscription', { skip: redisSkip }, () => {
@@ -113,15 +132,14 @@ describe('subscription', { skip: redisSkip }, () => {
     };
     mailingId = mailing.id;
     res = createFakeResponse();
-    requestSubscriptionController = toController(requestSubscription(
-      subscriptionRepository, mailingRepository, logger,
-      sender, template, subscribeConfig
+    requestSubscriptionController = withMailing(mailingRepository, requestSubscription(
+      subscriptionRepository, logger, sender, template, subscribeConfig
     ));
-    subscribeController = toController(
-      subscribe(subscriptionRepository, mailingRepository, logger)
+    subscribeController = withMailing(
+      mailingRepository, subscribe(subscriptionRepository, logger)
     );
-    unsubscribeController = toController(
-      unsubscribe(subscriptionRepository, mailingRepository, logger)
+    unsubscribeController = withMailing(
+      mailingRepository, unsubscribe(subscriptionRepository, mailingRepository, logger)
     );
     void unsubscribeController;
   });
@@ -204,8 +222,8 @@ describe('subscription', { skip: redisSkip }, () => {
       const source = readFileSync(
         join(__dirname, '..', '..', '..', 'templates', 'confirm-subscription.hbs.example'), 'utf8'
       );
-      requestSubscriptionController = toController(requestSubscription(
-        subscriptionRepository, mailingRepository, logger,
+      requestSubscriptionController = withMailing(mailingRepository, requestSubscription(
+        subscriptionRepository, logger,
         sender, new HandlebarsTemplate<SubscribeTemplateContext>(source), subscribeConfig
       ));
       await requestSubscriptionController(
@@ -252,7 +270,7 @@ describe('subscription', { skip: redisSkip }, () => {
       const req = createFakeRequest({
         body: defaultBody,
         params: {
-          mailingId: -1
+          mailingId: 999999
         }
       });
       await requestSubscriptionController(req, res);

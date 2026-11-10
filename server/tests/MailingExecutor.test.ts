@@ -160,6 +160,7 @@ describe('MailingExecutor', { skip: redisSkip }, () => {
         let result: any;
         const res: any = {
           json: (data: any) => { result = data; return res; },
+          locals: { spaceAccess: { allowed: 'all', system: true } },
           status: (code: number) => { status = code; return res; }
         };
         await (handlers as any[])[1]({ body }, res);

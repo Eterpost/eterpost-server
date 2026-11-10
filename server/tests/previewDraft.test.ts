@@ -6,6 +6,7 @@ import { MailingExecutor } from '../src/MailingExecutor';
 import { Mailing } from '../src/Mailing';
 import { previewDraft } from '../src/controllers/previewDraft';
 import { previewEmail } from '../src/controllers/previewEmail';
+import { loadMailing } from '../src/middleware/loadMailing';
 
 
 const config = {
@@ -28,6 +29,7 @@ async function call (handlers: unknown[], body: unknown, params: Record<string, 
   let status = 200;
   let result: any;
   const res = {
+    locals: { spaceAccess: { allowed: 'all', system: true } },
     json (data: any) {
       result = data;
       return res;
@@ -154,7 +156,8 @@ describe('POST /mailings/:id/preview', () => {
       getReceivers: async () => []
     };
     const { body, status } = await call(
-      previewEmail(repository, executor), { email: 'ivan@example.com' }, { id: '5' }
+      [loadMailing(repository), ...previewEmail(executor)], { email: 'ivan@example.com' },
+      { id: '5' }
     );
     assert.equal(status, 400);
     assert.equal(body.code, 'TEMPLATE_ERROR');

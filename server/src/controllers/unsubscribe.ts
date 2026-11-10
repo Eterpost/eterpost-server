@@ -5,6 +5,7 @@ import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
 import { catchPromise } from '../utils/catchPromise';
 import { Logger } from '../Logger';
 import { SubscriptionRequestRepository } from '../SubscriptionRequestRepository';
+import { getLoadedMailing } from '../middleware/loadMailing';
 
 
 export function unsubscribe (
@@ -12,13 +13,8 @@ export function unsubscribe (
   mailingRepository: MailingRepository, logger: Logger
 ) {
   const handler = async function (req: Request, res: Response) {
-    const mailingId = Number(req.params.mailingId);
-    const mailing = await mailingRepository.getById(mailingId);
-
-    if (!mailing) {
-      res.status(404).json(error('Mailing not found'));
-      return;
-    }
+    const mailing = getLoadedMailing(res);
+    const mailingId = mailing.id;
 
     let receiverToUnsubscribe;
     for await (const receiver of mailing.getReceiversStream()) {

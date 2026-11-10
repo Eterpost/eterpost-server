@@ -1,9 +1,9 @@
-import { MailingRepository } from '../MailingRepository';
 import { Request, Response } from 'express';
 import { success, error } from '../utils/response';
 import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
 import { catchPromise } from '../utils/catchPromise';
 import { MailingExecutor } from '../MailingExecutor';
+import { getLoadedMailing } from '../middleware/loadMailing';
 import { Receiver } from '../Receiver';
 import { ComposedMessage } from '../composeMessage';
 import { ExternalContentError, TemplateError } from '../templates/TemplateErrors';
@@ -13,21 +13,9 @@ import { ExternalContentError, TemplateError } from '../templates/TemplateErrors
  * Предпросмотр письма получателю без отправки. Если адреса нет в рассылке,
  * письмо собирается для получателя только с адресом — как тестовое
  */
-export function previewEmail (mailingRepository: MailingRepository, executor: MailingExecutor) {
+export function previewEmail (executor: MailingExecutor) {
   const handler = async function (req: Request, res: Response) {
-    const id = Number(req.params.id);
-
-    if (!(id > 0)) {
-      res.status(400).json(error('Invalid ID'));
-      return;
-    }
-
-    const mailing = await mailingRepository.getById(id);
-
-    if (!mailing) {
-      res.status(404).json(error('Mailing not found'));
-      return;
-    }
+    const mailing = getLoadedMailing(res);
 
     const email: string = req.body.email;
     const found = await mailing.getReceiverByEmail(email);

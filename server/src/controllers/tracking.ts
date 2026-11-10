@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
-import { MailingRepository } from '../MailingRepository';
+import { MailingRepository, TrackedLetter } from '../MailingRepository';
 import { success, error } from '../utils/response';
 import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
 import { catchPromise } from '../utils/catchPromise';
 import { isTrackingToken } from '../tracking';
+import { canSee, getSpaceAccess } from '../middleware/spaceAccess';
 
 
 /**
@@ -14,8 +15,7 @@ import { isTrackingToken } from '../tracking';
 export function trackOpen (mailingRepository: MailingRepository) {
   const handler = async function (req: Request, res: Response) {
     const { mailingId, token } = req.body;
-    const letter = isTrackingToken(token) ?
-      await mailingRepository.getTrackedLetter(mailingId, token) : null;
+    const letter = await findLetter(mailingRepository, res, mailingId, token);
     if (letter) {
       await mailingRepository.recordOpen(mailingId, letter.email, new Date());
     }
@@ -33,8 +33,7 @@ export function trackOpen (mailingRepository: MailingRepository) {
 export function trackClick (mailingRepository: MailingRepository) {
   const handler = async function (req: Request, res: Response) {
     const { link, mailingId, token } = req.body;
-    const letter = isTrackingToken(token) ?
-      await mailingRepository.getTrackedLetter(mailingId, token) : null;
+    const letter = await findLetter(mailingRepository, res, mailingId, token);
     const url = letter && letter.links[link];
     if (!letter || !url) {
       res.status(404).json(error('Link not found'));
@@ -46,6 +45,26 @@ export function trackClick (mailingRepository: MailingRepository) {
     res.json(success({ url }));
   };
   return [jsonSchemaMiddleware(clickBodyJsonSchema), catchPromise(handler)];
+}
+
+/**
+ * Письмо с отслеживанием. Сюда обращается subscription-facade служебным
+ * ключом; ключу пространства письма чужих пространств не видны
+ */
+async function findLetter (
+  mailingRepository: MailingRepository, res: Response, mailingId: number, token: string
+): Promise<TrackedLetter | null> {
+  if (!isTrackingToken(token)) {
+    return null;
+  }
+  const access = getSpaceAccess(res);
+  if (!access.system && !access.legacy) {
+    const mailing = await mailingRepository.getById(mailingId);
+    if (!mailing || !canSee(access, mailing.space)) {
+      return null;
+    }
+  }
+  return mailingRepository.getTrackedLetter(mailingId, token);
 }
 
 export const openBodyJsonSchema = {

@@ -9,14 +9,17 @@ import { unsubscribeFromAll } from '../src/controllers/unsubscribeFromAll';
 import { createRetryMailing } from '../src/controllers/createRetryMailing';
 import { restoreExcluded } from '../src/controllers/restoreExcluded';
 import { getResults } from '../src/controllers/getResults';
+import { loadMailing } from '../src/middleware/loadMailing';
 
 
 const bounced = 'failure-counter-bounced@example.com';
 const failed = 'failure-counter-failed@example.com';
 const unsubscribed = 'failure-counter-unsubscribed@example.com';
 
+// Прогоняет обработчики express по очереди, как маршрут, со служебным ключом
 async function call (
-  handlers: unknown, body: Record<string, unknown>, params: Record<string, string> = {}
+  handlers: unknown, body: Record<string, unknown>, params: Record<string, string> = {},
+  query: Record<string, string> = {}
 ) {
   let result: any;
   const res = {
@@ -24,11 +27,20 @@ async function call (
       result = data;
       return res;
     },
+    locals: { spaceAccess: { allowed: 'all', system: true } },
     status () {
       return res;
     }
   };
-  await (handlers as any[])[1]({ body, params }, res);
+  for (const handler of [handlers].flat(2) as any[]) {
+    let nextCalled = false;
+    await handler({ body, params, query }, res, () => {
+      nextCalled = true;
+    });
+    if (!nextCalled) {
+      break;
+    }
+  }
   return result;
 }
 
@@ -137,7 +149,8 @@ describe('FailureCounter', { skip: redisSkip }, () => {
     assert.deepEqual(await mailingRepository.getReceivers(mailing.id), []);
 
     const result = await call(
-      restoreExcluded(mailingRepository, statsRepository, logger), {}, { id: String(mailing.id) }
+      [loadMailing(mailingRepository), restoreExcluded(mailingRepository, statsRepository, logger)],
+      {}, { id: String(mailing.id) }
     );
     assert.deepEqual(result.data.restored, [bounced]);
     const [receiver] = await mailingRepository.getReceivers(mailing.id);
@@ -235,17 +248,10 @@ describe('FailureCounter', { skip: redisSkip }, () => {
     await mailingRepository.recordOpen(mailing.id, sent, date);
     await mailingRepository.recordClick(mailing.id, sent, 'https://example.com/', date);
 
-    const results = async (query: Record<string, string> = {}) => {
-      let result: any;
-      const res: any = {
-        json: (data: any) => { result = data; return res; },
-        status: () => res
-      };
-      await (getResults(mailingRepository, failureCounter) as any)(
-        { params: { id: String(mailing.id) }, query }, res
-      );
-      return result.data;
-    };
+    const results = async (query: Record<string, string> = {}) => (await call(
+      [loadMailing(mailingRepository), getResults(mailingRepository, failureCounter)], {},
+      { id: String(mailing.id) }, query
+    )).data;
 
     const all = await results();
     assert.deepEqual(all.summary, {

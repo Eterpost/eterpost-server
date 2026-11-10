@@ -1,6 +1,7 @@
 import { MailingRepository } from '../MailingRepository';
 import { Request, Response } from 'express';
-import { success, error } from '../utils/response';
+import { success } from '../utils/response';
+import { getLoadedMailing } from '../middleware/loadMailing';
 import { catchPromise } from '../utils/catchPromise';
 import { describeRetries } from './describeRetries';
 import { MailingState } from '../MailingState';
@@ -8,19 +9,7 @@ import { MailingState } from '../MailingState';
 
 export function getMailing (mailingRepository: MailingRepository) {
   return catchPromise(async function (req: Request, res: Response) {
-    const id = Number(req.params.id);
-
-    if (!(id > 0)) {
-      res.status(400).json(error('Invalid ID'));
-      return;
-    }
-
-    const mailing = await mailingRepository.getById(id);
-
-    if (!mailing) {
-      res.status(404).json(error('Mailing not found'));
-      return;
-    }
+    const mailing = getLoadedMailing(res);
 
     res.json(success({
       creationDate: mailing.creationDate && Math.floor(mailing.creationDate.getTime() / 1000),
@@ -40,7 +29,9 @@ export function getMailing (mailingRepository: MailingRepository) {
       sentCount: mailing.sentCount,
       ...await describeRetries(mailingRepository, mailing.id),
       state: req.query.stringState ? MailingState[mailing.state] : mailing.state,
+      space: mailing.space,
       subject: mailing.subject,
+      test: mailing.test,
       undeliveredCount: mailing.undeliveredCount
     }));
   });

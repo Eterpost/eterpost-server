@@ -10,6 +10,7 @@ import { Receiver } from '../Receiver';
 import { ReceiverListFilter } from '../ReceiverListFilter';
 import { generateUniqueCode } from '../utils/codes';
 import { Mailing } from '../Mailing';
+import { getLoadedMailing } from '../middleware/loadMailing';
 
 
 export function updateMailing (
@@ -17,13 +18,7 @@ export function updateMailing (
   receiverListFilter: ReceiverListFilter
 ) {
   const handler = async function (req: Request, res: Response) {
-    const id = Number(req.params.id);
-
-    if (!(id > 0)) {
-      res.status(400).json(error('Invalid ID'));
-      return;
-    }
-
+    const id = getLoadedMailing(res).id;
     const mailing = await mailingRepository.updateInTransaction(id, mailingToUpdate => {
       if (typeof req.body.html === 'string') {
         mailingToUpdate.html = req.body.html;
@@ -32,7 +27,7 @@ export function updateMailing (
 
       const fields = [
         'extraData', 'from', 'listUnsubscribe', 'name', 'openForSubscription', 'replyTo', 'subject',
-        'tracking'
+        'test', 'tracking'
       ];
 
       for (const field of fields) {
@@ -47,6 +42,7 @@ export function updateMailing (
       }
     });
 
+    // Рассылку могли удалить, пока шёл запрос
     if (!mailing) {
       res.status(404).json(error('Mailing not found'));
       return;
@@ -161,6 +157,9 @@ export const requestBodyJsonSchema = {
     subject: {
       type: 'string',
       minLength: 1
+    },
+    test: {
+      type: 'boolean'
     }
   }
 };
