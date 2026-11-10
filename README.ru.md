@@ -147,7 +147,7 @@ nginx для веб-клиента и публичных страниц подп
     "mail": {
       "from": "noreply@example.com",   // адрес сервиса: отправитель конверта (возвраты) и From по умолчанию
       "listIdDomain": "example.com",   // домен в заголовке List-Id
-      "listUnsubscribe": "<mailto:noreply+unsubscribe-{id}@example.com>"  // необязательный List-Unsubscribe; {id} — номер рассылки
+      "listUnsubscribe": "<mailto:noreply+unsubscribe-{id}@example.com>"  // необязательный List-Unsubscribe; {id} — номер рассылки (добавлять только после обновления mail-sorter, см. «Пространства рассылок»)
     },
     "maxEmailsWithoutPause": 1000,     // необязательно: после стольких писем рассылка встаёт на паузу...
     "pauseDuration": 600,              // ...на столько секунд (нужны оба параметра)
@@ -415,7 +415,7 @@ bk.ru, inbox.ru после снятия блокировки), только вр
 | Метод и путь | Назначение |
 |---|---|
 | `GET /mailings` | Список рассылок текущего пространства, `?kind=live\|test\|all` (по умолчанию `all`) |
-| `GET /spaces` | Пространства, доступные запросу: `[{name, title}]` |
+| `GET /spaces` | Пространства, доступные запросу: `[{name, title, from}]` |
 | `GET /mailings/:id` | Рассылка с текстом и статистикой (`?stringState=1` — состояние строкой) |
 | `POST /mailings` | Создать: `{name, subject, html, receivers: [{email, name?, extraData?}], from?, replyTo?, openForSubscription?, test?, extraData?}` (в пространство из `X-Eterpost-Space`) или скопировать: `{sourceId}` |
 | `PUT /mailings/:id` | Изменить поля, `receivers` или `state` (`2`/`"running"` — запуск, `3`/`"paused"` — пауза) |
@@ -483,10 +483,15 @@ node server/dist/src/apiKeysCli.js revoke site-example
 | `--space sales` | сайты и скрипты отправителя | только рассылки своего пространства |
 | `--system` | mail-sorter, subscription-facade | все рассылки; нужен для отписки, подписки, счётчиков и разбора возвратов |
 | `--proxy` | фронт веб-клиента | пространства пользователя из `X-Remote-User` (все — для логинов из `server.auth.admins`) |
-| без роли (legacy) | ключи, созданные до пространств | все рассылки, как раньше; каждое использование пишет в журнал предупреждение `has no role` |
+| без роли (legacy) | ключи, созданные до пространств | все рассылки, как раньше; предупреждение `has no role` пишется в журнал не чаще раза в 10 минут на ключ |
 
 Пока ни у одного пространства нет участников, пользователь ключа прокси видит
-`default`: после обновления веб-клиент не пустеет.
+`default` (так же запрос без `X-Remote-User`): после обновления веб-клиент не
+пустеет.
+
+Изоляция действует, только когда включён `server.auth.required: true` и не
+осталось ключей без роли: запрос без ключа и старый ключ видят все
+пространства.
 
 Текущее пространство запроса задаёт заголовок `X-Eterpost-Space` (его шлёт
 веб-клиент). Ключу пространства он не нужен; у системного ключа необязателен
@@ -494,7 +499,7 @@ node server/dist/src/apiKeysCli.js revoke site-example
 `403` (`SPACE_FORBIDDEN`), нет заголовка там, где пространство обязательно, —
 `403` (`SPACE_REQUIRED`). `POST /mailings` и `POST /mailings/create-retry`
 записывают рассылку в текущее пространство. `GET /spaces` возвращает
-пространства, доступные запросу (имя, название).
+пространства, доступные запросу (имя, название, From).
 
 Пробные рассылки: поле рассылки `test: boolean` (по умолчанию `false`).
 `GET /mailings?kind=live|test|all` фильтрует список внутри пространства; в API
@@ -527,6 +532,7 @@ node server/dist/src/spacesCli.js list                      # имя, назва
 node server/dist/src/spacesCli.js members sales
 node server/dist/src/spacesCli.js add-member sales ivan
 node server/dist/src/spacesCli.js remove-member sales ivan
+node server/dist/src/spacesCli.js move 7 sales             # перенести рассылку №7 в пространство sales (и обратно в default)
 node server/dist/src/spacesCli.js remove sales              # отказ, пока есть рассылки; участники удаляются вместе с ним
 ```
 

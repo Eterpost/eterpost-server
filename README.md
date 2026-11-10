@@ -146,7 +146,7 @@ comments below are for explanation only):
     "mail": {
       "from": "noreply@example.com",   // service address: envelope sender (bounces) and default From
       "listIdDomain": "example.com",   // domain part of the List-Id header
-      "listUnsubscribe": "<mailto:noreply+unsubscribe-{id}@example.com>"  // optional List-Unsubscribe header; {id} is the mailing number
+      "listUnsubscribe": "<mailto:noreply+unsubscribe-{id}@example.com>"  // optional List-Unsubscribe header; {id} is the mailing number (add it only after updating mail-sorter, see "Mailing spaces")
     },
     "maxEmailsWithoutPause": 1000,     // optional: pause the mailing after this many letters...
     "pauseDuration": 600,              // ...for this many seconds (both must be set)
@@ -419,7 +419,7 @@ every route is documented.
 | Method and path | Description |
 |---|---|
 | `GET /mailings` | List of mailings of the current space, `?kind=live\|test\|all` (default `all`) |
-| `GET /spaces` | Spaces available to the request: `[{name, title}]` |
+| `GET /spaces` | Spaces available to the request: `[{name, title, from}]` |
 | `GET /mailings/:id` | Mailing with text and statistics (`?stringState=1` — state as a name) |
 | `POST /mailings` | Create: `{name, subject, html, receivers: [{email, name?, extraData?}], from?, replyTo?, openForSubscription?, test?, extraData?}` (into the space of `X-Eterpost-Space`) or clone: `{sourceId}` |
 | `PUT /mailings/:id` | Change fields, `receivers`, or `state` (`2`/`"running"` — start, `3`/`"paused"` — pause) |
@@ -486,10 +486,14 @@ Roles of API keys (`api-keys add <name> --space <space> | --system | --proxy`,
 | `--space sales` | sites and scripts of a sender | only mailings of its space |
 | `--system` | mail-sorter, subscription-facade | all mailings; needed for unsubscription, subscription, counters and bounces |
 | `--proxy` | the front of the web client | spaces of the user from `X-Remote-User` (all spaces for logins in `server.auth.admins`) |
-| none (legacy) | keys created before spaces | all mailings, as before; every use is logged as a warning `has no role` |
+| none (legacy) | keys created before spaces | all mailings, as before; logged as a warning `has no role` (at most once per 10 minutes per key) |
 
-Until some space has members, the user of a proxy key sees `default`, so the
-web client does not become empty after the upgrade.
+Until some space has members, the user of a proxy key sees `default` (also a request
+without `X-Remote-User`), so the web client does not become empty after the
+upgrade.
+
+Isolation is enforced only when `server.auth.required: true` and no legacy keys
+remain: a request without a key and a legacy key see all spaces.
 
 The current space of a request is set by the `X-Eterpost-Space` header (the web
 client sends it). A space key does not need it; for a system key it is optional
@@ -497,7 +501,7 @@ client sends it). A space key does not need it; for a system key it is optional
 (`SPACE_FORBIDDEN`), a missing header where the space is required gives `403`
 (`SPACE_REQUIRED`). `POST /mailings` and `POST /mailings/create-retry` write
 the mailing to the current space. `GET /spaces` lists the spaces available to
-the request (name, title).
+the request (name, title, From).
 
 Test mailings: the mailing field `test: boolean` (default `false`) marks a
 trial mailing. `GET /mailings?kind=live|test|all` filters the list inside the
@@ -529,6 +533,7 @@ node server/dist/src/spacesCli.js list                      # name, title, From,
 node server/dist/src/spacesCli.js members sales
 node server/dist/src/spacesCli.js add-member sales ivan
 node server/dist/src/spacesCli.js remove-member sales ivan
+node server/dist/src/spacesCli.js move 7 sales             # move mailing #7 to the space "sales" (also back to default)
 node server/dist/src/spacesCli.js remove sales              # refused while it has mailings; members are deleted with it
 ```
 
