@@ -326,4 +326,32 @@ describe('RedisMailingRepository', { skip: redisSkip }, () => {
       assert.equal(loaded!.test, false);
     });
   });
+  describe('attachments', () => {
+    const price = {
+      contentType: 'application/pdf', filename: 'p.pdf', id: 'a'.repeat(16), size: 3
+    };
+    const list = { contentType: 'text/csv', filename: 'l.csv', id: 'b'.repeat(16), size: 4 };
+
+    it('should keep attachment descriptions of a new mailing', async () => {
+      const created = await repositoryOne.create({
+        attachments: [price], html: testHtml, name: testName, subject: testSubject,
+        undeliveredCount: 0
+      }, []);
+      const loaded = await repositoryTwo.getById(created.id);
+      assert.deepEqual(loaded!.attachments, [price]);
+    });
+
+    it('should save attachments changed in a transaction', async () => {
+      await repositoryOne.updateInTransaction(mailingId, mailing => {
+        mailing.attachments.push(price, list);
+      });
+      const loaded = await repositoryTwo.getById(mailingId);
+      assert.deepEqual(loaded!.attachments, [price, list]);
+    });
+
+    it('should give no attachments to a mailing saved without them', async () => {
+      const loaded = await repositoryOne.getById(mailingId);
+      assert.deepEqual(loaded!.attachments, []);
+    });
+  });
 });

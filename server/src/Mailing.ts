@@ -5,9 +5,14 @@ import { HandlebarsAsyncTemplate } from './templates/HandlebarsAsyncTemplate';
 import { MailingState } from './MailingState';
 import { TemplateError } from './templates/TemplateErrors';
 import { DEFAULT_SPACE } from './SpaceRepository';
+import { AttachmentInfo } from './attachments';
 
 
 export interface MailingProperties {
+  /**
+   * Вложения письма в порядке отправки; файлы — в AttachmentStore
+   */
+  attachments?: AttachmentInfo[];
   /**
    * Когда продолжить рассылку после автоматической паузы (мс с начала эпохи).
    * Хранится, чтобы рассылка продолжилась и после перезапуска сервера
@@ -66,6 +71,7 @@ const DEFAULT_STREAM_BATCH_SIZE = 100;
  */
 export class Mailing implements MailingProperties {
   public _html: string;
+  public attachments: AttachmentInfo[];
   public autoResumeAt?: number;
   public extraData?: {
     textAfterSubscribe?: string,
@@ -96,6 +102,7 @@ export class Mailing implements MailingProperties {
     public repository: MailingRepository,
     private receivers?: Receiver[]
   ) {
+    this.attachments = properties.attachments || [];
     this.autoResumeAt = properties.autoResumeAt;
     this.savedCreationDate = properties.creationDate;
     this.extraData = properties.extraData;

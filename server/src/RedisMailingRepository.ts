@@ -81,6 +81,7 @@ implements MailingRepository {
       space: properties.space ?? DEFAULT_SPACE
     };
     const data = {
+      attachments: properties.attachments,
       creationDate: properties.creationDate,
       extraData: properties.extraData,
       html: properties.html,
@@ -537,6 +538,7 @@ implements MailingRepository {
 
   protected serializeEntity (properties: MailingProperties): string {
     return JSON.stringify({
+      attachments: properties.attachments?.length ? properties.attachments : undefined,
       autoResumeAt: properties.autoResumeAt,
       creationDate: properties.creationDate ?
         Math.floor(properties.creationDate.getTime() / 1000) : undefined,

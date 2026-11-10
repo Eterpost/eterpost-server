@@ -57,7 +57,7 @@ export function setupRoutes (
   const mailingById = loadMailing(repository, 'mailingId');
   app.get('/spaces', getSpaces(spaceRepository));
   app.get('/mailings', getMailings(repository));
-  app.get('/mailings/:id', mailing, getMailing(repository));
+  app.get('/mailings/:id', mailing, getMailing(repository, config));
   app.post('/mailings', addMailing(config, repository, logger, receiverListFilter));
   app.post('/mailings/unsubscribe', unsubscribeFromAll(repository, logger));
   app.post('/mailings/create-retry', createRetryMailing(

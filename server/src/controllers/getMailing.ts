@@ -5,13 +5,16 @@ import { getLoadedMailing } from '../middleware/loadMailing';
 import { catchPromise } from '../utils/catchPromise';
 import { describeRetries } from './describeRetries';
 import { MailingState } from '../MailingState';
+import { getAttachmentsConfig } from '../attachments';
 
 
-export function getMailing (mailingRepository: MailingRepository) {
+export function getMailing (mailingRepository: MailingRepository, config: any) {
   return catchPromise(async function (req: Request, res: Response) {
     const mailing = getLoadedMailing(res);
 
     res.json(success({
+      attachments: mailing.attachments,
+      attachmentsMaxSize: getAttachmentsConfig(config).maxSize,
       creationDate: mailing.creationDate && Math.floor(mailing.creationDate.getTime() / 1000),
       extraData: mailing.extraData,
       html: mailing.html,
