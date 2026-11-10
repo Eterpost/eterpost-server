@@ -87,6 +87,8 @@ const csvList = {
 
 const spaceHeader = { $ref: '#/components/parameters/Space' };
 const attachmentConflict = failure('Рассылка выполняется (MAILING_RUNNING)');
+const missingAttachment =
+  failure('Файл вложения пропал с диска (MISSING_ATTACHMENT), в ошибке — его имя');
 const attachmentsUnavailable =
   failure('Каталог вложений недоступен (ATTACHMENTS_UNAVAILABLE)');
 const attachmentId = {
@@ -204,7 +206,9 @@ export const openApiDocument = {
           'с получателями. Адреса, отклонённые фильтром (некорректные, с постоянными ' +
           'ошибками доставки), возвращаются в `rejectedReceivers`. Рассылка (и копия) ' +
           'создаётся в текущем пространстве; если оно неясно (ключ прокси с несколькими ' +
-          'пространствами без `X-Eterpost-Space`) — 403 `SPACE_REQUIRED`.',
+          'пространствами без `X-Eterpost-Space`) — 403 `SPACE_REQUIRED`. ' +
+          '`attachments` — файлы в base64, которые уйдут вложениями каждому получателю; ' +
+          'копия получает вложения исходной рассылки.',
         requestBody: body(addMailingBody, {
           name: 'Новости для партнёров',
           subject: 'Новости, {{receiver.name}}',
@@ -224,7 +228,9 @@ export const openApiDocument = {
           }),
           400: badRequest,
           403: failure('Пространство не выбрано (SPACE_REQUIRED) или недоступно'),
-          404: failure('Рассылка-источник не найдена')
+          404: failure('Рассылка-источник не найдена'),
+          413: failure('Превышен общий размер вложений (ATTACHMENTS_TOO_LARGE)'),
+          503: attachmentsUnavailable
         }
       }
     },
@@ -318,7 +324,8 @@ export const openApiDocument = {
             }
           }),
           400: badRequest,
-          404: notFound
+          404: notFound,
+          409: missingAttachment
         }
       },
       delete: {
@@ -481,7 +488,8 @@ export const openApiDocument = {
         responses: {
           200: ok(),
           400: badRequest,
-          404: notFound
+          404: notFound,
+          409: missingAttachment
         }
       }
     },
@@ -774,6 +782,18 @@ export const openApiDocument = {
           receiverFound: {
             type: 'boolean',
             description: 'Есть ли адрес среди получателей рассылки'
+          },
+          attachments: {
+            type: 'array',
+            description: 'Вложения письма, без содержимого (только у сохранённой рассылки)',
+            items: {
+              type: 'object',
+              properties: {
+                filename: { type: 'string' },
+                contentType: { type: 'string' },
+                size: { type: 'integer' }
+              }
+            }
           }
         }
       },
@@ -842,7 +862,16 @@ export const openApiDocument = {
               creationDate: { type: 'integer', description: 'Unix time, секунды' },
               extraData: { type: 'object' },
               html: { type: 'string', description: 'Шаблон Handlebars' },
-              subject: { type: 'string', description: 'Шаблон Handlebars' }
+              subject: { type: 'string', description: 'Шаблон Handlebars' },
+              attachments: {
+                type: 'array',
+                items: ref('Attachment'),
+                description: 'Вложения письма в порядке отправки'
+              },
+              attachmentsMaxSize: {
+                type: 'integer',
+                description: 'Наибольший общий размер вложений (server.attachments.maxSize)'
+              }
             }
           }
         ]
