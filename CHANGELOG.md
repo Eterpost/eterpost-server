@@ -3,7 +3,7 @@
 All notable changes to eterpost-server. Versions follow [Semantic Versioning](https://semver.org/);
 before 1.0 a minor version brings new features and a patch version brings fixes.
 
-## Unreleased
+## 0.3.0 — 2026-11-11
 
 ### Letter images
 - `client.imagePublicUrl`: the editor inserts the absolute public address of an image
@@ -25,6 +25,13 @@ before 1.0 a minor version brings new features and a patch version brings fixes.
 - deploy: `StateDirectory=eterfund-mail` in `mail-server.service` and
   `server.attachments.dir` in the example config; the Docker image keeps files in
   `/app/data`.
+
+### Fixes
+- The retry form of the delivery errors tab no longer overlaps the test letter fields.
+- An attachment sent as a form (`curl -F`) is refused with 415 instead of being stored
+  with the form around it.
+- `update.sh` starts an enabled service on its first deploy and skips a service whose
+  unit is not installed.
 
 ## 0.2.0 — 2026-11-10
 
