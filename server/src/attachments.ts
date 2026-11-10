@@ -45,13 +45,17 @@ export function normalizeFilename (name: unknown): string | null {
 
 /**
  * Тип содержимого: заявленный при загрузке, если он что-то говорит, иначе по
- * расширению
+ * расширению. Типы форм (их ставит curl по умолчанию) о файле не говорят
  */
 export function detectContentType (filename: string, declared?: string): string {
-  if (declared && declared !== OCTET_STREAM) {
+  if (declared && declared !== OCTET_STREAM && !isFormType(declared)) {
     return declared;
   }
   return detectMimeType(filename) || OCTET_STREAM;
+}
+
+export function isFormType (contentType: string): boolean {
+  return /^\s*(multipart\/|application\/x-www-form-urlencoded)/i.test(contentType);
 }
 
 export function totalSize (attachments: AttachmentInfo[] | undefined): number {

@@ -157,6 +157,17 @@ describe('mailing attachments API', { skip: redisSkip }, () => {
     assert.equal(uploaded.body.data.filename, 'x.pdf');
   });
 
+  it('should refuse a form upload instead of saving the form as the file', async () => {
+    const id = await create();
+    const form = await upload(
+      salesKey, id, 'a.pdf', Buffer.from('--x\r\n\r\n%PDF\r\n--x--'),
+      'multipart/form-data; boundary=x'
+    );
+    assert.equal(form.status, 415);
+    assert.equal(form.body.code, 'UNSUPPORTED_MEDIA_TYPE');
+    assert.deepEqual((await mailingRepository.getById(id))!.attachments, []);
+  });
+
   it('should refuse attachments over the total size limit', async () => {
     const id = await create();
     assert.equal((await upload(salesKey, id, 'a.pdf', Buffer.alloc(1500))).status, 201);

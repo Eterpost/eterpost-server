@@ -297,7 +297,10 @@ ERROR.
 
 - `POST /mailings/:id/attachments?filename=<имя>` — тело запроса и есть файл;
   тип вложения — из Content-Type, для `application/octet-stream` — по
-  расширению имени. Ответ 201 — описание `{id, filename, contentType, size}`;
+  расширению имени. Ответ 201 — описание `{id, filename, contentType, size}`.
+  Форма (`curl -F`) не принимается (415): файл передаётся телом, например
+  `curl --data-binary @price.pdf -H 'Content-Type: application/pdf' \
+  '<api>/mailings/5/attachments?filename=price.pdf'`;
 - `GET /mailings/:id/attachments/:attachmentId` — скачать файл;
 - `DELETE /mailings/:id/attachments/:attachmentId` — удалить;
 - `POST /mailings` с `attachments: [{filename, contentType?, content}]`

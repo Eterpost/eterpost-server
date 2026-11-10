@@ -5,6 +5,8 @@ import { AttachmentStore } from '../AttachmentStore';
 import {
   AttachmentInfo, detectContentType, normalizeFilename, totalSize
 } from '../attachments';
+
+const MULTIPART = /^\s*multipart\//i;
 import { getLoadedMailing } from '../middleware/loadMailing';
 import { catchPromise } from '../utils/catchPromise';
 import { error, success } from '../utils/response';
@@ -59,6 +61,15 @@ export function uploadAttachment (
     const filename = normalizeFilename(req.query.filename);
     if (!filename) {
       res.status(400).json(error('File name is required (?filename=)'));
+      return;
+    }
+    // Тело формы (curl -F) — не сам файл: в письме вложение было бы битым
+    if (MULTIPART.test(req.get('content-type') || '')) {
+      res.status(415).json(error(
+        'Send the file itself as the request body, not a form ' +
+        '(curl --data-binary @file -H "Content-Type: application/pdf")',
+        'UNSUPPORTED_MEDIA_TYPE'
+      ));
       return;
     }
     const content: Buffer = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);

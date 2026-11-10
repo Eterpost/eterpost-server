@@ -369,6 +369,7 @@ export const openApiDocument = {
           404: notFound,
           409: attachmentConflict,
           413: failure('Превышен общий размер вложений (ATTACHMENTS_TOO_LARGE)'),
+          415: failure('Тело — форма multipart, а не сам файл (UNSUPPORTED_MEDIA_TYPE)'),
           503: attachmentsUnavailable
         }
       }

@@ -34,6 +34,14 @@ describe('attachments', () => {
     assert.equal(detectContentType('noext'), 'application/octet-stream');
   });
 
+  it('should ignore form content types and take the type by the extension', () => {
+    const form = 'application/x-www-form-urlencoded';
+    assert.equal(detectContentType('a.pdf', form), 'application/pdf');
+    assert.equal(
+      detectContentType('a.pdf', 'multipart/form-data; boundary=x'), 'application/pdf'
+    );
+  });
+
   it('should prefer the declared content type', () => {
     assert.equal(detectContentType('a.bin', 'text/csv'), 'text/csv');
   });

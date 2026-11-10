@@ -297,7 +297,10 @@ The mailing view has an «Вложения» block (add, download, delete); in t
 
 - `POST /mailings/:id/attachments?filename=<name>` — the request body is the file;
   the type comes from Content-Type, or from the file extension for
-  `application/octet-stream`. The 201 answer is `{id, filename, contentType, size}`;
+  `application/octet-stream`. The 201 answer is `{id, filename, contentType, size}`.
+  A form (`curl -F`) is refused (415): send the file as the body, for example
+  `curl --data-binary @price.pdf -H 'Content-Type: application/pdf' \
+  '<api>/mailings/5/attachments?filename=price.pdf'`;
 - `GET /mailings/:id/attachments/:attachmentId` — download the file;
 - `DELETE /mailings/:id/attachments/:attachmentId` — delete it;
 - `POST /mailings` with `attachments: [{filename, contentType?, content}]`
