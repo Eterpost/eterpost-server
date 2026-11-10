@@ -1,4 +1,5 @@
 import * as React from 'react';
+import '../styles/FailureList';
 import { ReceiverList, ReceiverListButton } from './ReceiverList';
 import { Mailing, Receiver } from '../reducers/mailings';
 import { RetryFilter } from '../api';
