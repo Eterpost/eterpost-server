@@ -87,6 +87,7 @@ async function waitFor (check, { timeout = 30000, interval = 500, what = 'condit
 }
 
 module.exports = {
-  api, CLIENT_URL, FACADE_URL, findMailing, MAILING_NAME, NEWS_KEY, rawApi, readMailbox,
+  api, CLIENT_URL, FACADE_URL, findMailing, MAIL_SERVER_URL, MAILING_NAME, NEWS_KEY, rawApi,
+  readMailbox,
   SALES_KEY, sendRaw, waitFor
 };

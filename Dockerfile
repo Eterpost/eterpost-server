@@ -8,7 +8,7 @@ COPY . .
 RUN rm -f config.json && npm run server:build && npm run client:build
 
 # API-сервер. Конфигурация — /app/config.json (поверх config.default.json),
-# шаблон письма подписки — /app/templates/confirm-subscription.hbs
+# шаблон письма подписки — /app/templates/confirm-subscription.hbs, вложения — /app/data
 FROM node:22-alpine AS server
 WORKDIR /app
 ENV NODE_ENV=production
@@ -19,6 +19,10 @@ COPY templates ./templates
 RUN [ -f templates/confirm-subscription.hbs ] || \
     cp templates/confirm-subscription.hbs.example templates/confirm-subscription.hbs
 COPY --from=build /app/server/dist ./server/dist
+# Файлы вложений (server.attachments.dir по умолчанию — data/attachments);
+# чтобы они пережили пересоздание контейнера, подключите сюда том
+RUN mkdir -p data/attachments && chown -R node:node data
+VOLUME /app/data
 USER node
 EXPOSE 8000
 CMD ["node", "server/dist/src/index.js"]
