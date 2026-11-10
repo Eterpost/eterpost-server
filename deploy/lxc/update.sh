@@ -279,7 +279,10 @@ update_project () {
     commit=$(as_build "git --git-dir='$mirror' rev-parse --verify -q '$ref^{commit}'") ||
         die "$name: unknown ref $ref"
     short=$(echo "$commit" | cut -c1-10)
-    release=$(date +%Y%m%d-%H%M%S)-$short
+    # версия из package.json — в имени выпуска после даты (сортировка по имени — по времени)
+    version=$(as_build "git --git-dir='$mirror' show '$commit:package.json'" |
+        sed -n 's/^ *"version": *"\([^"]*\)".*/\1/p' | head -n 1)
+    release=$(date +%Y%m%d-%H%M%S)${version:+-$version}-$short
     dir=$RELEASES/$name/$release
 
     log "$name: build $release ($(as_build "git --git-dir='$mirror' log --oneline -1 '$commit'"))"

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { requestBodyJsonSchema as addMailingBody } from './controllers/addMailing';
 import { requestBodyJsonSchema as createRetryMailingBody } from './controllers/createRetryMailing';
 import {
@@ -12,6 +14,13 @@ import { requestBodyJsonSchema as subscribeBody } from './controllers/subscribe'
 import { requestBodyJsonSchema as unsubscribeBody } from './controllers/unsubscribe';
 import { requestBodyJsonSchema as unsubscribeFromAllBody } from './controllers/unsubscribeFromAll';
 import { requestBodyJsonSchema as updateMailingBody } from './controllers/updateMailing';
+
+// Версия API — версия пакета: package.json в корне проекта
+// (код запускается из server/dist/src)
+function packageVersion (): string {
+  const path = join(__dirname, '..', '..', '..', 'package.json');
+  return JSON.parse(readFileSync(path, 'utf8')).version;
+}
 
 
 // Описание API в формате OpenAPI 3.1. Схемы тел запросов берутся из контроллеров —
@@ -115,7 +124,7 @@ export const openApiDocument = {
   openapi: '3.1.0',
   info: {
     title: 'mail-server API',
-    version: '0.1.0',
+    version: packageVersion(),
     description:
       'Сервис массовых рассылок. Ответ всегда JSON вида `{success, data}` при успехе ' +
       'или `{success: false, error, code?}` при ошибке.\n\n' +

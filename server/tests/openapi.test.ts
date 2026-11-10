@@ -1,6 +1,8 @@
 import { after, before, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { AddressInfo } from 'node:net';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { Server } from 'node:http';
 import express from 'express';
 import { setupRoutes } from '../src/routes';
@@ -32,6 +34,11 @@ function getRoutes (app: express.Express) {
 }
 
 describe('OpenAPI', () => {
+  it('should take the API version from package.json', () => {
+    const pkg = JSON.parse(readFileSync(join(__dirname, '..', '..', '..', 'package.json'), 'utf8'));
+    assert.equal(openApiDocument.info.version, pkg.version);
+  });
+
   it('should describe every API route', () => {
     const documented = new Set<string>();
     for (const [path, item] of Object.entries(openApiDocument.paths)) {

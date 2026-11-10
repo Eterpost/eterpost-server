@@ -1,0 +1,53 @@
+# Changelog
+
+All notable changes to eterpost-server. Versions follow [Semantic Versioning](https://semver.org/);
+before 1.0 a minor version brings new features and a patch version brings fixes.
+
+## 0.2.0 — 2026-11-10
+
+The first tagged release of Eterpost (Почтарь) under the Eterpost organization.
+
+### Mailing spaces
+- Mailings are divided into spaces. Lists, views, statistics and actions are limited to the
+  space of a request; a mailing of another space answers 404.
+- API keys get a role: a space key (sites and scripts), a system key (mail-sorter,
+  subscription-facade) or a proxy key (the web front, users from `X-Remote-User`).
+  Keys without a role keep full access and log a warning until a role is set.
+- `X-Eterpost-Space` chooses the current space; `GET /spaces` lists the spaces of a request.
+- Administrators (`server.auth.admins`) see every space.
+- A space has its own From address; a mailing may still set its own.
+- `spaces` CLI: add, set, list, members, add-member, remove-member, remove, move.
+- `server.mail.listUnsubscribe` accepts `{id}`; unsubscribe by mail then only affects the
+  space of that mailing (needs eterpost-sorter 0.3.0).
+- Existing mailings move to the `default` space on the first start.
+
+### Test mailings
+- A mailing can be marked as a test one (`test`); `GET /mailings?kind=live|test|all`.
+- The web client shows live mailings by default, with a «Боевые / Пробные / Все» filter.
+
+### Letters
+- Preview of a letter for a receiver, and of letters without a mailing (`POST /preview`),
+  exactly as they will be sent: subject, HTML and the plain text part.
+- Opens and clicks tracking for mailings with tracking turned on (through
+  subscription-facade); results by receiver in the API and as CSV.
+- A letter written as an HTML fragment is sent as a document for light and dark themes.
+- The plain text part is generated from HTML; the receiver name goes into `To`.
+
+### Delivery errors
+- Retry a mailing for a part of its errors: spam rejections, domains, 4xx or 5xx.
+- Put back receivers excluded for delivery errors.
+- Delivery errors are counted from the mailing's own list.
+- Receivers rejected with 4xx at RCPT TO are retried later.
+- Rejections recognised as spam by a configurable set of patterns (`server.spamPatterns`).
+
+### Operation
+- API keys and `server.auth.required`.
+- OpenAPI document and Swagger UI; the API version follows `package.json`.
+- Mailings resume after a server restart.
+- Deployment to an LXC container or VM on ALT Linux (`deploy/lxc`), releases with
+  `update.sh`; release names include the version.
+- Web client: light and dark themes, phone layout, mail-sorter status.
+
+## 0.1.0
+
+The original Etersoft mail-server (2018–2020), modernized for Node.js 22 in 2026.
