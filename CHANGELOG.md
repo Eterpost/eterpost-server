@@ -5,6 +5,13 @@ before 1.0 a minor version brings new features and a patch version brings fixes.
 
 ## Unreleased
 
+### Letter images
+- `client.imagePublicUrl`: the editor inserts the absolute public address of an image
+  (ipfs-images) instead of a relative one, which did not open for receivers (bug 20032).
+- Clear messages when an image is refused (not an image, too large).
+- deploy: ipfs-images service, `/images/` in the web interface server and only
+  `/images/dl/` on the public name; `update.sh ipfs-images`.
+
 ### Attachments
 - Files can be attached to a mailing and go to every receiver as attachments of the
   letter, the test letter too (bug 20027).

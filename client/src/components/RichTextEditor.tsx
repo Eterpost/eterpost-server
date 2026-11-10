@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { init, exec } from 'pell';
 import 'pell/dist/pell.css';
+import { imageUploadError, imageUrl } from '../imageUrl';
 
 
 export interface RichTextEditorProps {
@@ -46,7 +47,7 @@ export class RichTextEditor extends React.Component<
           this.handleChange(this.editor.content.innerHTML);
         }
       } catch (error) {
-        alert('Не удалось загрузить картинку.');
+        alert(error instanceof ImageUploadError ? error.message : imageUploadError(0));
         console.error(error);
       }
     });
@@ -113,7 +114,12 @@ export class RichTextEditor extends React.Component<
       body: form,
       method: 'POST'
     });
+    if (!response.ok) {
+      throw new ImageUploadError(imageUploadError(response.status));
+    }
     const jsonResponse = await response.json();
-    return IMAGE_SERVICE_URL + '/dl/' + jsonResponse.id + '/' + file.name;
+    return imageUrl(IMAGE_PUBLIC_URL, IMAGE_SERVICE_URL, jsonResponse.id, file.name);
   }
 }
+
+class ImageUploadError extends Error {}

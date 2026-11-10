@@ -133,6 +133,7 @@ comments below are for explanation only):
   "client": {
     "apiUrl": "/api",                  // where the client sends API requests
     "imageServiceUrl": "/images",      // image upload service for the editor (see below)
+    "imagePublicUrl": "https://subscribe.example.com/images",  // public address of the same service: it goes into letters
     "staticUrl": "/",                  // <base href> of the client
     "webpack": { "port": 8080, "publicPath": "http://localhost:8080/" }  // dev server
   },
@@ -196,7 +197,10 @@ spam filters penalise: set `smtp.name` then.
 `client.imageServiceUrl` is a service for images inserted in the editor
 (`POST <url>/ul` with a file returns `{"id": ...}`, the image is then available
 at `<url>/dl/<id>/<name>`), for example
-[ipfs-images](https://gitlab.eterfund.ru/ipfs-images/ipfs-images).
+[ipfs-images](https://github.com/Eterpost/ipfs-images). A letter gets the address
+`client.imagePublicUrl/dl/<id>/<name>`: it must be absolute and open from outside
+(for the receiver of the letter). Without `imagePublicUrl` the `imageServiceUrl`
+address is inserted, and a relative address does not open for the receiver.
 
 ## Mailings
 

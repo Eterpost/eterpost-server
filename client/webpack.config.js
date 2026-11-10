@@ -85,7 +85,8 @@ module.exports = (env, argv) => {
       new webpack.DefinePlugin({
         API_URL: JSON.stringify(config.client.apiUrl),
         BASE_URL: JSON.stringify(config.client.staticUrl),
-        IMAGE_SERVICE_URL: JSON.stringify(config.client.imageServiceUrl)
+        IMAGE_SERVICE_URL: JSON.stringify(config.client.imageServiceUrl),
+        IMAGE_PUBLIC_URL: JSON.stringify(config.client.imagePublicUrl || '')
       }),
       ...(isProduction ? [new MiniCssExtractPlugin({ filename: 'css/style.css' })] : []),
       new HtmlPlugin({

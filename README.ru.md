@@ -134,6 +134,7 @@ nginx для веб-клиента и публичных страниц подп
   "client": {
     "apiUrl": "/api",                  // куда клиент отправляет запросы к API
     "imageServiceUrl": "/images",      // сервис загрузки картинок для редактора (см. ниже)
+    "imagePublicUrl": "https://subscribe.example.com/images",  // публичный адрес того же сервиса: он попадает в письма
     "staticUrl": "/",                  // <base href> клиента
     "webpack": { "port": 8080, "publicPath": "http://localhost:8080/" }  // dev server
   },
@@ -197,7 +198,10 @@ nodemailer передаёт `[127.0.0.1]`, за что некоторые рел
 клиент нужно пересобрать. `client.imageServiceUrl` — сервис для картинок,
 вставляемых в редакторе (`POST <url>/ul` с файлом возвращает `{"id": ...}`,
 картинка затем доступна по `<url>/dl/<id>/<имя>`), например
-[ipfs-images](https://gitlab.eterfund.ru/ipfs-images/ipfs-images).
+[ipfs-images](https://github.com/Eterpost/ipfs-images). В письмо вставляется
+адрес `client.imagePublicUrl/dl/<id>/<имя>`: он должен быть абсолютным и
+открываться снаружи (у получателя письма). Без `imagePublicUrl` вставляется
+адрес `imageServiceUrl` — относительный адрес у получателя не откроется.
 
 ## Рассылки
 
