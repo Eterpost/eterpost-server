@@ -16,9 +16,14 @@ export interface EmailParameters {
   subject: string;
 }
 
+/**
+ * Вложение письма: содержимое или путь к файлу (nodemailer прочитает его сам)
+ */
 export interface Attachment {
-  content: string | Buffer;
+  content?: string | Buffer;
+  contentType?: string;
   filename: string;
+  path?: string;
 }
 
 

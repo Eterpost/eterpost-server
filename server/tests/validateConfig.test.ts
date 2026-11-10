@@ -19,3 +19,15 @@ describe('validateConfig', () => {
     }
   });
 });
+
+describe('validateConfig: attachments', () => {
+  it('should reject a maximum attachment size that is not a positive number', () => {
+    for (const maxSize of [0, -1, '10']) {
+      assert.throws(
+        () => validateConfig({ server: { attachments: { maxSize } } }),
+        /server\.attachments\.maxSize must be a positive number/
+      );
+    }
+    validateConfig({ server: { attachments: { maxSize: 100 } } });
+  });
+});

@@ -9,6 +9,10 @@
     }
   },
   "server": {
+    "attachments": {
+      "dir": "data/attachments",
+      "maxSize": 10485760
+    },
     "auth": {
       "admins": [],
       "required": false
