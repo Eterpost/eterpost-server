@@ -2,7 +2,7 @@ import { parseArgs } from 'node:util';
 import { readConfig } from './readConfig';
 import { RedisConnectionPoolImpl } from './RedisConnectionPool';
 import { RedisMailingRepository } from './RedisMailingRepository';
-import { SPACE_NAME_PATTERN, SpaceRepository } from './SpaceRepository';
+import { DEFAULT_SPACE, SPACE_NAME_PATTERN, SpaceRepository } from './SpaceRepository';
 
 
 const usage = `Управление пространствами рассылок mail-server (хранятся в Redis из конфига сервера)
@@ -14,6 +14,7 @@ const usage = `Управление пространствами рассыло�
   spaces add-member <имя> <логин>           добавить участника
   spaces remove-member <имя> <логин>        убрать участника
   spaces remove <имя>                       удалить пространство без рассылок
+  spaces move <номер рассылки> <имя>        перенести рассылку в другое пространство
 
 Имя: латинские буквы в нижнем регистре, цифры и дефис, до 32 знаков.
 --from — адрес отправителя по умолчанию: «Имя <адрес>».`;
@@ -28,6 +29,7 @@ async function main () {
     }
   });
   const [command, name, login] = positionals;
+  const target = login;
   if (values.help || !command) {
     console.log(usage);
     return 0;
@@ -36,6 +38,13 @@ async function main () {
   if (['add', 'set', 'members', 'remove'].includes(command) || needsLogin) {
     if (!name || (needsLogin && !login)) {
       console.error(`Usage: spaces ${command} <name>${needsLogin ? ' <login>' : ''}`);
+      return 2;
+    }
+  } else if (command === 'move') {
+    if (!name || !target || !/^\d+$/.test(name) || !(
+      target === DEFAULT_SPACE || SPACE_NAME_PATTERN.test(target)
+    )) {
+      console.error('Usage: spaces move <mailingId> <space>');
       return 2;
     }
   } else if (command !== 'list') {
@@ -101,6 +110,25 @@ async function main () {
         }
         console.log(`"${login}" removed from "${name}"`);
         return 0;
+      case 'move': {
+        const mailings = new RedisMailingRepository(pool, config.server.redis.prefixes);
+        if (target !== DEFAULT_SPACE && !await spaces.get(target)) {
+          console.error(`No space "${target}"`);
+          return 1;
+        }
+        let previous = DEFAULT_SPACE;
+        // Через транзакцию рассылки: BaseRedisRepository.update() для рассылок не годится
+        const moved = await mailings.updateInTransaction(Number(name), mailing => {
+          previous = mailing.space || DEFAULT_SPACE;
+          mailing.space = target;
+        });
+        if (!moved) {
+          console.error(`No mailing #${name}`);
+          return 1;
+        }
+        console.log(`Mailing #${name} moved: ${previous} → ${target}`);
+        return 0;
+      }
       case 'remove': {
         const mailings = new RedisMailingRepository(pool, config.server.redis.prefixes);
         const count = (await mailings.getAll()).filter(mailing => mailing.space === name).length;
