@@ -28,7 +28,14 @@ export function previewEmail (executor: MailingExecutor) {
       return;
     }
 
-    res.json(success({ ...formatPreview(message, receiver), receiverFound: Boolean(found) }));
+    res.json(success({
+      ...formatPreview(message, receiver),
+      // Вложения — списком, без содержимого
+      attachments: mailing.attachments.map(({ contentType, filename, size }) => ({
+        contentType, filename, size
+      })),
+      receiverFound: Boolean(found)
+    }));
   };
   return [jsonSchemaMiddleware(requestBodyJsonSchema), catchPromise(handler)];
 }

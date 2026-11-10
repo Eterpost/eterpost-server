@@ -15,6 +15,11 @@ import { Receiver } from '../src/Receiver';
 import { SpaceRepository } from '../src/SpaceRepository';
 import { once } from 'node:events';
 import { trackClick, trackOpen } from '../src/controllers/tracking';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { AttachmentStore } from '../src/AttachmentStore';
+import { MissingAttachmentError } from '../src/MailingExecutor';
 
 
 const testHtml = '<h1>Test</h1>';
@@ -704,6 +709,89 @@ describe('MailingExecutor', { skip: redisSkip }, () => {
         const stats = await addressStatsRepository.getByEmail('a@example.com');
         assert.equal(stats?.lastStatus, undefined);
       });
+    });
+  });
+
+  describe('attachments', () => {
+    let dir: string;
+    let store: AttachmentStore;
+    let attachmentExecutor: MailingExecutor;
+
+    before(async () => {
+      dir = await mkdtemp(join(tmpdir(), 'att-exec-'));
+      store = new AttachmentStore(dir);
+      await store.init();
+      attachmentExecutor = new MailingExecutor(
+        mailer, mailingRepository, addressStatsRepository, spaceRepository, logger, fakeConfig,
+        store
+      );
+    });
+
+    after(async () => {
+      await rm(dir, { force: true, recursive: true });
+    });
+
+    afterEach(() => {
+      mailer.sendEmail.mock.resetCalls();
+    });
+
+    async function createWithPrice () {
+      const created = await mailingRepository.create({
+        html: testHtml, name: testName, subject: testSubject, undeliveredCount: 0
+      }, [{ email: 'reader@example.com' }]);
+      const id = await store.save(created.id, Buffer.from('%PDF'));
+      const info = { contentType: 'application/pdf', filename: 'Прайс.pdf', id, size: 4 };
+      return (await mailingRepository.updateInTransaction(created.id, m => {
+        m.attachments.push(info);
+      }))!;
+    }
+
+    it('should attach the files to every letter of the mailing', async () => {
+      const priced = await createWithPrice();
+      const finished = once(attachmentExecutor, 'finished');
+      await attachmentExecutor.startExecution(priced);
+      await finished;
+      const [email] = mailer.sendEmail.mock.calls[0].arguments as unknown as [Email];
+      assert.deepEqual(email.attachments, [{
+        contentType: 'application/pdf', filename: 'Прайс.pdf',
+        path: store.path(priced.id, priced.attachments[0].id)
+      }]);
+    });
+
+    it('should attach the files to a test letter', async () => {
+      const priced = await createWithPrice();
+      await attachmentExecutor.sendTestEmail(priced, 'me@example.com');
+      const [email] = mailer.sendEmail.mock.calls[0].arguments as unknown as [Email];
+      assert.equal(email.attachments?.[0].filename, 'Прайс.pdf');
+    });
+
+    it('should not send a test letter without a missing file', async () => {
+      const priced = await createWithPrice();
+      await store.remove(priced.id, priced.attachments[0].id);
+      await assert.rejects(
+        attachmentExecutor.sendTestEmail(priced, 'me@example.com'),
+        (error: unknown) => error instanceof MissingAttachmentError &&
+          error.filename === 'Прайс.pdf'
+      );
+      assert.equal(mailer.sendEmail.mock.callCount(), 0);
+    });
+
+    it('should not start a mailing without a missing file', async () => {
+      const priced = await createWithPrice();
+      await store.remove(priced.id, priced.attachments[0].id);
+      const errorListener = mock.fn();
+      attachmentExecutor.on('error', errorListener);
+      try {
+        await attachmentExecutor.startExecution(priced);
+        await sleep(100);
+        assert.equal(mailer.sendEmail.mock.callCount(), 0);
+        assert.equal(errorListener.mock.callCount(), 1);
+        const [id, error] = errorListener.mock.calls[0].arguments as unknown as [number, Error];
+        assert.equal(id, priced.id);
+        assert.ok(error instanceof MissingAttachmentError);
+      } finally {
+        attachmentExecutor.off('error', errorListener);
+      }
     });
   });
 });

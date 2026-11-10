@@ -5,13 +5,21 @@ import { catchPromise } from '../utils/catchPromise';
 import { Logger } from '../Logger';
 import { MailingExecutor } from '../MailingExecutor';
 import { getLoadedMailing } from '../middleware/loadMailing';
+import { sendMissingAttachment } from './attachments';
 
 
 export function sendTestEmail (executor: MailingExecutor, logger: Logger) {
   const handler = async function (req: Request, res: Response) {
     const mailing = getLoadedMailing(res);
 
-    await executor.sendTestEmail(mailing, req.body.email);
+    try {
+      await executor.sendTestEmail(mailing, req.body.email);
+    } catch (err) {
+      if (sendMissingAttachment(res, err)) {
+        return;
+      }
+      throw err;
+    }
 
     res.json(success());
   };

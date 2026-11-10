@@ -18,6 +18,7 @@ import { MailingState } from '../src/MailingState';
 import { AttachmentStore } from '../src/AttachmentStore';
 import { createExpressServer } from '../src/createExpressServer';
 import { setupRoutes } from '../src/routes';
+import { MailingExecutor } from '../src/MailingExecutor';
 
 
 const mailingBody = {
@@ -48,8 +49,13 @@ describe('mailing attachments API', { skip: redisSkip }, () => {
     };
     const app = createExpressServer(config);
     const stub: any = {};
+    const mailer = { sendEmail: async () => {} };
+    const executor = new MailingExecutor(
+      mailer, mailingRepository, statsRepository, new SpaceRepository(pool), createFakeLogger(),
+      { server: { mail: { from: 'no-reply@example.com' } } }, withStore ? store : undefined
+    );
     setupRoutes(
-      config, app, mailingRepository, stub, createFakeLogger(), stub,
+      config, app, mailingRepository, stub, createFakeLogger(), executor,
       new FailureCounter(mailingRepository, statsRepository),
       new RedisSubscriptionRequestRepository(pool, 60), stub, stub,
       new ReceiverListFilter(statsRepository), stub, apiKeyRepository, statsRepository,
@@ -298,6 +304,35 @@ describe('mailing attachments API', { skip: redisSkip }, () => {
       const result = await request(salesKey, 'PUT', `/mailings/${id}`, { attachments: [] });
       assert.equal(result.status, 400);
       assert.equal((await mailingRepository.getById(id))!.attachments.length, 1);
+    });
+  });
+  describe('letters', () => {
+    it('should list attachments in the preview', async () => {
+      const id = await create();
+      await upload(salesKey, id, 'p.pdf', Buffer.from('%PDF'));
+      const preview = await request(salesKey, 'POST', `/mailings/${id}/preview`, {
+        email: 'ivan@example.com'
+      });
+      assert.equal(preview.status, 200, JSON.stringify(preview.body));
+      assert.deepEqual(preview.body.data.attachments, [
+        { contentType: 'application/pdf', filename: 'p.pdf', size: 4 }
+      ]);
+    });
+
+    it('should refuse a test letter and a start without an attachment file', async () => {
+      const id = await create();
+      const { body } = await upload(salesKey, id, 'p.pdf', Buffer.from('%PDF'));
+      await store.remove(id, body.data.id);
+      const test = await request(salesKey, 'POST', `/mailings/${id}/send-test-email`, {
+        email: 'me@example.com'
+      });
+      assert.equal(test.status, 409);
+      assert.equal(test.body.code, 'MISSING_ATTACHMENT');
+      assert.match(test.body.error, /p\.pdf/);
+      const start = await request(salesKey, 'PUT', `/mailings/${id}`, { state: 'RUNNING' });
+      assert.equal(start.status, 409);
+      assert.equal(start.body.code, 'MISSING_ATTACHMENT');
+      assert.equal((await mailingRepository.getById(id))!.state, MailingState.NEW);
     });
   });
 });

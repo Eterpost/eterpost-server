@@ -14,6 +14,7 @@ import { ComposedMessage, composeMessage, htmlToText } from './composeMessage';
 import { applyTracking, createTrackingToken } from './tracking';
 import { createSpamDetector } from './spamDetection';
 import { SpaceRepository } from './SpaceRepository';
+import { AttachmentStore } from './AttachmentStore';
 
 
 // Паузы перед повторами при временной ошибке SMTP (секунды), если не заданы
@@ -24,6 +25,15 @@ const DEFAULT_SEND_RETRY_DELAYS = [10, 60, 300];
 // проверить адрес (reject_unverified_recipient) или снять greylisting
 const DEFAULT_RCPT_RETRY_DELAYS = [60, 300, 900, 3600];
 
+/**
+ * Файл вложения рассылки пропал с диска: письмо без него не отправляется
+ */
+export class MissingAttachmentError extends Error {
+  constructor (public filename: string) {
+    super(`Attachment file is missing: ${filename}`);
+    this.name = 'MissingAttachmentError';
+  }
+}
 
 export class MailingExecutor extends EventEmitter {
   private executionStates: Map<number, MailingExecutionState> = new Map();
@@ -35,7 +45,8 @@ export class MailingExecutor extends EventEmitter {
     private addressStatsRepository: AddressStatsRepository,
     private spaceRepository: SpaceRepository,
     private logger: Logger,
-    private config: any
+    private config: any,
+    private attachmentStore?: AttachmentStore
   ) {
     super();
     this.isSpam = createSpamDetector(config.server.spamPatterns);
@@ -68,7 +79,19 @@ export class MailingExecutor extends EventEmitter {
     return composeMessage(email, this.config.server.mail.from);
   }
 
+  /**
+   * Все ли файлы вложений рассылки на месте; нет — MissingAttachmentError
+   */
+  async checkAttachments (mailing: Mailing): Promise<void> {
+    for (const attachment of mailing.attachments) {
+      if (!await this.attachmentStore?.exists(mailing.id, attachment.id)) {
+        throw new MissingAttachmentError(attachment.filename);
+      }
+    }
+  }
+
   async sendTestEmail (mailing: Mailing, address: string) {
+    await this.checkAttachments(mailing);
     const email = await this.createEmail(mailing, new Receiver(address));
     await this.mailer.sendEmail(email);
     this.logger.verbose(`#${mailing.id}: sent test email to ${address}`);
@@ -89,6 +112,15 @@ export class MailingExecutor extends EventEmitter {
     const { value: receiver } = await this.getActualReceiverStream(mailing).next();
     if (!receiver && !(await this.mailingRepository.getRetries(mailing.id)).length) {
       this.logger.debug(`#${mailing.id}: no receivers to send emails to, ignoring start request`);
+      return;
+    }
+
+    // Без файла вложения рассылка не уходит: ошибка переводит её в ERROR
+    try {
+      await this.checkAttachments(mailing);
+    } catch (error) {
+      this.logger.error(`#${mailing.id}: ${(error as Error).message}`);
+      this.emit(MailingExecutorEvents.MAILING_ERROR, mailing.id, error);
       return;
     }
 
@@ -156,6 +188,11 @@ export class MailingExecutor extends EventEmitter {
     // подставит server.mail.from
     const from = mailing.from || (await this.spaceRepository.get(mailing.space))?.from;
     return new Email({
+      attachments: mailing.attachments.length ? mailing.attachments.map(attachment => ({
+        contentType: attachment.contentType,
+        filename: attachment.filename,
+        path: this.attachmentStore!.path(mailing.id, attachment.id)
+      })) : undefined,
       from,
       headers,
       html: html,

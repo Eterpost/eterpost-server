@@ -5,6 +5,9 @@ import { SmtpMailSender } from '../src/SmtpMailSender';
 import { Email } from '../src/Email';
 import { Receiver } from '../src/Receiver';
 import { composeMessage } from '../src/composeMessage';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 
 const serviceAddress = 'no-reply@etersoft.ru';
@@ -130,5 +133,25 @@ describe('SmtpMailSender', () => {
     assert.equal(options.port, 465);
     assert.equal(options.secure, true);
     (sender as any).transport.close();
+  });
+
+  it('should send attachments read from files', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'att-smtp-'));
+    try {
+      const path = join(dir, 'file');
+      await writeFile(path, '%PDF-1.4 price');
+      const { message } = await send(new Email({
+        attachments: [{ contentType: 'application/pdf', filename: 'Прайс ноябрь.pdf', path }],
+        html: '<p>Hello</p>',
+        receivers: [new Receiver('partner@example.com')],
+        subject: 'Price'
+      }));
+      assert.match(message, /^Content-Type: application\/pdf;/m);
+      assert.match(message, /^Content-Disposition: attachment;/m);
+      assert.match(message, /filename\*0\*=utf-8''%D0%9F|filename="=\?UTF-8/i);
+      assert.ok(message.includes(Buffer.from('%PDF-1.4 price').toString('base64')));
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
   });
 });

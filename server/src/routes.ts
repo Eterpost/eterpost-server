@@ -40,8 +40,8 @@ import { loadMailing } from './middleware/loadMailing';
 import { AttachmentStore } from './AttachmentStore';
 import { getAttachmentsConfig } from './attachments';
 import {
-  deleteAttachment, downloadAttachment, rawAttachmentBody, requireAttachmentStore,
-  uploadAttachment
+  checkAttachmentsBeforeStart, deleteAttachment, downloadAttachment, rawAttachmentBody,
+  requireAttachmentStore, uploadAttachment
 } from './controllers/attachments';
 
 
@@ -71,7 +71,7 @@ export function setupRoutes (
   app.post('/mailings/create-retry', createRetryMailing(
     config, repository, logger, failureCounter, attachmentStore
   ));
-  app.put('/mailings/:id', mailing, updateMailing(
+  app.put('/mailings/:id', mailing, checkAttachmentsBeforeStart(executor), updateMailing(
     repository, stateManager, logger, receiverListFilter
   ));
   app.get('/mailings/:id/receivers', mailing, getReceivers(repository));

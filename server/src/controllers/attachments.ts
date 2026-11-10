@@ -10,6 +10,7 @@ import { catchPromise } from '../utils/catchPromise';
 import { error, success } from '../utils/response';
 import { Logger } from '../Logger';
 import { Mailing } from '../Mailing';
+import { MailingExecutor, MissingAttachmentError } from '../MailingExecutor';
 
 
 type Refusal = 'running' | 'size' | 'missing';
@@ -212,4 +213,41 @@ export async function attachFiles (
     await store.removeAll(mailing.id);
     throw err;
   }
+}
+
+/**
+ * Пропавший файл вложения — 409 с его именем; другие ошибки — дальше
+ */
+export function sendMissingAttachment (res: Response, err: unknown): boolean {
+  if (err instanceof MissingAttachmentError) {
+    res.status(409).json(error(err.message, 'MISSING_ATTACHMENT'));
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Перед запуском рассылки (PUT со state RUNNING) проверяет, что файлы
+ * вложений на месте: иначе рассылка ушла бы в ERROR, а не ответила ошибкой
+ */
+export function checkAttachmentsBeforeStart (executor: MailingExecutor): RequestHandler {
+  return async function (req: Request, res: Response, next: NextFunction) {
+    const mailing = getLoadedMailing(res);
+    const state = req.body?.state;
+    const starting = state === MailingState.RUNNING ||
+      (typeof state === 'string' && state.toUpperCase() === 'RUNNING');
+    if (!starting || mailing.state === MailingState.RUNNING) {
+      next();
+      return;
+    }
+    try {
+      await executor.checkAttachments(mailing);
+    } catch (err) {
+      if (!sendMissingAttachment(res, err)) {
+        next(err);
+      }
+      return;
+    }
+    next();
+  };
 }
