@@ -1,8 +1,9 @@
 import { MailingRepository } from '../MailingRepository';
 import { Request, Response } from 'express';
-import { success } from '../utils/response';
+import { error, success } from '../utils/response';
 import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
 import { catchPromise } from '../utils/catchPromise';
+import { getSpaceAccess } from '../middleware/spaceAccess';
 import { Logger } from '../Logger';
 
 
@@ -12,13 +13,28 @@ import { Logger } from '../Logger';
  * не доставляются, и для запросов отписки, пришедших письмом. С listUnsubscribe: true
  * адрес исключается только из рассылок с заголовком List-Unsubscribe: письмо на
  * адрес из этого заголовка — отписка от них, а не от всех рассылок.
+ * С mailingId (номер из адреса отписки) и найденной рассылкой адрес исключается
+ * только из рассылок её пространства; без него или с несуществующей — из всех.
+ * Доступен только служебному (и старому без роли) ключу.
  * Ответ: { removed: <количество рассылок, из которых удалён адрес> }
  */
 export function unsubscribeFromAll (mailingRepository: MailingRepository, logger: Logger) {
   const handler = async function (req: Request, res: Response) {
+    const access = getSpaceAccess(res);
+    if (!access.system && !access.legacy) {
+      res.status(403).json(
+        error('Only a system key may unsubscribe from all mailings', 'FORBIDDEN')
+      );
+      return;
+    }
     const email: string = req.body.email;
+    const scope = req.body.mailingId === undefined
+      ? undefined : (await mailingRepository.getById(req.body.mailingId))?.space;
     let removed = 0;
     for (const mailing of await mailingRepository.getAll()) {
+      if (scope !== undefined && mailing.space !== scope) {
+        continue;
+      }
       if (req.body.listUnsubscribe && !mailing.listUnsubscribe) {
         continue;
       }
@@ -51,6 +67,10 @@ export const requestBodyJsonSchema = {
     },
     listUnsubscribe: {
       type: 'boolean'
+    },
+    mailingId: {
+      minimum: 1,
+      type: 'integer'
     }
   },
   required: [

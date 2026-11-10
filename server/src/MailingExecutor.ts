@@ -129,7 +129,9 @@ export class MailingExecutor extends EventEmitter {
       headers['List-Id'] = mailing.listId;
     }
     if (mailing.listUnsubscribe && this.config.server.mail.listUnsubscribe) {
-      headers['List-Unsubscribe'] = this.config.server.mail.listUnsubscribe;
+      // {id} — номер рассылки: по нему mail-sorter определяет пространство отписки
+      headers['List-Unsubscribe'] =
+        this.config.server.mail.listUnsubscribe.replaceAll('{id}', String(mailing.id));
     }
     headers.Precedence = 'bulk';
     let html = await mailing.getHtmlForReceiver(receiver);

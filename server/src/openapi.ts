@@ -200,8 +200,14 @@ export const openApiDocument = {
           'Без проверки кода. mail-sorter вызывает его для адресов с постоянными ' +
           'ошибками доставки и для запросов отписки, пришедших письмом. С ' +
           '`listUnsubscribe: true` адрес исключается только из рассылок с ' +
-          'заголовком List-Unsubscribe (см. поле `listUnsubscribe` рассылки).',
-        requestBody: body(unsubscribeFromAllBody, { email: 'bounced@example.com' }),
+          'заголовком List-Unsubscribe (см. поле `listUnsubscribe` рассылки). ' +
+          'С `mailingId` (номер из адреса отписки, подстановка `{id}` в ' +
+          '`server.mail.listUnsubscribe`) адрес исключается только из рассылок ' +
+          'пространства этой рассылки; без него или с несуществующим номером — из ' +
+          'всех пространств. Только служебный ключ, иначе 403 (FORBIDDEN).',
+        requestBody: body(unsubscribeFromAllBody, {
+          email: 'reader@example.com', listUnsubscribe: true, mailingId: 7
+        }),
         responses: {
           200: ok({
             type: 'object',
@@ -209,7 +215,8 @@ export const openApiDocument = {
               removed: { type: 'integer', description: 'Из скольких рассылок удалён адрес' }
             }
           }),
-          400: badRequest
+          400: badRequest,
+          403: failure('Ключ не служебный (FORBIDDEN)')
         }
       }
     },

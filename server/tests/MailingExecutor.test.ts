@@ -227,6 +227,18 @@ describe('MailingExecutor', { skip: redisSkip }, () => {
       assert.equal((await sentHeaders(mailing))['List-Unsubscribe'], header);
     });
 
+    it('should put the mailing number into {id} of the address', async () => {
+      fakeConfig.server.mail.listUnsubscribe = '<mailto:noreply+unsubscribe-{id}@example.com>';
+      try {
+        assert.equal(
+          (await sentHeaders(mailing))['List-Unsubscribe'],
+          `<mailto:noreply+unsubscribe-${mailing.id}@example.com>`
+        );
+      } finally {
+        fakeConfig.server.mail.listUnsubscribe = header;
+      }
+    });
+
     it('should not add the header to mailings without listUnsubscribe', async () => {
       const updated = await mailingRepository.updateInTransaction(mailing.id, m => {
         m.listUnsubscribe = false;
