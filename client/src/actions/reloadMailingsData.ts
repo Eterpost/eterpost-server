@@ -7,8 +7,16 @@ import { AppDispatch } from '../types';
 
 export function reloadMailingsData () {
   return async function (dispatch: AppDispatch, getState: () => RootState) {
-    const mailings = await getMailings();
+    const { kind, space } = getState().ui;
+    // Пока список не загружен, обновлять нечего: иначе он показался бы раньше времени
+    if (!space || !getState().mailings.loaded) {
+      return;
+    }
+    const mailings = await getMailings(kind);
     const state = getState();
+    if (state.ui.space !== space || state.ui.kind !== kind || !state.mailings.loaded) {
+      return;
+    }
     mailings.forEach(mailing => {
       if (state.mailings.byId[mailing.id]) {
         dispatch(updateMailing(mailing.id, {

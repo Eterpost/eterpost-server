@@ -34,8 +34,11 @@ export interface Mailing {
   from?: string;
   replyTo?: string;
   sentCount: number;
+  // Пространство рассылки; пробная рассылка (test) не смешивается с боевыми в списке
+  space?: string;
   state: MailingState;
   subject: string;
+  test?: boolean;
   // Отслеживание открытий и переходов; opened/clicked — сколько адресов
   tracking: boolean;
   opened?: number;
@@ -76,6 +79,7 @@ function createMailing (data: MailingCreateData, id: number, listId: string): Ma
     sentCount: 0,
     state: MailingState.NEW,
     subject: data.subject,
+    test: data.test,
     undeliveredCount: 0
   };
 }
@@ -143,6 +147,8 @@ export function mailings (state: MailingListState = initialState, action: Action
   switch (action.type) {
     case ActionTypes.SET_MAILINGS:
       return createMailingListState(action.data as Mailing[]);
+    case ActionTypes.RESET_MAILINGS:
+      return initialState;
     case ActionTypes.DELETE_MAILING:
       return deleteMailing(state, action.data);
     case ActionTypes.SELECT_MAILING:

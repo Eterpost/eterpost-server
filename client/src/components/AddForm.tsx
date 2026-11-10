@@ -3,6 +3,7 @@ import { Receiver } from '../reducers/mailings';
 import '../styles/AddForm';
 import { ReceiverList } from './ReceiverList';
 import { Editor } from './Editor';
+import { Checkbox } from './elements/Checkbox';
 import template from '../email-template.html';
 
 
@@ -16,12 +17,19 @@ export interface MailingCreateData {
   receivers: Receiver[];
   replyTo?: string;
   subject: string;
+  test?: boolean;
+}
+
+// Подсказка в пустом поле From: адрес пространства, если он задан, иначе адрес сервиса
+export function fromPlaceholder (spaceFrom?: string) {
+  return spaceFrom || 'как у сервиса';
 }
 
 export interface AddFormProps {
   containerRef?: React.Ref<HTMLDivElement>;
   onAdd: (mailing: MailingCreateData) => void;
   onClose: () => void;
+  spaceFrom?: string;
 }
 
 interface AddFormState {
@@ -31,6 +39,7 @@ interface AddFormState {
   receivers: Receiver[];
   replyTo: string;
   subject: string;
+  test: boolean;
 }
 
 export class AddForm extends React.Component<AddFormProps, AddFormState> {
@@ -44,7 +53,8 @@ export class AddForm extends React.Component<AddFormProps, AddFormState> {
       name: '',
       receivers: [],
       replyTo: '',
-      subject: ''
+      subject: '',
+      test: false
     };
   }
 
@@ -81,13 +91,18 @@ export class AddForm extends React.Component<AddFormProps, AddFormState> {
               <label className='input-name' htmlFor='add-from'>Отправитель (From)</label>
               <input className='input' id='add-from' value={this.state.from}
                      onChange={this.changeFrom}
-                     placeholder='по умолчанию — адрес сервиса' />
+                     placeholder={fromPlaceholder(this.props.spaceFrom)} />
             </div>
             <div className='form-group'>
               <label className='input-name' htmlFor='add-reply-to'>Ответы (Reply-To)</label>
               <input className='input' id='add-reply-to' value={this.state.replyTo}
                      onChange={this.changeReplyTo}
                      placeholder='по умолчанию — на адрес отправителя' />
+            </div>
+            <div className='form-group'>
+              <Checkbox value={this.state.test} onChange={this.changeTest}>
+                Пробная
+              </Checkbox>
             </div>
             <div className='form-group stretch double'>
               <span className='input-name'>Текст письма</span>
@@ -116,7 +131,8 @@ export class AddForm extends React.Component<AddFormProps, AddFormState> {
       name: this.state.name,
       receivers: this.state.receivers,
       replyTo: this.state.replyTo || undefined,
-      subject: this.state.subject
+      subject: this.state.subject,
+      test: this.state.test
     };
     this.props.onAdd(mailing);
   };
@@ -169,6 +185,12 @@ export class AddForm extends React.Component<AddFormProps, AddFormState> {
   private changeReceivers = (receivers: Receiver[]) => {
     this.setState({
       receivers
+    });
+  };
+
+  private changeTest = (test: boolean) => {
+    this.setState({
+      test
     });
   };
 

@@ -16,6 +16,10 @@ import { NotificationItem } from '../../reducers/notifications';
 import { hideNotification } from '../../actions/notify';
 import { AppDispatch } from '../../types';
 import { ActionTypes } from '../../ActionTypes';
+import { Space } from '../../api';
+import { getCurrentSpace } from '../../reducers/ui';
+import { selectSpace } from '../../actions/loadSpaces';
+import { SpaceSwitcher } from '../SpaceSwitcher';
 
 
 export interface RootViewProps {
@@ -23,9 +27,13 @@ export interface RootViewProps {
   onDismissNotification: (id: number) => void;
   onAdd: (mailing: MailingCreateData) => void;
   onHideAddForm: () => void;
+  onSelectSpace: (space: string) => void;
   onShowList: () => void;
   selectedMailing?: number;
   showAddForm: boolean;
+  space?: string;
+  spaceFrom?: string;
+  spaces?: Space[];
 }
 
 class RootView extends React.Component<RootViewProps> {
@@ -41,7 +49,9 @@ class RootView extends React.Component<RootViewProps> {
       </div>
     ) : (
       <div className='right-column no-selection'>
-        <p>Выберите рассылку в списке или добавьте новую.</p>
+        {this.props.spaces && !this.props.spaces.length ? null : (
+          <p>Выберите рассылку в списке или добавьте новую.</p>
+        )}
       </div>
     );
     const rootStyle = {
@@ -54,6 +64,8 @@ class RootView extends React.Component<RootViewProps> {
             <header className='app-brand'>
               <img src='favicon.svg' alt='' width={24} height={24} />
               Eterpost
+              <SpaceSwitcher spaces={this.props.spaces || []} current={this.props.space}
+                             onSelect={this.props.onSelectSpace} />
             </header>
             <MailingListContainer />
             <SorterStatusView />
@@ -63,7 +75,7 @@ class RootView extends React.Component<RootViewProps> {
         <Animator show={this.props.showAddForm}>
           {nodeRef => (
             <AddForm containerRef={nodeRef} onAdd={this.props.onAdd}
-                     onClose={this.props.onHideAddForm} />
+                     onClose={this.props.onHideAddForm} spaceFrom={this.props.spaceFrom} />
           )}
         </Animator>
         <Notifications notifications={this.props.notifications}
@@ -77,7 +89,10 @@ function mapStateToProps (state: RootState) {
   return {
     notifications: state.notifications,
     selectedMailing: state.mailings.selected,
-    showAddForm: state.ui.showAddForm
+    showAddForm: state.ui.showAddForm,
+    space: state.ui.space,
+    spaceFrom: getCurrentSpace(state.ui)?.from,
+    spaces: state.ui.spaces
   };
 }
 
@@ -86,6 +101,7 @@ function mapDispatchToProps (dispatch: AppDispatch) {
     onAdd: (data: MailingCreateData) => dispatch(createMailing(data)),
     onDismissNotification: (id: number) => dispatch(hideNotification(id)),
     onHideAddForm: () => dispatch(hideAddForm()),
+    onSelectSpace: (space: string) => dispatch(selectSpace(space)),
     onShowList: () => dispatch({ data: undefined, type: ActionTypes.SELECT_MAILING })
   };
 }

@@ -15,6 +15,7 @@ import { Checkbox } from './elements/Checkbox';
 import { formatDate } from '../formatDate';
 import { EmailPreview, RetryFilter } from '../api';
 import { EmailPreviewView } from './EmailPreviewView';
+import { fromPlaceholder } from './AddForm';
 
 
 const REFRESH_INTERVAL = 1000;
@@ -30,6 +31,7 @@ const editableFields = {
   receiversCount: 'Количество получателей',
   replyTo: 'Обратный адрес (Reply-To)',
   subject: 'Тема письма',
+  test: 'Пробная рассылка',
   tracking: 'Отслеживание открытий и переходов'
 };
 const keys = Object.keys(editableFields) as Array<keyof MailingEditData>;
@@ -45,6 +47,7 @@ export interface MailingEditData {
   receiversChanged: boolean;
   replyTo: string;
   subject: string;
+  test: boolean;
   tracking: boolean;
 }
 
@@ -63,6 +66,8 @@ export interface MailingDetailViewProps {
   onStart?: (mailing: Mailing) => void;
   onStop?: (mailing: Mailing) => void;
   onUpdate?: (mailing: Mailing, saveData: MailingEditData) => void;
+  // Адрес пространства рассылки: подсказка в пустом поле From
+  spaceFrom?: string;
 }
 
 interface MailingDetailViewState {
@@ -206,6 +211,10 @@ export class MailingDetailView extends React.Component<
                     onChange={this.handlers.tracking}>
             Отслеживать открытия и переходы по ссылкам
           </Checkbox>
+          <Checkbox value={Boolean(this.state.fields.test)}
+                    onChange={this.handlers.test}>
+            Пробная
+          </Checkbox>
         </div>
 
         <div className='actions'>
@@ -247,7 +256,7 @@ export class MailingDetailView extends React.Component<
           </FormGroup>
           <FormGroup inline title='Отправитель (From)' htmlFor={id('from')}>
             <TextInput id={id('from')} value={from} onChange={this.handlers.from}
-                       placeholder='по умолчанию — адрес сервиса' />
+                       placeholder={fromPlaceholder(this.props.spaceFrom)} />
           </FormGroup>
           <FormGroup inline title='Ответы (Reply-To)' htmlFor={id('reply-to')}>
             <TextInput id={id('reply-to')} value={replyTo} onChange={this.handlers.replyTo}

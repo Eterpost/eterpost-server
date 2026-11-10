@@ -17,6 +17,7 @@ import { loadReceivers } from '../../actions/loadReceivers';
 import { removeReceiver } from '../../actions/removeReceiver';
 import { AppDispatch } from '../../types';
 import { RetryFilter } from '../../api';
+import { getCurrentSpace } from '../../reducers/ui';
 
 
 function mapStateToProps (state: RootState) {
@@ -24,7 +25,8 @@ function mapStateToProps (state: RootState) {
     throw new Error('No selected mailing!');
   }
   return {
-    mailing: state.mailings.byId[state.mailings.selected]
+    mailing: state.mailings.byId[state.mailings.selected],
+    spaceFrom: getCurrentSpace(state.ui)?.from
   };
 }
 

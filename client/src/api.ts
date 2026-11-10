@@ -7,14 +7,36 @@ import { SorterStatus } from '../../server/src/RedisSorterStatusRepository';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
+const SPACE_HEADER = 'X-Eterpost-Space';
+
+// Пространство, в котором работает пользователь: уходит в каждом запросе к API
+let currentSpace: string | undefined;
+
+export function setCurrentSpace (space: string | undefined) {
+  currentSpace = space;
+}
+
+// Ошибка ответа API: code — машинный код ошибки сервера (например, SPACE_FORBIDDEN)
+export class ApiError extends Error {
+  constructor (message: string, public status: number, public code?: string) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 export async function apiRequest (
-  endpoint: string, method: HttpMethod = 'GET', queryParams?: any, data?: any
+  endpoint: string, method: HttpMethod = 'GET', queryParams?: any, data?: any,
+  withSpace = true
 ): Promise<any> {
+  const headers: { [name: string]: string } = {
+    'content-type': 'application/json'
+  };
+  if (withSpace && currentSpace) {
+    headers[SPACE_HEADER] = currentSpace;
+  }
   const requestConfig: any = {
     credentials: 'include',
-    headers: {
-      'content-type': 'application/json'
-    },
+    headers,
     method
   };
 
@@ -31,12 +53,26 @@ export async function apiRequest (
   const jsonResponse = await response.json();
 
   if (!response.ok || !jsonResponse.success) {
-    throw new Error(
-      `Endpoint ${endpoint} replied with ${response.status}: ${jsonResponse.error}`
+    const apiError = new ApiError(
+      `Endpoint ${endpoint} replied with ${response.status}: ${jsonResponse.error}`,
+      response.status, jsonResponse.code
     );
+    for (const listener of errorListeners) {
+      listener(apiError);
+    }
+    throw apiError;
   }
 
   return jsonResponse.data;
+}
+
+type ErrorListener = (error: ApiError) => void;
+
+const errorListeners: ErrorListener[] = [];
+
+// Слушатель ошибок всех запросов: так приложение узнаёт, что доступ к пространству пропал
+export function onApiError (listener: ErrorListener) {
+  errorListeners.push(listener);
 }
 
 export interface CreateResponse {
@@ -95,8 +131,23 @@ export async function getMailingById (id: number): Promise<Mailing> {
   return mailing;
 }
 
-export function getMailings (): Promise<Mailing[]> {
-  return apiRequest('/mailings');
+export type MailingKind = 'live' | 'test' | 'all';
+
+export const MAILING_KINDS: MailingKind[] = ['live', 'test', 'all'];
+
+export function getMailings (kind: MailingKind): Promise<Mailing[]> {
+  return apiRequest('/mailings', 'GET', { kind });
+}
+
+export interface Space {
+  from?: string;
+  name: string;
+  title?: string;
+}
+
+// Без X-Eterpost-Space: с ним сервер вернул бы только текущее пространство
+export function getSpaces (): Promise<Space[]> {
+  return apiRequest('/spaces', 'GET', null, undefined, false);
 }
 
 export type SorterStatusView = SorterStatus & { stale: boolean };
