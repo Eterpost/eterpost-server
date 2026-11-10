@@ -3,6 +3,22 @@
 All notable changes to eterpost-server. Versions follow [Semantic Versioning](https://semver.org/);
 before 1.0 a minor version brings new features and a patch version brings fixes.
 
+## Unreleased
+
+### Attachments
+- Files can be attached to a mailing and go to every receiver as attachments of the
+  letter, the test letter too (bug 20027).
+- API: `POST/GET/DELETE /mailings/:id/attachments[/:attachmentId]`; `attachments`
+  (base64) in `POST /mailings`; `attachments` and `attachmentsMaxSize` in a mailing;
+  the preview lists attachments.
+- Copies and retry mailings get copies of the files; deleting a mailing deletes them.
+- Files are kept in `server.attachments.dir`; `server.attachments.maxSize` limits the
+  total size of a letter (10 MB by default).
+- The web client has an «Вложения» block in the mailing view.
+- deploy: `StateDirectory=eterfund-mail` in `mail-server.service` and
+  `server.attachments.dir` in the example config; the Docker image keeps files in
+  `/app/data`.
+
 ## 0.2.0 — 2026-11-10
 
 The first tagged release of Eterpost (Почтарь) under the Eterpost organization.

@@ -342,11 +342,41 @@ mail-server, раздел «Mailing spaces»). Обновление не лом�
 `server.mail.listUnsubscribe` и перезапустите службу: старая версия не
 подставляет номер и отправила бы в письмо буквальное `{id}`.
 
+### Переход на вложения рассылок
+
+Файлы вложений лежат в `/var/lib/eterfund-mail/attachments`: каталог создаёт
+systemd (`StateDirectory=eterfund-mail` в юните mail-server), иначе при
+`ProtectSystem=strict` писать на диск нельзя. `update.sh` юниты не меняет,
+поэтому до обновления mail-server:
+
+1. Обновить юнит:
+
+   ```
+   install -m 644 deploy/lxc/systemd/mail-server.service /etc/systemd/system/
+   systemctl daemon-reload
+   ```
+
+2. Добавить в `/etc/eterfund-mail/mail-server.json` (сохранив копию
+   `mail-server.json.bak-<дата>`):
+
+   ```
+   "attachments": { "dir": "/var/lib/eterfund-mail/attachments" }
+   ```
+
+   в раздел `server`. Без него сервер возьмёт `data/attachments` в каталоге
+   релиза, недоступном для записи: вложения будут выключены (503), в журнале —
+   `Attachment directory ... is not writable`.
+3. Обновить mail-server (`update.sh`).
+
+Размер загрузки ограничивает и nginx: `client_max_body_size` в `location /api/`
+(в примере — 50m) должен быть не меньше `server.attachments.maxSize`.
+
 ## 6. Эксплуатация
 
 - Журналы: `journalctl -u mail-server`, `-u subscription-facade`, `-u mail-sorter`.
-- Резервное копирование: все данные рассылок — в Redis, `/var/lib/redis/`
-  (AOF и RDB); плюс `/etc/eterfund-mail/`.
+- Резервное копирование: данные рассылок — в Redis, `/var/lib/redis/`
+  (AOF и RDB), файлы вложений — в `/var/lib/eterfund-mail/attachments`; плюс
+  `/etc/eterfund-mail/`.
 - Расписание mail-sorter: `systemctl edit mail-sorter.timer` (`OnCalendar=`).
 
 ## 7. Безопасность

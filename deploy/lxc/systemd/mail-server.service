@@ -19,6 +19,8 @@ RestartSec=5
 NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=strict
+# /var/lib/eterfund-mail: файлы вложений рассылок (server.attachments.dir)
+StateDirectory=eterfund-mail
 ProtectHome=yes
 
 [Install]

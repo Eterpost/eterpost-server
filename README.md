@@ -175,6 +175,10 @@ comments below are for explanation only):
       "subject": "Подписка на рассылку",  // subject of the confirmation letter
       "replyTo": "support@example.com" // optional
     },
+    "attachments": {                   // mailing attachments, see «Attachments»
+      "dir": "/var/lib/eterfund-mail/attachments",  // file directory; data/attachments in the working directory by default
+      "maxSize": 10485760              // the largest total size of attachments of a letter, bytes (10 MB)
+    },
     "tracking": {                      // optional: tracking of opens and clicks
       "url": "https://subscribe.example.com"  // public address of subscription-facade serving /t/...
     }
@@ -284,6 +288,37 @@ changes in the editor are not included.
 Other programs (admin panels and so on) should not render the letter with their
 own copy of Handlebars: the service builds the plain text version and headers
 itself, and a copy may differ from it — use the preview to show the letter.
+
+### Attachments
+
+Files (a price list in PDF, for example) can be attached to a mailing: every
+receiver gets them as ordinary attachments of the letter, the test letter too.
+The mailing view has an «Вложения» block (add, download, delete); in the API:
+
+- `POST /mailings/:id/attachments?filename=<name>` — the request body is the file;
+  the type comes from Content-Type, or from the file extension for
+  `application/octet-stream`. The 201 answer is `{id, filename, contentType, size}`;
+- `GET /mailings/:id/attachments/:attachmentId` — download the file;
+- `DELETE /mailings/:id/attachments/:attachmentId` — delete it;
+- `POST /mailings` with `attachments: [{filename, contentType?, content}]`
+  (`content` in base64) creates a mailing with attachments at once;
+- `GET /mailings/:id` returns `attachments` and `attachmentsMaxSize`; a preview
+  lists attachments without their content.
+
+A copy of a mailing and a retry of failed receivers get copies of the files;
+deleting a mailing deletes its files. The total size of attachments of a letter is
+limited by `server.attachments.maxSize` (10 MB by default; base64 makes a letter
+about a third larger) — over it the answer is 413 (`ATTACHMENTS_TOO_LARGE`).
+Attachments of a running mailing cannot be changed (409, `MAILING_RUNNING`).
+
+Files are kept on disk in `server.attachments.dir` (`<dir>/<mailing id>/<id>`),
+Redis keeps only their descriptions; back the directory up together with Redis.
+If the directory cannot be created, the server logs an error and the attachment
+routes answer 503 (`ATTACHMENTS_UNAVAILABLE`); mailings without attachments keep
+working. If an attachment file disappears from disk, neither the mailing nor a test
+letter goes out without it: a start and a test letter answer 409
+(`MISSING_ATTACHMENT`) with the file name, and a mailing resumed after a restart
+goes to ERROR.
 
 ### Mailing results
 

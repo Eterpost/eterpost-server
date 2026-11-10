@@ -8,6 +8,9 @@
     "host": "127.0.0.1",
     "port": 8000,
     "logLevel": "info",
+    "attachments": {
+      "dir": "/var/lib/eterfund-mail/attachments"
+    },
     "auth": {
       "required": false
     },
