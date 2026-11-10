@@ -9,9 +9,14 @@ import { getLoadedMailing } from '../middleware/loadMailing';
 import { catchPromise } from '../utils/catchPromise';
 import { error, success } from '../utils/response';
 import { Logger } from '../Logger';
+import { Mailing } from '../Mailing';
 
 
 type Refusal = 'running' | 'size' | 'missing';
+
+export interface AttachmentUpload extends AttachmentInfo {
+  content: Buffer;
+}
 
 /**
  * Без хранилища (каталог не создан или недоступен) маршруты вложений
@@ -183,4 +188,28 @@ function sendRefusal (res: Response, refusal: Refusal, maxSize: number) {
 
 function sendNotFound (res: Response) {
   res.status(404).json(error('Attachment not found', 'NOT_FOUND'));
+}
+
+/**
+ * Сохраняет файлы вложений новой рассылки и их описания. Если это не удалось,
+ * рассылка удаляется: без вложений она ушла бы не тем письмом
+ */
+export async function attachFiles (
+  repository: MailingRepository, store: AttachmentStore, mailing: Mailing,
+  uploads: AttachmentUpload[], sourceMailingId: number, sourceAttachments: AttachmentInfo[]
+) {
+  try {
+    const attachments = sourceAttachments.length ?
+      await store.copy(sourceMailingId, mailing.id, sourceAttachments) : [];
+    for (const { content, ...info } of uploads) {
+      attachments.push({ ...info, id: await store.save(mailing.id, content) });
+    }
+    await repository.updateInTransaction(mailing.id, mailingToUpdate => {
+      mailingToUpdate.attachments = attachments;
+    });
+  } catch (err) {
+    await repository.remove(mailing);
+    await store.removeAll(mailing.id);
+    throw err;
+  }
 }

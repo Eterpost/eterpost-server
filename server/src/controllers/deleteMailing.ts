@@ -5,9 +5,12 @@ import { catchPromise } from '../utils/catchPromise';
 import { MailingState } from '../MailingState';
 import { getLoadedMailing } from '../middleware/loadMailing';
 import { Logger } from '../Logger';
+import { AttachmentStore } from '../AttachmentStore';
 
 
-export function deleteMailing (mailingRepository: MailingRepository, logger: Logger) {
+export function deleteMailing (
+  mailingRepository: MailingRepository, logger: Logger, attachmentStore?: AttachmentStore
+) {
   return catchPromise(async function (req: Request, res: Response) {
     const mailing = getLoadedMailing(res);
 
@@ -17,6 +20,9 @@ export function deleteMailing (mailingRepository: MailingRepository, logger: Log
     }
 
     await mailingRepository.remove(mailing);
+    if (mailing.attachments.length) {
+      await attachmentStore?.removeAll(mailing.id);
+    }
     logger.info(`Deleted mailing #${mailing.id}`);
     res.json(success());
   });

@@ -64,10 +64,12 @@ export function setupRoutes (
   app.get('/spaces', getSpaces(spaceRepository));
   app.get('/mailings', getMailings(repository));
   app.get('/mailings/:id', mailing, getMailing(repository, config));
-  app.post('/mailings', addMailing(config, repository, logger, receiverListFilter));
+  app.post('/mailings', addMailing(
+    config, repository, logger, receiverListFilter, attachmentStore
+  ));
   app.post('/mailings/unsubscribe', unsubscribeFromAll(repository, logger));
   app.post('/mailings/create-retry', createRetryMailing(
-    config, repository, logger, failureCounter
+    config, repository, logger, failureCounter, attachmentStore
   ));
   app.put('/mailings/:id', mailing, updateMailing(
     repository, stateManager, logger, receiverListFilter
@@ -81,7 +83,7 @@ export function setupRoutes (
   app.post('/mailings/:id/restore-excluded', mailing, restoreExcluded(
     repository, addressStatsRepository, logger
   ));
-  app.delete('/mailings/:id', mailing, deleteMailing(repository, logger));
+  app.delete('/mailings/:id', mailing, deleteMailing(repository, logger, attachmentStore));
   // Без хранилища маршруты вложений отвечают 503 (requireAttachmentStore)
   const { maxSize } = getAttachmentsConfig(config);
   const store = requireAttachmentStore(attachmentStore);

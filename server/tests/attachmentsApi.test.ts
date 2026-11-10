@@ -218,4 +218,86 @@ describe('mailing attachments API', { skip: redisSkip }, () => {
     assert.equal(uploaded.status, 503);
     assert.equal(uploaded.body.code, 'ATTACHMENTS_UNAVAILABLE');
   });
+  describe('with mailings', () => {
+    const pdf = Buffer.from('%PDF-1.4 price list');
+
+    async function download (id: number, attachmentId: string) {
+      const response = await fetch(`${base}/mailings/${id}/attachments/${attachmentId}`, {
+        headers: { Authorization: `Bearer ${salesKey}` }
+      });
+      assert.equal(response.status, 200);
+      return Buffer.from(await response.arrayBuffer());
+    }
+
+    it('should create a mailing with attachments in one request', async () => {
+      const id = await create(salesKey, {
+        ...mailingBody, attachments: [{ content: pdf.toString('base64'), filename: 'p.pdf' }]
+      });
+      const [info] = (await mailingRepository.getById(id))!.attachments;
+      assert.equal(info.filename, 'p.pdf');
+      assert.equal(info.contentType, 'application/pdf');
+      assert.equal(info.size, pdf.length);
+      assert.deepEqual(await download(id, info.id), pdf);
+    });
+
+    it('should refuse to create a mailing with too large attachments', async () => {
+      const content = Buffer.alloc(MAX_SIZE + 1).toString('base64');
+      const result = await request(salesKey, 'POST', '/mailings', {
+        ...mailingBody, attachments: [{ content, filename: 'big.pdf' }]
+      });
+      assert.equal(result.status, 413);
+      assert.deepEqual(await mailingRepository.getAll(), []);
+    });
+
+    it('should refuse attachments without a name or content', async () => {
+      const invalid = [
+        { content: 'eA==' }, { filename: 'a.pdf' }, { content: 'eA==', filename: ' ' }
+      ];
+      for (const attachment of invalid) {
+        const result = await request(salesKey, 'POST', '/mailings', {
+          ...mailingBody, attachments: [attachment]
+        });
+        assert.equal(result.status, 400, JSON.stringify(attachment));
+      }
+      assert.deepEqual(await mailingRepository.getAll(), []);
+    });
+
+    it('should copy attachments to a copy of the mailing', async () => {
+      const id = await create();
+      const { body } = await upload(salesKey, id, 'p.pdf', pdf);
+      const copyId = await create(salesKey, { sourceId: id });
+      const [copied] = (await mailingRepository.getById(copyId))!.attachments;
+      assert.notEqual(copied.id, body.data.id);
+      assert.equal(copied.filename, 'p.pdf');
+      assert.deepEqual(await download(copyId, copied.id), pdf);
+    });
+
+    it('should copy attachments to a retry mailing', async () => {
+      const id = await create();
+      await upload(salesKey, id, 'p.pdf', pdf);
+      await mailingRepository.setFailure(id, {
+        date: new Date().toISOString(), email: 'ivan@example.com', spam: false, status: '5.1.1'
+      });
+      const retry = await request(salesKey, 'POST', '/mailings/create-retry', { sourceId: id });
+      assert.equal(retry.status, 200, JSON.stringify(retry.body));
+      const [copied] = (await mailingRepository.getById(retry.body.data.id))!.attachments;
+      assert.equal(copied.filename, 'p.pdf');
+      assert.deepEqual(await download(retry.body.data.id, copied.id), pdf);
+    });
+
+    it('should remove attachment files with the mailing', async () => {
+      const id = await create();
+      await upload(salesKey, id, 'p.pdf', pdf);
+      assert.equal((await request(salesKey, 'DELETE', `/mailings/${id}`)).status, 200);
+      assert.equal((await readdir(dir)).includes(String(id)), false);
+    });
+
+    it('should not change attachments with an update of the mailing', async () => {
+      const id = await create();
+      await upload(salesKey, id, 'p.pdf', pdf);
+      const result = await request(salesKey, 'PUT', `/mailings/${id}`, { attachments: [] });
+      assert.equal(result.status, 400);
+      assert.equal((await mailingRepository.getById(id))!.attachments.length, 1);
+    });
+  });
 });

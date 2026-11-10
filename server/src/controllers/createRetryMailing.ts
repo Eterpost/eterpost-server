@@ -8,6 +8,8 @@ import { getListId } from '../getListId';
 import { Logger } from '../Logger';
 import { FailedReceiver, FailureCounter } from '../FailureCounter';
 import { canSee, getSpaceAccess } from '../middleware/spaceAccess';
+import { AttachmentStore } from '../AttachmentStore';
+import { attachFiles } from './attachments';
 
 
 /**
@@ -39,7 +41,7 @@ export function matchesRetryFilter (receiver: FailedReceiver, filter: RetryFilte
 
 export function createRetryMailing (
   config: any, mailingRepository: MailingRepository, logger: Logger,
-  failureCounter: FailureCounter
+  failureCounter: FailureCounter, attachmentStore?: AttachmentStore
 ) {
   const handler = async function (req: Request, res: Response) {
     const sourceId = req.body.sourceId;
@@ -55,6 +57,10 @@ export function createRetryMailing (
     // dryRun — только посчитать, сколько адресов попадёт в повтор
     if (req.body.dryRun) {
       res.json(success({ count: sourceFailedReceivers.length }));
+      return;
+    }
+    if (sourceMailing.attachments.length && !attachmentStore?.available) {
+      res.status(503).json(error('Attachments are unavailable', 'ATTACHMENTS_UNAVAILABLE'));
       return;
     }
 
@@ -92,6 +98,13 @@ export function createRetryMailing (
       mailingToUpdate.listId = listId;
     });
     logger.verbose(`#${mailing.id}: assigned List-Id = ${listId}`);
+
+    if (sourceMailing.attachments.length) {
+      await attachFiles(
+        mailingRepository, attachmentStore!, mailing, [], sourceMailing.id,
+        sourceMailing.attachments
+      );
+    }
 
     res.json(success({
       id: mailing.id, listId
