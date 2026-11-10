@@ -512,18 +512,22 @@ node server/dist/src/apiKeysCli.js revoke site-example
 адреса и передаёт его как `mailingId` в `POST /mailings/unsubscribe`, и адрес
 исключается только из рассылок этого пространства. Без `{id}` (и в старых
 письмах) адрес исключается из всех пространств, как раньше.
-`POST /mailings/unsubscribe` доступен только системным и legacy-ключам.
+`POST /mailings/unsubscribe` доступен только системным и legacy-ключам. Сначала обновите mail-sorter и
+только потом добавляйте `{id}`: старый mail-sorter распознаёт лишь точное
+`+unsubscribe` и молча игнорирует письма с номером (порядок —
+[deploy/lxc/README.md](deploy/lxc/README.md#переход-на-пространства-рассылок)).
 
 Пространства создаются на сервере, как и ключи:
 
 ```
+node server/dist/src/spacesCli.js add default --title "Общее"   # сначала: в нём существующие рассылки
 node server/dist/src/spacesCli.js add sales --title "Продажи" --from "Sales <sales@example.com>"
 node server/dist/src/spacesCli.js set sales --from "Sales <sales@example.com>"
 node server/dist/src/spacesCli.js list                      # имя, название, From, участники
 node server/dist/src/spacesCli.js members sales
 node server/dist/src/spacesCli.js add-member sales ivan
 node server/dist/src/spacesCli.js remove-member sales ivan
-node server/dist/src/spacesCli.js remove sales              # отказ, пока есть рассылки
+node server/dist/src/spacesCli.js remove sales              # отказ, пока есть рассылки; участники удаляются вместе с ним
 ```
 
 Порядок перехода работающей установки — в

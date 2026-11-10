@@ -515,18 +515,21 @@ mail-sorter takes the number from the address and passes it as `mailingId` to
 `POST /mailings/unsubscribe`, and the address is removed from the mailings of
 that space only. Without `{id}` (and in older letters) the address is removed
 from all spaces, as before. `POST /mailings/unsubscribe` is allowed only to
-system and legacy keys.
+system and legacy keys. Update mail-sorter first and add `{id}` afterwards: the
+old mail-sorter recognises only the exact `+unsubscribe` and silently ignores
+letters with a number (order: [deploy/lxc/README.md](deploy/lxc/README.md#переход-на-пространства-рассылок)).
 
 Spaces are managed on the server, like keys:
 
 ```
+node server/dist/src/spacesCli.js add default --title "Common"   # first: holds the existing mailings
 node server/dist/src/spacesCli.js add sales --title "Sales" --from "Sales <sales@example.com>"
 node server/dist/src/spacesCli.js set sales --from "Sales <sales@example.com>"
 node server/dist/src/spacesCli.js list                      # name, title, From, members
 node server/dist/src/spacesCli.js members sales
 node server/dist/src/spacesCli.js add-member sales ivan
 node server/dist/src/spacesCli.js remove-member sales ivan
-node server/dist/src/spacesCli.js remove sales              # refused while it has mailings
+node server/dist/src/spacesCli.js remove sales              # refused while it has mailings; members are deleted with it
 ```
 
 Upgrading a running installation is described in
