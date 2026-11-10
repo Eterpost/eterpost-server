@@ -51,7 +51,7 @@ export STAND_SORTER_KEY STAND_SALES_KEY STAND_NEWS_KEY
 compose up -d --wait facade client
 
 echo "=== Stage 1: mailing, subscription, incoming mail"
-compose run --rm e2e 1-mailing.test.js 1-spaces.test.js 1-attachments.test.js
+compose run --rm e2e 1-mailing.test.js 1-spaces.test.js 1-attachments.test.js 1-images.test.js
 
 echo "=== mail-sorter"
 compose run --rm mail-sorter

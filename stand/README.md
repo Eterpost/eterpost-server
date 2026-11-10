@@ -23,6 +23,10 @@ subscription-facade, ключи пространств (`--space`) для «са
 `docker compose run ...` выполните `. .generated/keys.env`. Повторный `run.sh`
 выпускает ключи заново.
 
+Сервер картинок писем (ipfs-images) собирается из `IPFS_IMAGES_SRC` (по
+умолчанию `https://github.com/Eterpost/ipfs-images.git#master`) и доступен через
+nginx веб-интерфейса: `/images/ul`, `/images/dl/...`.
+
 Можно указать и другой git-адрес или ветку, например
 `MAIL_SORTER_SRC=https://github.com/Eterpost/eterpost-sorter.git#my-branch`.
 

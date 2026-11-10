@@ -1,0 +1,19 @@
+{
+  "logging": { "transports": [{ "type": "console", "level": "verbose" }] },
+  "redis": {
+    "url": "redis://redis:6379",
+    "options": {},
+    "prefix": { "attachments": "IMAGES_" },
+    "index": { "datetime": "IMAGES.DATETIME.INDEX" }
+  },
+  "server": {
+    "port": 8002,
+    "auth": { "type": "partial", "allowedIPs": [".*"] },
+    "allowedTypes": ["image/png", "image/jpeg", "image/gif", "image/webp"],
+    "cache": 600,
+    "size": 5242880,
+    "storage": { "type": "filesystem", "options": { "basePath": "/app/data/images" } },
+    "headers": { "origin": "http://127.0.0.1:18100" }
+  },
+  "thumbnails": { "cache": false, "sizes": [64, 128] }
+}

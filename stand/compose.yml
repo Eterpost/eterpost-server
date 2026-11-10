@@ -53,6 +53,15 @@ services:
       - "127.0.0.1:${STAND_UI_PORT:-18100}:80"
     depends_on:
       mail-server: { condition: service_healthy }
+      images: { condition: service_started }
+
+  # Картинки писем (ipfs-images): через nginx клиента — /images/
+  images:
+    build: ${IPFS_IMAGES_SRC:-https://github.com/Eterpost/ipfs-images.git#master}
+    volumes:
+      - ./config/ipfs-images.json:/app/config.json:ro
+    depends_on:
+      redis: { condition: service_healthy }
 
   # Страницы подписки: http://127.0.0.1:${STAND_FACADE_PORT:-18101}/subscribe?...
   facade:
