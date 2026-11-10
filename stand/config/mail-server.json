@@ -1,9 +1,13 @@
 {
   "server": {
+    "auth": {
+      "required": true
+    },
     "logLevel": "verbose",
     "mail": {
       "from": "noreply@example.com",
-      "listIdDomain": "stand.local"
+      "listIdDomain": "stand.local",
+      "listUnsubscribe": "<mailto:noreply+unsubscribe-{id}@example.com>"
     },
     "port": 8000,
     "redis": {
@@ -14,6 +18,9 @@
     "smtp": {
       "host": "mail",
       "port": 3025
+    },
+    "subscription": {
+      "url": "http://facade:8001"
     }
   }
 }

@@ -8,24 +8,34 @@ const FACADE_URL = process.env.FACADE_URL || 'http://127.0.0.1:8001';
 const CLIENT_URL = process.env.CLIENT_URL || 'http://127.0.0.1';
 const MAIL_HOST = process.env.MAIL_HOST || '127.0.0.1';
 
+// Ключи пространств (создаются run.sh): «сайт» отдела продаж и новостей
+const SALES_KEY = process.env.STAND_SALES_KEY;
+const NEWS_KEY = process.env.STAND_NEWS_KEY;
+
 const MAILING_NAME = 'E2E рассылка';
 
-// Вызов API mail-server; возвращает поле data ответа
-async function api (path, method = 'GET', body) {
+// Запрос к API mail-server с ключом (по умолчанию — ключ пространства sales);
+// возвращает статус и разобранный JSON
+async function rawApi (path, method = 'GET', body, key = SALES_KEY) {
   const response = await fetch(MAIL_SERVER_URL + path, {
     body: body === undefined ? undefined : JSON.stringify(body),
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
     method
   });
-  const json = await response.json();
-  if (!response.ok || !json.success) {
-    throw new Error(`${method} ${path}: ${response.status} ${JSON.stringify(json)}`);
+  return { json: await response.json(), status: response.status };
+}
+
+// Вызов API mail-server; возвращает поле data ответа
+async function api (path, method = 'GET', body, key = SALES_KEY) {
+  const { json, status } = await rawApi(path, method, body, key);
+  if (status >= 400 || !json.success) {
+    throw new Error(`${method} ${path}: ${status} ${JSON.stringify(json)}`);
   }
   return json.data;
 }
 
-async function findMailing (name = MAILING_NAME) {
-  const list = await api('/mailings');
+async function findMailing (name = MAILING_NAME, key = SALES_KEY) {
+  const list = await api('/mailings', 'GET', undefined, key);
   const found = list.filter(m => m.name === name);
   return found[found.length - 1];
 }
@@ -56,6 +66,7 @@ async function readMailbox (user) {
   }
 }
 
+// to — получатель в конверте (ящик GreenMail); заголовок To берётся из raw
 function sendRaw (to, raw) {
   const transport = createTransport({ host: MAIL_HOST, port: 3025, secure: false });
   return transport.sendMail({ envelope: { from: 'mailer-daemon@example.net', to }, raw });
@@ -76,5 +87,6 @@ async function waitFor (check, { timeout = 30000, interval = 500, what = 'condit
 }
 
 module.exports = {
-  api, CLIENT_URL, FACADE_URL, findMailing, MAILING_NAME, readMailbox, sendRaw, waitFor
+  api, CLIENT_URL, FACADE_URL, findMailing, MAILING_NAME, NEWS_KEY, rawApi, readMailbox,
+  SALES_KEY, sendRaw, waitFor
 };

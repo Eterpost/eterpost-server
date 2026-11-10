@@ -3,7 +3,10 @@
   "actions": { "callHandler": true, "markAsRead": true, "delete": false },
   "database": {
     "type": "mail-server",
-    "options": { "backend": "http://mail-server:8000" }
+    "options": {
+      "apiKey": "%{STAND_SORTER_KEY}",
+      "backend": "http://mail-server:8000"
+    }
   },
   "forwardTo": "admin@example.com",
   "imapConnection": {

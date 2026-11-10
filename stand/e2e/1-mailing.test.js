@@ -3,7 +3,7 @@
 const { describe, it, before } = require('node:test');
 const assert = require('node:assert/strict');
 const {
-  api, CLIENT_URL, FACADE_URL, MAILING_NAME, readMailbox, sendRaw, waitFor
+  api, CLIENT_URL, FACADE_URL, MAILING_NAME, readMailbox, SALES_KEY, sendRaw, waitFor
 } = require('./lib');
 
 
@@ -27,8 +27,13 @@ describe('stand', function () {
 
   it('web client is served and proxies API', async function () {
     const page = await (await fetch(CLIENT_URL + '/')).text();
-    assert.match(page, /Сервис рассылок/);
-    const list = await (await fetch(CLIENT_URL + '/api/mailings')).json();
+    assert.match(page, /рассылки/);
+    // без ключа API отвечает 401 — значит, запрос дошёл до сервера
+    const anonymous = await fetch(CLIENT_URL + '/api/mailings');
+    assert.equal(anonymous.status, 401);
+    const list = await (await fetch(CLIENT_URL + '/api/mailings', {
+      headers: { Authorization: `Bearer ${SALES_KEY}` }
+    })).json();
     assert.equal(list.success, true);
   });
 
@@ -64,17 +69,17 @@ describe('stand', function () {
       const list = await readMailbox(email);
       return list.length ? list : null;
     }, { what: 'subscription confirmation' });
-    const code = /code=([0-9a-f-]{36})/.exec(confirmation.parsed.html)[1];
+    const code = /code(?:=|&#x3D;)([0-9a-f-]{36})/.exec(confirmation.parsed.html)[1];
 
     const wrong = await (await fetch(
       `${FACADE_URL}/subscribe?mailingId=${mailing.id}&email=${email}&code=wrong`
     )).text();
-    assert.match(wrong, /Не удалось добавить адрес/);
+    assert.match(wrong, /Не удалось подтвердить подписку/);
 
     const subscribed = await (await fetch(
       `${FACADE_URL}/subscribe?mailingId=${mailing.id}&email=${email}&code=${code}`
     )).text();
-    assert.match(subscribed, /Спасибо!/);
+    assert.match(subscribed, /Подписка подтверждена/);
     let receivers = await api(`/mailings/${mailing.id}/receivers`);
     assert.ok(receivers.list.some(r => r.email === email));
 

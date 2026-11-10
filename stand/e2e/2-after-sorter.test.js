@@ -26,7 +26,8 @@ describe('after mail-sorter', function () {
 
   it('marked processed messages as read', async function () {
     const messages = await readMailbox('noreply@example.com');
-    assert.equal(messages.length, 2);
+    // DSN, письмо человека и (1-spaces.test.js) письмо об отписке
+    assert.equal(messages.length, 3);
     for (const message of messages) {
       assert.ok(message.flags.has('\\Seen'), message.parsed.subject);
     }

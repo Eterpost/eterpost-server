@@ -1,4 +1,0 @@
-{
-  "backend": "http://mail-server:8000",
-  "port": 8001
-}

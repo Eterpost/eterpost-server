@@ -14,6 +14,15 @@
 SUBSCRIPTION_FACADE_SRC=../../subscription-facade MAIL_SORTER_SRC=../../mail-sorter ./run.sh
 ```
 
+Ключи API и пространства создаёт `run.sh` после запуска mail-server:
+пространства `sales` и `news`, служебные ключи (`--system`) для mail-sorter и
+subscription-facade, ключи пространств (`--space`) для «сайтов» e2e-тестов. Сервер
+работает с `server.auth.required: true`. Конфигурация facade и
+`.generated/keys.env` (переменные `STAND_*_KEY`) записываются в
+`stand/.generated/` (в git не попадает); для ручных запусков
+`docker compose run ...` выполните `. .generated/keys.env`. Повторный `run.sh`
+выпускает ключи заново.
+
 Можно указать и другой git-адрес или ветку, например
 `MAIL_SORTER_SRC=https://github.com/Eterpost/eterpost-sorter.git#my-branch`.
 
@@ -43,6 +52,12 @@ SUBSCRIPTION_FACADE_SRC=../../subscription-facade MAIL_SORTER_SRC=../../mail-sor
 4. в ящик `noreply@example.com` приходят уведомление о недоставке (DSN) для
    одного из получателей и письмо от человека.
 
+Пространства (`e2e/1-spaces.test.js`): одинаковый адрес в рассылках двух
+пространств (`sales`, `news`; каждое создаётся своим ключом пространства), чужая
+рассылка недоступна (404), в `List-Unsubscribe` попадает номер рассылки
+(`server.mail.listUnsubscribe` с `{id}`), в ящик noreply приходит письмо
+об отписке с адресом `noreply+unsubscribe-<номер рассылки sales>@`.
+
 Затем один раз запускается mail-sorter (`config/mail-sorter.json`,
 драйвер базы `mail-server`).
 
@@ -51,11 +66,14 @@ SUBSCRIPTION_FACADE_SRC=../../subscription-facade MAIL_SORTER_SRC=../../mail-sor
 `POST /mailings/unsubscribe`, письмо человека переслано на
 `admin@example.com`, обработанные письма помечены прочитанными.
 
+Этап 2 (`e2e/2-spaces-after-sorter.test.js`): адрес исключён из рассылки
+sales и остался в рассылке news.
+
 ## Ручная работа со стендом
 
 ```
 docker compose run --rm mail-sorter --dry   # mail-sorter без изменений
-docker compose run --rm e2e 1-mailing.test.js
+docker compose run --rm e2e 1-mailing.test.js 1-spaces.test.js
 docker compose logs -f mail-server
 ```
 
