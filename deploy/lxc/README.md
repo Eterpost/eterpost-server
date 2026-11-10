@@ -150,6 +150,8 @@ deploy/lxc/update.sh --rollback mail-server   # на предыдущий рел
 - Хранятся 3 последних релиза (`KEEP=5 update.sh ...` — больше), текущий не
   удаляется.
 - `update.sh` не трогает пакеты, Redis, nginx и `/etc/eterfund-mail`.
+  Службы перезапускаются `systemctl restart`, если они включены; невключённая
+  служба пропускается с подсказкой.
   Новые шаблоны из примеров создаёт `install.sh`; юниты systemd тоже обновляет
   он (`update.sh` их не меняет). Если в новой версии появился шаблон, которого
   нет в `/etc/eterfund-mail/templates/`, `update.sh` его не подключает и пишет
@@ -390,7 +392,9 @@ Redis (ключи `IMAGES_*`). Редактор загружает картин�
    подписки — только `location /images/dl/` (см. `deploy/lxc/nginx/eterfund-mail.conf`);
    `nginx -t && systemctl reload nginx`. Если страницы подписки открыты наружу
    через отдельный фронт, путь `/images/dl/` нужно добавить и там.
-4. `update.sh ipfs-images` — сборка и запуск службы.
+4. `update.sh ipfs-images` — сборка и запуск службы (включённая служба
+   запускается и при первой выкладке; без юнита `update.sh` только собирает
+   релиз и напоминает установить юнит).
 5. В `/etc/eterfund-mail/mail-server.json` — `client.imagePublicUrl`, затем
    `update.sh mail-server` (значения `client.*` встраиваются при сборке).
 

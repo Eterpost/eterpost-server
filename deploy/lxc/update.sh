@@ -252,8 +252,11 @@ restart_service () {
     [ -n "$service" ] || return 0
     if [ "$service" = mail-server ]; then
         restart_mail_server
+    elif $SYSTEMCTL is-enabled --quiet "$service" 2>/dev/null; then
+        # restart, а не try-restart: при первой выкладке служба ещё не запущена
+        $SYSTEMCTL restart "$service" 9>&-
     else
-        $SYSTEMCTL try-restart "$service" 9>&-
+        echo "NOTE: $service is not enabled; install its unit (deploy/lxc/README.md)" >&2
     fi
 }
 
