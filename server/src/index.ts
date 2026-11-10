@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { readConfig } from './readConfig';
 import { validateConfig } from './validateConfig';
 import { RedisMailingRepository } from './RedisMailingRepository';
@@ -18,6 +19,8 @@ import { readHandlebarsTemplate } from './templates/readTemplate';
 import { ApiKeyRepository } from './ApiKeyRepository';
 import { SpaceRepository } from './SpaceRepository';
 import { migrateMailingsToDefaultSpace } from './migrateSpaces';
+import { AttachmentStore } from './AttachmentStore';
+import { getAttachmentsConfig } from './attachments';
 
 
 async function main () {
@@ -83,12 +86,18 @@ async function main () {
     logger.info(`Moved ${migrated} mailings to the default space`);
   }
   await stateManager.initialize();
+  const attachmentStore = new AttachmentStore(path.resolve(getAttachmentsConfig(config).dir));
+  if (!await attachmentStore.init()) {
+    logger.error(
+      `Attachment directory ${attachmentStore.dir} is not writable: attachments are off`
+    );
+  }
   const app = createExpressServer(config.server);
   setupRoutes(
     config, app, mailingRepository, stateManager, logger, executor, failureCounter,
     subscriptionRepository, sender, readHandlebarsTemplate('confirm-subscription.hbs'),
     receiverListFilter, sorterStatusRepository, apiKeyRepository, addressStatsRepository,
-    spaceRepository, config.server.auth?.admins ?? []
+    spaceRepository, config.server.auth?.admins ?? [], attachmentStore
   );
   const { host, port } = config.server;
   await new Promise<void>((resolve, reject) => {

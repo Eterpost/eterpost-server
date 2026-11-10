@@ -86,6 +86,16 @@ const csvList = {
 };
 
 const spaceHeader = { $ref: '#/components/parameters/Space' };
+const attachmentConflict = failure('Рассылка выполняется (MAILING_RUNNING)');
+const attachmentsUnavailable =
+  failure('Каталог вложений недоступен (ATTACHMENTS_UNAVAILABLE)');
+const attachmentId = {
+  name: 'attachmentId',
+  in: 'path',
+  required: true,
+  schema: { type: 'string', pattern: '^[0-9a-f]{16}$' },
+  description: 'ID вложения'
+};
 const spaceForbidden = failure('Нет доступа к пространству из X-Eterpost-Space (SPACE_FORBIDDEN)');
 
 /**
@@ -143,6 +153,7 @@ export const openApiDocument = {
   servers: [{ url: '.' }],
   tags: [
     { name: 'mailings', description: 'Рассылки' },
+    { name: 'attachments', description: 'Вложения рассылок' },
     { name: 'receivers', description: 'Получатели рассылки' },
     { name: 'subscription', description: 'Подписка и отписка (используется subscription-facade)' },
     { name: 'mail-sorter', description: 'Используется mail-sorter' },
@@ -319,6 +330,65 @@ export const openApiDocument = {
           200: ok(),
           400: badRequest,
           404: notFound
+        }
+      }
+    },
+    '/mailings/{id}/attachments': {
+      post: {
+        tags: ['attachments'],
+        summary: 'Приложить файл к рассылке',
+        description:
+          'Тело запроса — сам файл (любой Content-Type, по нему определяется тип ' +
+          'вложения; `application/octet-stream` — тип по расширению имени). Вложения ' +
+          'уходят каждому получателю; общий размер ограничен server.attachments.maxSize. ' +
+          'Менять вложения выполняющейся рассылки нельзя.',
+        parameters: [
+          mailingId(),
+          {
+            name: 'filename',
+            in: 'query',
+            required: true,
+            schema: { type: 'string' },
+            description: 'Имя файла в письме'
+          }
+        ],
+        requestBody: {
+          content: { 'application/octet-stream': { schema: { type: 'string', format: 'binary' } } },
+          required: true
+        },
+        responses: {
+          201: ok(ref('Attachment'), 'Вложение добавлено'),
+          400: badRequest,
+          404: notFound,
+          409: attachmentConflict,
+          413: failure('Превышен общий размер вложений (ATTACHMENTS_TOO_LARGE)'),
+          503: attachmentsUnavailable
+        }
+      }
+    },
+    '/mailings/{id}/attachments/{attachmentId}': {
+      get: {
+        tags: ['attachments'],
+        summary: 'Скачать вложение',
+        parameters: [mailingId(), attachmentId],
+        responses: {
+          200: {
+            description: 'Файл вложения',
+            content: { '*/*': { schema: { type: 'string', format: 'binary' } } }
+          },
+          404: failure('Рассылка или вложение не найдены'),
+          503: attachmentsUnavailable
+        }
+      },
+      delete: {
+        tags: ['attachments'],
+        summary: 'Удалить вложение',
+        parameters: [mailingId(), attachmentId],
+        responses: {
+          200: ok(),
+          404: failure('Рассылка или вложение не найдены'),
+          409: attachmentConflict,
+          503: attachmentsUnavailable
         }
       }
     },
@@ -611,6 +681,16 @@ export const openApiDocument = {
       apiKeyHeader: { type: 'apiKey', in: 'header', name: 'X-API-Key' }
     },
     schemas: {
+      Attachment: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', example: '9f2c4e1a7b3d5c60' },
+          filename: { type: 'string', example: 'Прайс ноябрь.pdf' },
+          contentType: { type: 'string', example: 'application/pdf' },
+          size: { type: 'integer', description: 'Размер в байтах' }
+        },
+        required: ['id', 'filename', 'contentType', 'size']
+      },
       Space: {
         type: 'object',
         properties: {

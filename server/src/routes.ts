@@ -37,6 +37,12 @@ import { ApiKeyRepository } from './ApiKeyRepository';
 import { apiKeyAuth } from './middleware/apiKeyAuth';
 import { SpaceRepository } from './SpaceRepository';
 import { loadMailing } from './middleware/loadMailing';
+import { AttachmentStore } from './AttachmentStore';
+import { getAttachmentsConfig } from './attachments';
+import {
+  deleteAttachment, downloadAttachment, rawAttachmentBody, requireAttachmentStore,
+  uploadAttachment
+} from './controllers/attachments';
 
 
 export function setupRoutes (
@@ -46,7 +52,7 @@ export function setupRoutes (
   subscribeTemplate: Template<SubscribeTemplateContext>, receiverListFilter: ReceiverListFilter,
   sorterStatusRepository: RedisSorterStatusRepository, apiKeyRepository: ApiKeyRepository,
   addressStatsRepository: AddressStatsRepository, spaceRepository: SpaceRepository,
-  admins: string[]
+  admins: string[], attachmentStore?: AttachmentStore
 ) {
   app.use(apiKeyAuth(
     apiKeyRepository, logger, config.server.auth || {}, isApiDocsRequest, spaceRepository, admins
@@ -76,6 +82,15 @@ export function setupRoutes (
     repository, addressStatsRepository, logger
   ));
   app.delete('/mailings/:id', mailing, deleteMailing(repository, logger));
+  // Без хранилища маршруты вложений отвечают 503 (requireAttachmentStore)
+  const { maxSize } = getAttachmentsConfig(config);
+  const store = requireAttachmentStore(attachmentStore);
+  app.post('/mailings/:id/attachments', mailing, store, rawAttachmentBody(maxSize),
+    uploadAttachment(repository, attachmentStore!, maxSize, logger));
+  app.get('/mailings/:id/attachments/:attachmentId', mailing, store,
+    downloadAttachment(attachmentStore!));
+  app.delete('/mailings/:id/attachments/:attachmentId', mailing, store,
+    deleteAttachment(repository, attachmentStore!, logger));
   app.post('/mailings/:mailingId/requestSubscription', mailingById, requestSubscription(
     subscriptionRepository, logger, sender, subscribeTemplate, config.server.subscription
   ));
