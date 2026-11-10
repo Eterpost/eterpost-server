@@ -67,13 +67,20 @@ async function main () {
     ...config.server.smtp,
     from: config.server.mail.from
   });
+  const attachmentStore = new AttachmentStore(path.resolve(getAttachmentsConfig(config).dir));
+  if (!await attachmentStore.init()) {
+    logger.error(
+      `Attachment directory ${attachmentStore.dir} is not writable: attachments are off`
+    );
+  }
   const executor = new MailingExecutor(
     sender,
     mailingRepository,
     addressStatsRepository,
     spaceRepository,
     logger,
-    config
+    config,
+    attachmentStore
   );
   const stateManager = new MailingStateManager(
     executor,
@@ -86,12 +93,6 @@ async function main () {
     logger.info(`Moved ${migrated} mailings to the default space`);
   }
   await stateManager.initialize();
-  const attachmentStore = new AttachmentStore(path.resolve(getAttachmentsConfig(config).dir));
-  if (!await attachmentStore.init()) {
-    logger.error(
-      `Attachment directory ${attachmentStore.dir} is not writable: attachments are off`
-    );
-  }
   const app = createExpressServer(config.server);
   setupRoutes(
     config, app, mailingRepository, stateManager, logger, executor, failureCounter,
