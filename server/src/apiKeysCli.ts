@@ -14,7 +14,7 @@ const usage = `Управление ключами API mail-server (хранят
 
 Роль (не больше одной; без роли — «старый» ключ, legacy):
   --space <пространство>         ключ работает только в этом пространстве
-  --system                       системный ключ: все пространства и управление ими
+  --system                       системный ключ: все пространства
   --proxy                        ключ фронта, которому сервер верит в заголовке
                                  X-Remote-User`;
 
@@ -45,6 +45,10 @@ async function main () {
   }
   if (['add', 'revoke', 'set-role'].includes(command) && !name) {
     console.error(`Usage: api-keys ${command} <name>`);
+    return 2;
+  }
+  if (values.space !== undefined && !values.space.trim()) {
+    console.error('Empty --space: give a space name');
     return 2;
   }
   const role: ApiKeyRole = { proxy: values.proxy, space: values.space, system: values.system };
