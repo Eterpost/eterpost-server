@@ -25,6 +25,7 @@ describe('POST /mailings/unsubscribe', { skip: redisSkip }, () => {
   let salesKey: string;
   let sysKey: string;
   let frontKey: string;
+  let legacyKey: string;
   let salesId: number;
   let newsId: number;
 
@@ -36,6 +37,7 @@ describe('POST /mailings/unsubscribe', { skip: redisSkip }, () => {
     salesKey = (await apiKeyRepository.add('sales-key', { space: 'sales' }))!;
     sysKey = (await apiKeyRepository.add('sys-key', { system: true }))!;
     frontKey = (await apiKeyRepository.add('front', { proxy: true }))!;
+    legacyKey = (await apiKeyRepository.add('old-key'))!;
     const spaces = new SpaceRepository(pool);
     await spaces.add({ name: 'sales' });
     await spaces.add({ name: 'news' });
@@ -103,6 +105,14 @@ describe('POST /mailings/unsubscribe', { skip: redisSkip }, () => {
   it('should remove the address from all spaces for an unknown mailing', async () => {
     const { body } = await unsubscribe(sysKey, { mailingId: 99999 });
     assert.equal(body.data.removed, 2);
+  });
+
+  it('should let a legacy key without a role unsubscribe', async () => {
+    const { body, status } = await unsubscribe(legacyKey, { mailingId: salesId });
+    assert.equal(status, 200);
+    assert.equal(body.data.removed, 1);
+    assert.equal(await has(salesId), false);
+    assert.equal(await has(newsId), true);
   });
 
   it('should reject a space key and a proxy key', async () => {

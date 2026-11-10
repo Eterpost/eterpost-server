@@ -197,6 +197,15 @@ describe('mailing spaces', { skip: redisSkip }, () => {
     assert.equal(created.body.code, 'SPACE_REQUIRED');
   });
 
+  it('should refuse a subscription request for a mailing of another space', async () => {
+    const id = await create(salesKey);
+    const other = await request(newsKey, 'POST', `/mailings/${id}/requestSubscription`, {
+      email: 'new@example.com'
+    });
+    assert.equal(other.status, 404);
+    assert.equal(other.body.error, 'Mailing not found');
+  });
+
   it('should not track letters of another space', async () => {
     const id = await create(salesKey);
     await mailingRepository.setTrackedLetter(id, 'tok', {
