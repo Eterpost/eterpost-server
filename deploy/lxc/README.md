@@ -268,6 +268,52 @@ node server/dist/src/apiKeysCli.js revoke site-example
 Изменяющие запросы mail-server пишет в журнал с именем ключа и пользователя:
 `PUT /mailings/5 by ivan via front-intfront from 10.0.0.7: state=running`.
 
+### Переход на пространства рассылок
+
+Рассылки делятся на пространства, ключи получают роли (описание — в README
+mail-server, раздел «Mailing spaces»). Обновление не ломает работающую
+установку: рассылки без пространства попадают в `default`, ключи без роли
+работают как раньше, а пока ни у одного пространства нет участников,
+пользователь ключа прокси видит `default`. Порядок перехода:
+
+1. Обновить mail-server (`update.sh`). При первом запуске все рассылки
+   переносятся в `default` (в журнале — сколько).
+2. Завести пространства и участников (логины — те, что фронт передаёт в
+   `X-Remote-User`), при необходимости адрес отправителя пространства:
+
+   ```
+   cd /opt/eterfund-mail/mail-server
+   node server/dist/src/spacesCli.js add sales --title "Продажи" --from "Sales <sales@example.com>"
+   node server/dist/src/spacesCli.js add-member sales ivan
+   node server/dist/src/spacesCli.js list
+   ```
+
+   Администраторов, которые видят все пространства, перечислить в
+   `server.auth.admins` в `mail-server.json`. Существующие рассылки лежат в
+   `default`; чтобы работать с ними, заведите это пространство
+   (`spacesCli.js add default`) и добавьте участников.
+3. Назначить роли ключам (`list` показывает текущие):
+
+   ```
+   node server/dist/src/apiKeysCli.js set-role mail-sorter --system
+   node server/dist/src/apiKeysCli.js set-role subscription-facade --system
+   node server/dist/src/apiKeysCli.js set-role site-example --space sales
+   ```
+
+   Ключ фронта остаётся `--proxy`. Сами ключи не меняются, перенастраивать
+   клиентов не нужно.
+4. Добавить `{id}` в `server.mail.listUnsubscribe` в `mail-server.json`:
+   `<mailto:noreply+unsubscribe-{id}@example.com>`, и перезапустить
+   mail-server. Письма, отправленные до этого, отписывают из всех
+   пространств, как раньше.
+5. Обновить mail-sorter (`update.sh`): он узнаёт адрес `unsubscribe-<номер>` и
+   передаёт номер рассылки при отписке. Поэтому `{id}` в п. 4 включают
+   только после обновления mail-sorter (можно поменять порядок п. 4 и 5, но
+   не отправлять письма с `{id}` старому mail-sorter).
+6. Убедиться по журналу, что предупреждений нет:
+   `journalctl -u mail-server | grep 'has no role'` — после последнего
+   перезапуска пусто, то есть не осталось ключей без роли.
+
 ## 6. Эксплуатация
 
 - Журналы: `journalctl -u mail-server`, `-u subscription-facade`, `-u mail-sorter`.

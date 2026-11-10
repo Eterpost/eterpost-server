@@ -147,7 +147,7 @@ nginx для веб-клиента и публичных страниц подп
     "mail": {
       "from": "noreply@example.com",   // адрес сервиса: отправитель конверта (возвраты) и From по умолчанию
       "listIdDomain": "example.com",   // домен в заголовке List-Id
-      "listUnsubscribe": "<mailto:noreply+unsubscribe@example.com>"  // необязательный List-Unsubscribe
+      "listUnsubscribe": "<mailto:noreply+unsubscribe-{id}@example.com>"  // необязательный List-Unsubscribe; {id} — номер рассылки
     },
     "maxEmailsWithoutPause": 1000,     // необязательно: после стольких писем рассылка встаёт на паузу...
     "pauseDuration": 600,              // ...на столько секунд (нужны оба параметра)
@@ -414,9 +414,10 @@ bk.ru, inbox.ru после снятия блокировки), только вр
 
 | Метод и путь | Назначение |
 |---|---|
-| `GET /mailings` | Список рассылок |
+| `GET /mailings` | Список рассылок текущего пространства, `?kind=live\|test\|all` (по умолчанию `all`) |
+| `GET /spaces` | Пространства, доступные запросу: `[{name, title}]` |
 | `GET /mailings/:id` | Рассылка с текстом и статистикой (`?stringState=1` — состояние строкой) |
-| `POST /mailings` | Создать: `{name, subject, html, receivers: [{email, name?, extraData?}], from?, replyTo?, openForSubscription?, extraData?}` или скопировать: `{sourceId}` |
+| `POST /mailings` | Создать: `{name, subject, html, receivers: [{email, name?, extraData?}], from?, replyTo?, openForSubscription?, test?, extraData?}` (в пространство из `X-Eterpost-Space`) или скопировать: `{sourceId}` |
 | `PUT /mailings/:id` | Изменить поля, `receivers` или `state` (`2`/`"running"` — запуск, `3`/`"paused"` — пауза) |
 | `DELETE /mailings/:id` | Удалить (кроме выполняющейся) |
 | `GET /mailings/:id/receivers` | Получатели, `?limit=N`, `?format=csv` |
@@ -431,7 +432,7 @@ bk.ru, inbox.ru после снятия блокировки), только вр
 | `POST /mailings/:id/requestSubscription` | Запрос подписки, см. выше |
 | `POST /mailings/:id/subscribe` | Подтвердить подписку `{email, code}` |
 | `POST /mailings/:id/unsubscribe` | Отписаться `{email, code}` |
-| `POST /mailings/unsubscribe` | Исключить `{email}` из всех рассылок без кода (для mail-sorter), с `listUnsubscribe: true` — только из рассылок с этой настройкой; возвращает `{removed}` |
+| `POST /mailings/unsubscribe` | Только системные и legacy-ключи. Исключить `{email}` из всех рассылок без кода (для mail-sorter); с `mailingId` — только из рассылок его пространства; с `listUnsubscribe: true` — только из рассылок с этой настройкой; возвращает `{removed}` |
 
 ### Ключи API
 
@@ -463,6 +464,72 @@ node server/dist/src/apiKeysCli.js revoke site-example
 `PUT /mailings/5 by ivan via front from 10.0.0.7: state=running`. Свои ключи
 нужны и subscription-facade (`apiKey` в его конфиге), и mail-sorter
 (`apiKey` в параметрах драйвера `mail-server`).
+
+### Пространства рассылок
+
+Рассылки делятся на пространства (имя `[a-z0-9][a-z0-9-]{0,31}`, название,
+необязательный адрес отправителя по умолчанию и список участников — логинов,
+которые фронт передаёт в `X-Remote-User`). Рассылка, её статистика и все
+действия с ней доступны только в её пространстве; рассылка чужого пространства
+отвечает `404`, как будто её нет. Рассылки, созданные до появления пространств,
+при первом запуске попадают в пространство `default` (в журнал пишется,
+сколько перенесено).
+
+Роли ключей API (`api-keys add <имя> --space <пространство> | --system | --proxy`,
+`api-keys set-role <имя> …` меняет роль существующего ключа):
+
+| Роль | Кому | Что видит |
+|---|---|---|
+| `--space sales` | сайты и скрипты отправителя | только рассылки своего пространства |
+| `--system` | mail-sorter, subscription-facade | все рассылки; нужен для отписки, подписки, счётчиков и разбора возвратов |
+| `--proxy` | фронт веб-клиента | пространства пользователя из `X-Remote-User` (все — для логинов из `server.auth.admins`) |
+| без роли (legacy) | ключи, созданные до пространств | все рассылки, как раньше; каждое использование пишет в журнал предупреждение `has no role` |
+
+Пока ни у одного пространства нет участников, пользователь ключа прокси видит
+`default`: после обновления веб-клиент не пустеет.
+
+Текущее пространство запроса задаёт заголовок `X-Eterpost-Space` (его шлёт
+веб-клиент). Ключу пространства он не нужен; у системного ключа необязателен
+(без него — все пространства); пространство, к которому нет доступа, —
+`403` (`SPACE_FORBIDDEN`), нет заголовка там, где пространство обязательно, —
+`403` (`SPACE_REQUIRED`). `POST /mailings` и `POST /mailings/create-retry`
+записывают рассылку в текущее пространство. `GET /spaces` возвращает
+пространства, доступные запросу (имя, название).
+
+Пробные рассылки: поле рассылки `test: boolean` (по умолчанию `false`).
+`GET /mailings?kind=live|test|all` фильтрует список внутри пространства; в API
+по умолчанию `all`, веб-клиент показывает `live` и запоминает выбор в адресе
+страницы. Ошибки доставки пробных рассылок учитываются в статистике адресов
+как обычно.
+
+Адрес отправителя: From письма берётся из рассылки (`from`), затем из
+пространства, затем из `server.mail.from`. Sender и конверт — всегда
+`server.mail.from`: возвраты разбирает mail-sorter.
+
+Отписка письмом действует в пространстве рассылки: добавьте `{id}` в
+`server.mail.listUnsubscribe`, например
+`<mailto:noreply+unsubscribe-{id}@example.com>`; mail-sorter берёт номер из
+адреса и передаёт его как `mailingId` в `POST /mailings/unsubscribe`, и адрес
+исключается только из рассылок этого пространства. Без `{id}` (и в старых
+письмах) адрес исключается из всех пространств, как раньше.
+`POST /mailings/unsubscribe` доступен только системным и legacy-ключам.
+
+Пространства создаются на сервере, как и ключи:
+
+```
+node server/dist/src/spacesCli.js add sales --title "Продажи" --from "Sales <sales@example.com>"
+node server/dist/src/spacesCli.js set sales --from "Sales <sales@example.com>"
+node server/dist/src/spacesCli.js list                      # имя, название, From, участники
+node server/dist/src/spacesCli.js members sales
+node server/dist/src/spacesCli.js add-member sales ivan
+node server/dist/src/spacesCli.js remove-member sales ivan
+node server/dist/src/spacesCli.js remove sales              # отказ, пока есть рассылки
+```
+
+Порядок перехода работающей установки — в
+[deploy/lxc/README.md](deploy/lxc/README.md#переход-на-пространства-рассылок).
+Заметьте: нечисловой номер рассылки в `/mailings/:id/...` (в том числе в
+подписке и отписке) теперь даёт `400 Invalid ID`.
 
 ## Разработка
 

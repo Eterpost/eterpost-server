@@ -146,7 +146,7 @@ comments below are for explanation only):
     "mail": {
       "from": "noreply@example.com",   // service address: envelope sender (bounces) and default From
       "listIdDomain": "example.com",   // domain part of the List-Id header
-      "listUnsubscribe": "<mailto:noreply+unsubscribe@example.com>"  // optional List-Unsubscribe header
+      "listUnsubscribe": "<mailto:noreply+unsubscribe-{id}@example.com>"  // optional List-Unsubscribe header; {id} is the mailing number
     },
     "maxEmailsWithoutPause": 1000,     // optional: pause the mailing after this many letters...
     "pauseDuration": 600,              // ...for this many seconds (both must be set)
@@ -418,9 +418,10 @@ every route is documented.
 
 | Method and path | Description |
 |---|---|
-| `GET /mailings` | List of mailings |
+| `GET /mailings` | List of mailings of the current space, `?kind=live\|test\|all` (default `all`) |
+| `GET /spaces` | Spaces available to the request: `[{name, title}]` |
 | `GET /mailings/:id` | Mailing with text and statistics (`?stringState=1` — state as a name) |
-| `POST /mailings` | Create: `{name, subject, html, receivers: [{email, name?, extraData?}], from?, replyTo?, openForSubscription?, extraData?}` or clone: `{sourceId}` |
+| `POST /mailings` | Create: `{name, subject, html, receivers: [{email, name?, extraData?}], from?, replyTo?, openForSubscription?, test?, extraData?}` (into the space of `X-Eterpost-Space`) or clone: `{sourceId}` |
 | `PUT /mailings/:id` | Change fields, `receivers`, or `state` (`2`/`"running"` — start, `3`/`"paused"` — pause) |
 | `DELETE /mailings/:id` | Delete (not while running) |
 | `GET /mailings/:id/receivers` | Receivers, `?limit=N`, `?format=csv` |
@@ -435,7 +436,7 @@ every route is documented.
 | `POST /mailings/:id/requestSubscription` | Subscription request, see above |
 | `POST /mailings/:id/subscribe` | Confirm subscription `{email, code}` |
 | `POST /mailings/:id/unsubscribe` | Unsubscribe `{email, code}` |
-| `POST /mailings/unsubscribe` | Remove `{email}` from all mailings without a code (for mail-sorter), with `listUnsubscribe: true` only from mailings with this option; returns `{removed}` |
+| `POST /mailings/unsubscribe` | System and legacy keys only. Remove `{email}` from all mailings without a code (for mail-sorter); with `mailingId` only from mailings of its space; with `listUnsubscribe: true` only from mailings with this option; returns `{removed}` |
 
 ### API keys
 
@@ -467,6 +468,71 @@ names and the list of body fields (without the letter text and addresses):
 `PUT /mailings/5 by ivan via front from 10.0.0.7: state=running`.
 subscription-facade (`apiKey` in its config) and mail-sorter (`apiKey` in the
 `mail-server` driver options) need keys of their own.
+
+### Mailing spaces
+
+Mailings are divided into spaces (name `[a-z0-9][a-z0-9-]{0,31}`, a title, an
+optional default From address and a list of members, the logins that the front
+passes in `X-Remote-User`). A mailing, its statistics and all actions on it are
+available only inside its space; a mailing of another space answers `404`, as
+if it did not exist. Mailings created before spaces appeared are moved to the
+space `default` on the first start (the log tells how many).
+
+Roles of API keys (`api-keys add <name> --space <space> | --system | --proxy`,
+`api-keys set-role <name> …` changes the role of an existing key):
+
+| Role | For | Sees |
+|---|---|---|
+| `--space sales` | sites and scripts of a sender | only mailings of its space |
+| `--system` | mail-sorter, subscription-facade | all mailings; needed for unsubscription, subscription, counters and bounces |
+| `--proxy` | the front of the web client | spaces of the user from `X-Remote-User` (all spaces for logins in `server.auth.admins`) |
+| none (legacy) | keys created before spaces | all mailings, as before; every use is logged as a warning `has no role` |
+
+Until some space has members, the user of a proxy key sees `default`, so the
+web client does not become empty after the upgrade.
+
+The current space of a request is set by the `X-Eterpost-Space` header (the web
+client sends it). A space key does not need it; for a system key it is optional
+(without it, all spaces); a space the request has no access to gives `403`
+(`SPACE_FORBIDDEN`), a missing header where the space is required gives `403`
+(`SPACE_REQUIRED`). `POST /mailings` and `POST /mailings/create-retry` write
+the mailing to the current space. `GET /spaces` lists the spaces available to
+the request (name, title).
+
+Test mailings: the mailing field `test: boolean` (default `false`) marks a
+trial mailing. `GET /mailings?kind=live|test|all` filters the list inside the
+space; the API default is `all`, the web client shows `live` and keeps the
+choice in the page address. Delivery errors of test mailings count in the
+address statistics like any other.
+
+Sender address: the From of a letter is taken from the mailing (`from`), then
+from the space, then from `server.mail.from`. Sender and the envelope are
+always `server.mail.from`: bounces are processed by mail-sorter.
+
+Unsubscription by letter works inside the space of the mailing: put `{id}` in
+`server.mail.listUnsubscribe`, e.g. `<mailto:noreply+unsubscribe-{id}@example.com>`;
+mail-sorter takes the number from the address and passes it as `mailingId` to
+`POST /mailings/unsubscribe`, and the address is removed from the mailings of
+that space only. Without `{id}` (and in older letters) the address is removed
+from all spaces, as before. `POST /mailings/unsubscribe` is allowed only to
+system and legacy keys.
+
+Spaces are managed on the server, like keys:
+
+```
+node server/dist/src/spacesCli.js add sales --title "Sales" --from "Sales <sales@example.com>"
+node server/dist/src/spacesCli.js set sales --from "Sales <sales@example.com>"
+node server/dist/src/spacesCli.js list                      # name, title, From, members
+node server/dist/src/spacesCli.js members sales
+node server/dist/src/spacesCli.js add-member sales ivan
+node server/dist/src/spacesCli.js remove-member sales ivan
+node server/dist/src/spacesCli.js remove sales              # refused while it has mailings
+```
+
+Upgrading a running installation is described in
+[deploy/lxc/README.md](deploy/lxc/README.md#переход-на-пространства-рассылок).
+Note: a non-numeric mailing id in `/mailings/:id/...` (including subscribe and
+unsubscribe) now answers `400 Invalid ID`.
 
 ## Development
 
