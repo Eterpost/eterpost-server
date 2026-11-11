@@ -1,6 +1,6 @@
 {
   "name": "eterpost-server",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Bulk mailing service",
   "main": "server/dist/src/index.js",
   "scripts": {
