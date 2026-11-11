@@ -36,8 +36,9 @@ log () {
 [ "$(id -u)" = 0 ] || { echo "Run as root" >&2; exit 1; }
 
 log "Packages"
-apt-get update -q
-apt-get install -y -q node npm git redis nginx node-sharp
+command -v epm >/dev/null || { echo "epm is required: install the eepm package" >&2; exit 1; }
+epm update
+epm install --auto node npm git redis nginx node-sharp
 
 if ! id "$APP_USER" >/dev/null 2>&1; then
     log "User $APP_USER"
