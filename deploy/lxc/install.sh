@@ -37,7 +37,7 @@ log () {
 
 log "Packages"
 apt-get update -q
-apt-get install -y -q node npm git redis nginx
+apt-get install -y -q node npm git redis nginx node-sharp
 
 if ! id "$APP_USER" >/dev/null 2>&1; then
     log "User $APP_USER"

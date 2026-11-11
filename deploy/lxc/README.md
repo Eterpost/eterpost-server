@@ -382,6 +382,11 @@ Redis (ключи `IMAGES_*`). Редактор загружает картин�
 (`/images/` во внутреннем сервере nginx), а в письмо вставляет публичный адрес
 `client.imagePublicUrl` (`https://<имя страниц подписки>/images/dl/...`).
 
+Превью (`/images/dl/thumb/...`) делает sharp из пакета ALT `node-sharp`
+(`/usr/lib/node_modules/sharp`, собран с системной libvips): готовые сборки
+sharp из npm не ставятся. Без пакета превью отключены и отдаётся исходная
+картинка; в журнале службы — «sharp is not installed».
+
 Подключение на работающей установке:
 
 1. Конфиг: `install -m 640 -g mailing deploy/lxc/config/ipfs-images.json
