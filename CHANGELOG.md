@@ -3,7 +3,7 @@
 All notable changes to eterpost-server. Versions follow [Semantic Versioning](https://semver.org/);
 before 1.0 a minor version brings new features and a patch version brings fixes.
 
-## Unreleased
+## 0.3.2 — 2026-11-11
 
 - Plain text version of a letter: tables with `class="data-table"` are laid out in
   columns instead of one paragraph of glued cell texts (bug 20047).
