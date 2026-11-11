@@ -3,11 +3,15 @@ import { Email } from './Email';
 import { toEmailDocument } from './emailDocument';
 
 
-// Картинки пропускаем: в тексте от них остались бы только адреса или data: URI
+// Картинки пропускаем: в тексте от них остались бы только адреса или data: URI.
+// Колонками выводим только таблицы, помеченные отправителем как таблицы данных:
+// обёртку письма часто верстают таблицами, её колонками раскладывать нельзя.
+// Шапку оставляем в исходном регистре — русские подписи заглавными читаются хуже.
 const htmlToTextOptions = {
   selectors: [
     { options: { hideLinkHrefIfSameAsText: true }, selector: 'a' },
-    { format: 'skip', selector: 'img' }
+    { format: 'skip', selector: 'img' },
+    { format: 'dataTable', options: { uppercaseHeaderCells: false }, selector: 'table.data-table' }
   ]
 };
 

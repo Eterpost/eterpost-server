@@ -225,7 +225,9 @@ button by this header. A letter sent to its address unsubscribes the sender only
 from mailings with this option, not from the rest.
 
 Letters are sent as HTML with a plain text alternative generated from it
-(images are dropped, links become `text [url]`).
+(images are dropped, links become `text [url]`). Tables with
+`class="data-table"` are laid out in columns there; other tables (e.g. the
+letter layout) become paragraphs.
 
 A mailing may set its own `From` (e.g. `Sales <sales@example.com>`). The
 envelope sender (Return-Path) and the `Sender` header stay `server.mail.from`,

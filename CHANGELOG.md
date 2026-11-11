@@ -3,6 +3,11 @@
 All notable changes to eterpost-server. Versions follow [Semantic Versioning](https://semver.org/);
 before 1.0 a minor version brings new features and a patch version brings fixes.
 
+## Unreleased
+
+- Plain text version of a letter: tables with `class="data-table"` are laid out in
+  columns instead of one paragraph of glued cell texts (bug 20047).
+
 ## 0.3.1 — 2026-11-11
 
 - deploy: `update.sh` and the Dockerfile build with `npm ci --omit=optional`, so npm
