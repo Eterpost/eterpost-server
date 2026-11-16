@@ -3,7 +3,7 @@
 All notable changes to eterpost-server. Versions follow [Semantic Versioning](https://semver.org/);
 before 1.0 a minor version brings new features and a patch version brings fixes.
 
-## Unreleased
+## 0.4.0 — 2026-11-16
 
 - Test email can be filled with the data of a mailing receiver: `send-test-email`
   takes an optional `receiver` address, the letter still goes only to `email`.
