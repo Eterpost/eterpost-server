@@ -65,7 +65,7 @@ export interface MailingDetailViewProps {
   onRestoreExcluded?: (mailing: Mailing, emails?: string[]) => Promise<void>;
   onRemoveReceiver?: (mailing: Mailing, receiver: Receiver) => void;
   onPreview?: (mailing: Mailing, address: string) => Promise<EmailPreview | null>;
-  onSendTestEmail?: (mailing: Mailing, address: string) => void;
+  onSendTestEmail?: (mailing: Mailing, address: string, receiver?: string) => void;
   onStart?: (mailing: Mailing) => void;
   onStop?: (mailing: Mailing) => void;
   onUpdate?: (mailing: Mailing, saveData: MailingEditData) => void;
@@ -280,28 +280,37 @@ export class MailingDetailView extends React.Component<
         </div>
 
         <div className='test-email'>
-          <FormGroup inline title='Пробное письмо на адрес' htmlFor={id('test-email')}>
-            <div className='horizontal-group'>
-              <TextInput id={id('test-email')} type='email' value={this.state.testEmail}
-                         onChange={this.handleChangeTestEmail}
-                         placeholder='например, свой адрес' />
-              <Button disabled={!this.state.testEmail.length || !canEdit}
-                      onClick={this.handleSendTestEmail}>
-                Отправить
-              </Button>
-            </div>
+          <h3 className='test-email-title'>Проверка письма</h3>
+          <FormGroup inline title='Данные получателя' htmlFor={id('preview-email')}>
+            <TextInput id={id('preview-email')} type='email' value={this.state.previewEmail}
+                       onChange={this.handleChangePreviewEmail}
+                       placeholder='адрес из списка получателей рассылки' />
           </FormGroup>
-          <FormGroup inline title='Предпросмотр для' htmlFor={id('preview-email')}>
-            <div className='horizontal-group'>
-              <TextInput id={id('preview-email')} type='email' value={this.state.previewEmail}
-                         onChange={this.handleChangePreviewEmail}
-                         placeholder='адрес получателя' />
-              <Button disabled={!this.state.previewEmail.length}
-                      onClick={this.handlePreview}>
-                Показать
-              </Button>
-            </div>
+          <FormGroup inline title='Свой адрес' htmlFor={id('test-email')}>
+            <TextInput id={id('test-email')} type='email' value={this.state.testEmail}
+                       onChange={this.handleChangeTestEmail}
+                       placeholder='куда прислать пробное письмо' />
           </FormGroup>
+          <div className='horizontal-group test-email-actions'>
+            <Button disabled={!this.state.previewEmail.length}
+                    onClick={this.handlePreview}>
+              Показать предпросмотр
+            </Button>
+            <Button disabled={!this.state.testEmail.length || !canEdit}
+                    onClick={this.handleSendTestEmail}>
+              Отправить пробное письмо себе
+            </Button>
+          </div>
+          <ul className='hint test-email-help'>
+            <li>
+              <b>Предпросмотр</b> — {this.state.previewEmail.length
+                ? `письмо так, как его получит ${this.state.previewEmail}. Ничего не отправляется.`
+                : 'укажите адрес в «Данные получателя». Ничего не отправляется.'}
+            </li>
+            <li>
+              <b>Пробное письмо</b> — {testEmailHint(this.state.testEmail, this.state.previewEmail)}
+            </li>
+          </ul>
           {this.state.changed ? (
             <p className='hint'>
               Сервер собирает сохранённое письмо: несохранённые изменения в предпросмотр
@@ -423,7 +432,9 @@ export class MailingDetailView extends React.Component<
 
   private handleSendTestEmail = () => {
     if (this.props.onSendTestEmail) {
-      this.props.onSendTestEmail(this.props.mailing, this.state.testEmail);
+      this.props.onSendTestEmail(
+        this.props.mailing, this.state.testEmail, this.state.previewEmail || undefined
+      );
     }
   };
 
@@ -523,4 +534,18 @@ export class MailingDetailView extends React.Component<
       );
     }
   }
+}
+
+
+/**
+ * Что сделает кнопка пробного письма при текущих полях
+ */
+function testEmailHint (testEmail: string, receiverEmail: string): string {
+  const to = testEmail || 'свой адрес';
+  if (receiverEmail) {
+    return `придёт на ${to} с данными ${receiverEmail}, как его увидит этот получатель. ` +
+      `Самому ${receiverEmail} ничего не отправляется.`;
+  }
+  return `придёт на ${to} без данных получателя: подстановки (имя и т. п.) будут пустыми. ` +
+    'Чтобы письмо пришло заполненным, укажите адрес в «Данные получателя».';
 }

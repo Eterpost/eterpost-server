@@ -58,8 +58,8 @@ function mapDispatchToProps (dispatch: AppDispatch) {
       removeReceiver(mailing, receiver)
     ),
     onPreview: (mailing: Mailing, email: string) => dispatch(previewEmail(mailing, email)),
-    onSendTestEmail: (mailing: Mailing, email: string) => dispatch(
-      sendTestEmail(mailing, email)
+    onSendTestEmail: (mailing: Mailing, email: string, receiver?: string) => dispatch(
+      sendTestEmail(mailing, email, receiver)
     ),
     onStart: (mailing: Mailing) => dispatch(startMailing(mailing.id)),
     onStop: (mailing: Mailing) => dispatch(stopMailing(mailing.id)),

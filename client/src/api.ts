@@ -197,9 +197,14 @@ export function restoreExcluded (
   return apiRequest(`/mailings/${mailingId}/restore-excluded`, 'POST', null, { emails });
 }
 
-export function sendTestEmail (mailingId: number, email: string): Promise<void> {
+/**
+ * receiver — адрес получателя рассылки, чьими данными заполнить письмо
+ */
+export function sendTestEmail (
+  mailingId: number, email: string, receiver?: string
+): Promise<{ receiverFound?: boolean } | undefined> {
   return apiRequest(`/mailings/${mailingId}/send-test-email`, 'POST', null, {
-    email
+    email, ...(receiver ? { receiver } : {})
   });
 }
 

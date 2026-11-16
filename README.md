@@ -264,10 +264,16 @@ If a request fails, the letter is not sent and the mailing goes to the ERROR sta
 
 ### Preview and test letter
 
-You can check how a receiver will see the letter without running the mailing:
+You can check how a receiver will see the letter without running the mailing.
+In the mailing card this is the "Проверка письма" block: the "Данные получателя"
+field (an address from the receiver list whose data fills the letter), the
+"Свой адрес" field and the "Показать предпросмотр" and "Отправить пробное письмо
+себе" buttons. To get a letter filled for a particular receiver, fill both fields
+and press "Отправить пробное письмо себе": the letter comes to your own address,
+nothing is sent to the receiver.
 
-- **Preview** — the "Предпросмотр для" field and the "Показать" button in the
-  mailing card, `POST /mailings/:id/preview` with `{email}` in the API. The
+- **Preview** — the "Показать предпросмотр" button,
+  `POST /mailings/:id/preview` with `{email}` in the API. The
   server builds the letter with the same code as for sending and returns the
   subject, HTML, plain text version, From/Sender/To/Reply-To and headers
   (`List-Id`, `List-Unsubscribe`, `Precedence`); nothing is sent. If the address
@@ -281,9 +287,14 @@ You can check how a receiver will see the letter without running the mailing:
   letters in the same form, one per receiver; nothing is saved. A program that
   prepares a mailing on its side can check the letter before creating it.
   `List-Id` has 0 instead of the mailing number.
-- **Test letter** — the "Пробное письмо на адрес" field,
-  `POST /mailings/:id/send-test-email` with `{email}` in the API: the letter is
-  really sent to that address, to a receiver with the address only.
+- **Test letter** — the "Отправить пробное письмо себе" button,
+  `POST /mailings/:id/send-test-email` with `{email, receiver?}` in the API: the
+  letter is really sent to `email`. With `receiver`, an address from the mailing,
+  the templates are filled with that receiver's data as in the preview, but
+  nothing is sent to them; if the address is not in the mailing, with the address
+  only (`receiverFound: false`). Without `receiver` the letter is built for a
+  receiver with the `email` address only, name and `extraData` substitutions are
+  empty.
 
 If the subject or HTML template does not compile, the preview answers 400
 with the `TEMPLATE_ERROR` code and a text like `html: Parse error on line 3: ...`;
@@ -473,7 +484,7 @@ every route is documented.
 | `GET /mailings/:id/failed-receivers` | Receivers with delivery errors, `?limit=N`, `?format=csv` |
 | `GET /mailings/:id/results` | Results by receiver: sending, error, exclusion, unsubscription, open, click; `?event=`, `?offset=`, `?limit=`, `?format=csv` |
 | `POST /mailings/:id/restore-excluded` | Put back addresses excluded for delivery errors `{emails?}`, returns `{restored}` |
-| `POST /mailings/:id/send-test-email` | Send the letter to `{email}` |
+| `POST /mailings/:id/send-test-email` | Send the letter to `{email}`; `receiver` — whose data fills it |
 | `POST /mailings/:id/preview` | Build the letter for receiver `{email}` without sending it: subject, HTML, plain text and headers as the service sends them |
 | `POST /preview` | The same without a mailing: from mailing fields and `receivers` (up to 100), returns an array of letters |
 | `POST /mailings/create-retry` | New mailing for failed receivers of `{sourceId}` |

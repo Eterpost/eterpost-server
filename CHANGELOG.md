@@ -3,6 +3,14 @@
 All notable changes to eterpost-server. Versions follow [Semantic Versioning](https://semver.org/);
 before 1.0 a minor version brings new features and a patch version brings fixes.
 
+## Unreleased
+
+- Test email can be filled with the data of a mailing receiver: `send-test-email`
+  takes an optional `receiver` address, the letter still goes only to `email`.
+- Mailing card: the preview and test email fields are merged into a "Проверка письма"
+  block with explicit fields (receiver data, own address), buttons and a hint
+  describing what each button will do.
+
 ## 0.3.2 — 2026-11-11
 
 - Plain text version of a letter: tables with `class="data-table"` are laid out in
