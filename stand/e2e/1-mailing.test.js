@@ -37,6 +37,24 @@ describe('stand', function () {
     assert.equal(list.success, true);
   });
 
+  it('sends a test email filled for a receiver only to the test address', async function () {
+    const aliceBefore = (await readMailbox('alice@example.com')).length;
+    const result = await api(`/mailings/${mailing.id}/send-test-email`, 'POST', {
+      email: 'tester@example.com', receiver: 'alice@example.com'
+    });
+    assert.equal(result.receiverFound, true);
+    const messages = await waitFor(async () => {
+      const list = await readMailbox('tester@example.com');
+      return list.length ? list : null;
+    }, { what: 'test mail for tester' });
+    const { parsed } = messages[messages.length - 1];
+    assert.equal(parsed.subject, 'Привет, Alice');
+    assert.match(parsed.html, /Здравствуйте, Alice!/);
+    assert.equal(parsed.to.value[0].address, 'tester@example.com');
+    // Самой Alice пробное письмо не уходит
+    assert.equal((await readMailbox('alice@example.com')).length, aliceBefore);
+  });
+
   it('sends mailing with personalized subject and List-Id', async function () {
     await api(`/mailings/${mailing.id}`, 'PUT', { state: MailingState.RUNNING });
     await waitFor(async () => {

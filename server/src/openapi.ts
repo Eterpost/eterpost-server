@@ -484,10 +484,26 @@ export const openApiDocument = {
       post: {
         tags: ['mailings'],
         summary: 'Отправить тестовое письмо',
+        description:
+          'Письмо по-настоящему уходит на `email`. Если указан `receiver` — адрес ' +
+          'получателя рассылки, шаблоны заполняются его данными (имя, код, ' +
+          'extraData), как в предпросмотре, но получателю ничего не отправляется. ' +
+          'Адреса нет в рассылке — шаблоны заполняются только адресом ' +
+          '(`receiverFound: false`). Без `receiver` — только адресом `email`.',
         parameters: [mailingId()],
-        requestBody: body(sendTestEmailBody, { email: 'me@example.com' }),
+        requestBody: body(sendTestEmailBody, {
+          email: 'me@example.com', receiver: 'user@example.com'
+        }),
         responses: {
-          200: ok(),
+          200: ok({
+            type: 'object',
+            properties: {
+              receiverFound: {
+                type: 'boolean',
+                description: 'Есть ли `receiver` среди получателей (только если он указан)'
+              }
+            }
+          }),
           400: badRequest,
           404: notFound,
           409: missingAttachment

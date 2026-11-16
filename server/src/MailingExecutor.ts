@@ -90,11 +90,18 @@ export class MailingExecutor extends EventEmitter {
     }
   }
 
-  async sendTestEmail (mailing: Mailing, address: string) {
+  /**
+   * Пробное письмо на address. receiver — чьими данными заполнить шаблоны
+   * (имя, код, extraData); без него получатель — только адрес. Письмо в любом
+   * случае уходит только на address
+   */
+  async sendTestEmail (mailing: Mailing, address: string, receiver?: Receiver) {
     await this.checkAttachments(mailing);
-    const email = await this.createEmail(mailing, new Receiver(address));
+    const email = await this.createEmail(mailing, receiver || new Receiver(address));
+    email.receivers = [new Receiver(address)];
     await this.mailer.sendEmail(email);
-    this.logger.verbose(`#${mailing.id}: sent test email to ${address}`);
+    const filledFor = receiver ? ` filled for ${receiver.email}` : '';
+    this.logger.verbose(`#${mailing.id}: sent test email to ${address}${filledFor}`);
   }
 
   async startExecution (mailing: Mailing): Promise<void> {

@@ -99,6 +99,21 @@ describe('MailingExecutor', { skip: redisSkip }, () => {
       await executor.sendTestEmail(mailing, testAddress);
       assert.equal(mailer.sendEmail.mock.callCount(), 1);
     });
+
+    it('should fill templates with receiver data but send to test address', async () => {
+      mailer.sendEmail.mock.resetCalls();
+      const personal = await mailingRepository.create({
+        html: '<p>Hello, {{name}} ({{email}})</p>', name: testName,
+        subject: 'For {{name}}', undeliveredCount: 0
+      }, [{ email: 'client@example.com', name: 'Client' }]);
+      const receiver = (await personal.getReceiverByEmail('client@example.com'))!;
+      await executor.sendTestEmail(personal, 'me@example.com', receiver);
+      assert.equal(mailer.sendEmail.mock.callCount(), 1);
+      const [email] = mailer.sendEmail.mock.calls[0].arguments as unknown as [Email];
+      assert.deepEqual(email.receivers.map(r => r.email), ['me@example.com']);
+      assert.equal(email.subject, 'For Client');
+      assert.match(email.html!, /Hello, Client \(client@example\.com\)/);
+    });
   });
 
   describe('space From', () => {
