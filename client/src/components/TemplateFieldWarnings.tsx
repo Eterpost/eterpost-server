@@ -2,7 +2,7 @@ import * as React from 'react';
 import {
   canInsertField, checkTemplateFields, fieldPlaceholder, FieldProblem, fieldTitle,
   ReceiverFieldStats
-} from '../../../server/src/templateFields';
+} from 'eterpost-letter-editor/fields';
 
 
 export interface TemplateFieldWarningsProps {

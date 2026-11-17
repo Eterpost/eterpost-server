@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { success } from '../utils/response';
 import { catchPromise } from '../utils/catchPromise';
 import { getLoadedMailing } from '../middleware/loadMailing';
-import { FieldStatsCollector } from '../templateFields';
+import { FieldStatsCollector } from 'eterpost-letter-editor/fields';
 
 
 /**

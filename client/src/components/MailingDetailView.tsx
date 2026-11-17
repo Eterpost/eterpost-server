@@ -15,7 +15,7 @@ import { Checkbox } from './elements/Checkbox';
 import { formatDate } from '../formatDate';
 import { EmailPreview, getReceiverFields, RetryFilter } from '../api';
 import { insertableFields, TemplateFieldWarnings } from './TemplateFieldWarnings';
-import { collectFieldStats, ReceiverFieldStats } from '../../../server/src/templateFields';
+import { collectFieldStats, ReceiverFieldStats } from 'eterpost-letter-editor/fields';
 import { EmailPreviewView } from './EmailPreviewView';
 import { fromPlaceholder } from './AddForm';
 import { AttachmentList } from './AttachmentList';

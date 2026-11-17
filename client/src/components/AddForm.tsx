@@ -4,7 +4,7 @@ import '../styles/AddForm';
 import { ReceiverList } from './ReceiverList';
 import { Editor } from './Editor';
 import { insertableFields, TemplateFieldWarnings } from './TemplateFieldWarnings';
-import { collectFieldStats, ReceiverFieldStats } from '../../../server/src/templateFields';
+import { collectFieldStats, ReceiverFieldStats } from 'eterpost-letter-editor/fields';
 import { Checkbox } from './elements/Checkbox';
 import template from '../email-template.html';
 

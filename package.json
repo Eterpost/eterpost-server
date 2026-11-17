@@ -24,6 +24,7 @@
     "cors": "^2.8.6",
     "cron-converter": "^2.1.0",
     "csv-stringify": "^6.9.0",
+    "eterpost-letter-editor": "file:../../../../../../home/lav/tmp/claude/pkg/eterpost-letter-editor-0.1.0.tgz",
     "express": "^5.1.0",
     "handlebars": "^4.7.10",
     "html-to-text": "^10.0.1",

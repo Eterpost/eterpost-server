@@ -4,7 +4,7 @@ import { MailingCreateData } from './components/AddForm';
 import { MAX_RECEIVERS } from './components/ReceiverList';
 import { SorterStatus } from '../../server/src/RedisSorterStatusRepository';
 import type { AttachmentInfo } from '../../server/src/attachments';
-import type { ReceiverFieldStats } from '../../server/src/templateFields';
+import type { ReceiverFieldStats } from 'eterpost-letter-editor/fields';
 
 export type { AttachmentInfo };
 

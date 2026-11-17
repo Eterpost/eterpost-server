@@ -3,7 +3,7 @@ import { RichTextEditor } from './RichTextEditor';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.scss';
 import * as pretty from 'pretty';
-import { fieldPlaceholder, fieldTitle } from '../../../server/src/templateFields';
+import { fieldPlaceholder, fieldTitle } from 'eterpost-letter-editor/fields';
 
 
 export interface EditorProps {
