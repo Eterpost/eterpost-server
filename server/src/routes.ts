@@ -11,6 +11,7 @@ import { MailingStateManager } from './MailingStateManager';
 import { getReceivers } from './controllers/getReceivers';
 import { deleteMailing } from './controllers/deleteMailing';
 import { sendTestEmail } from './controllers/sendTestEmail';
+import { getMe, setupAdminRoutes } from './controllers/admin';
 import { previewEmail } from './controllers/previewEmail';
 import { previewDraft } from './controllers/previewDraft';
 import { getSpaces } from './controllers/getSpaces';
@@ -61,6 +62,8 @@ export function setupRoutes (
   // проверяет пространство рассылки
   const mailing = loadMailing(repository);
   const mailingById = loadMailing(repository, 'mailingId');
+  app.get('/me', getMe());
+  setupAdminRoutes(app, spaceRepository, apiKeyRepository, repository, logger);
   app.get('/spaces', getSpaces(spaceRepository));
   app.get('/mailings', getMailings(repository));
   app.get('/mailings/:id', mailing, getMailing(repository, config));

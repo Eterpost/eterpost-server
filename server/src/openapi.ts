@@ -1,6 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { requestBodyJsonSchema as addMailingBody } from './controllers/addMailing';
+import {
+  createKeyBody, createSpaceBody, moveMailingBody, setKeyRoleBody, updateSpaceBody
+} from './controllers/admin';
 import { requestBodyJsonSchema as createRetryMailingBody } from './controllers/createRetryMailing';
 import {
   requestBodyJsonSchema as requestSubscriptionBody
@@ -98,6 +101,19 @@ const attachmentId = {
   schema: { type: 'string', pattern: '^[0-9a-f]{16}$' },
   description: 'ID вложения'
 };
+const adminRequired = failure('Запрос не от админа (ADMIN_REQUIRED)');
+const spaceNotFound = failure('Нет такого пространства (SPACE_NOT_FOUND)');
+const spaceName = {
+  name: 'name', in: 'path', required: true,
+  schema: { type: 'string', pattern: '^[a-z0-9][a-z0-9-]{0,31}$' }, description: 'Имя пространства'
+};
+const login = {
+  name: 'login', in: 'path', required: true, schema: { type: 'string' },
+  description: 'Логин участника'
+};
+const keyName = {
+  name: 'name', in: 'path', required: true, schema: { type: 'string' }, description: 'Имя ключа'
+};
 const spaceForbidden = failure('Нет доступа к пространству из X-Eterpost-Space (SPACE_FORBIDDEN)');
 
 /**
@@ -155,6 +171,11 @@ export const openApiDocument = {
   servers: [{ url: '.' }],
   tags: [
     { name: 'mailings', description: 'Рассылки' },
+    {
+      name: 'admin',
+      description: 'Администрирование: только ключ с ролью admin или логин из ' +
+        '`server.auth.admins` через фронт; остальным — 403 (`ADMIN_REQUIRED`)'
+    },
     { name: 'attachments', description: 'Вложения рассылок' },
     { name: 'receivers', description: 'Получатели рассылки' },
     { name: 'subscription', description: 'Подписка и отписка (используется subscription-facade)' },
@@ -165,6 +186,159 @@ export const openApiDocument = {
     }
   ],
   paths: withSpace({
+    '/me': {
+      get: {
+        tags: ['mailings'],
+        summary: 'Кто сделал запрос',
+        description: 'Имя ключа, пользователь фронта (`X-Remote-User`) и признак админа: ' +
+          'по нему веб-клиент показывает раздел «Администрирование».',
+        responses: {
+          200: ok({
+            type: 'object',
+            properties: {
+              admin: { type: 'boolean' },
+              key: { type: 'string' },
+              user: { type: 'string' }
+            },
+            required: ['admin']
+          })
+        }
+      }
+    },
+    '/admin/spaces': {
+      get: {
+        tags: ['admin'],
+        summary: 'Все пространства с участниками и числом рассылок',
+        responses: { 200: ok({ type: 'array', items: ref('AdminSpace') }), 403: adminRequired }
+      },
+      post: {
+        tags: ['admin'],
+        summary: 'Создать пространство',
+        requestBody: body(createSpaceBody, {
+          name: 'news', title: 'Новости', from: 'Новости <news@example.com>'
+        }),
+        responses: {
+          200: ok(),
+          400: badRequest,
+          403: adminRequired,
+          409: failure('Пространство уже есть (SPACE_EXISTS)')
+        }
+      }
+    },
+    '/admin/spaces/{name}': {
+      put: {
+        tags: ['admin'],
+        summary: 'Изменить название и/или From пространства',
+        parameters: [spaceName],
+        requestBody: body(updateSpaceBody, { title: 'Новости компании' }),
+        responses: { 200: ok(), 400: badRequest, 403: adminRequired, 404: spaceNotFound }
+      },
+      delete: {
+        tags: ['admin'],
+        summary: 'Удалить пространство без рассылок вместе с участниками',
+        parameters: [spaceName],
+        responses: {
+          200: ok(),
+          400: failure('default удалить нельзя (DEFAULT_SPACE)'),
+          403: adminRequired,
+          404: spaceNotFound,
+          409: failure('В пространстве есть рассылки (SPACE_NOT_EMPTY)')
+        }
+      }
+    },
+    '/admin/spaces/{name}/members/{login}': {
+      put: {
+        tags: ['admin'],
+        summary: 'Добавить участника (логин, который фронт передаёт в X-Remote-User)',
+        parameters: [spaceName, login],
+        responses: { 200: ok(), 400: badRequest, 403: adminRequired, 404: spaceNotFound }
+      },
+      delete: {
+        tags: ['admin'],
+        summary: 'Убрать участника',
+        parameters: [spaceName, login],
+        responses: {
+          200: ok(), 403: adminRequired, 404: failure('Такого участника нет (MEMBER_NOT_FOUND)')
+        }
+      }
+    },
+    '/admin/mailings/{id}/move': {
+      post: {
+        tags: ['admin'],
+        summary: 'Перенести рассылку в другое пространство',
+        parameters: [mailingId()],
+        requestBody: body(moveMailingBody, { space: 'sales' }),
+        responses: {
+          200: ok({
+            type: 'object',
+            properties: { previous: { type: 'string' }, space: { type: 'string' } }
+          }),
+          400: badRequest,
+          403: adminRequired,
+          404: failure('Нет рассылки (MAILING_NOT_FOUND) или пространства (SPACE_NOT_FOUND)')
+        }
+      }
+    },
+    '/admin/keys': {
+      get: {
+        tags: ['admin'],
+        summary: 'Ключи API: имя, роль, создан, последнее использование',
+        description: 'Значения и хеши ключей не отдаются. `current` — ключ этого запроса.',
+        responses: { 200: ok({ type: 'array', items: ref('ApiKey') }), 403: adminRequired }
+      },
+      post: {
+        tags: ['admin'],
+        summary: 'Выпустить ключ',
+        description: 'Значение ключа есть только в этом ответе: сервер хранит лишь его хеш.',
+        requestBody: body(createKeyBody, {
+          name: 'site-sales', role: { type: 'space', space: 'sales' }
+        }),
+        responses: {
+          200: ok({
+            type: 'object',
+            properties: { key: { type: 'string' }, name: { type: 'string' } },
+            required: ['key', 'name']
+          }),
+          400: badRequest,
+          403: adminRequired,
+          404: spaceNotFound,
+          409: failure('Ключ с таким именем уже есть (KEY_EXISTS)')
+        }
+      }
+    },
+    '/admin/keys/{name}/role': {
+      put: {
+        tags: ['admin'],
+        summary: 'Сменить роль ключа (сам ключ не меняется)',
+        parameters: [keyName],
+        requestBody: body(setKeyRoleBody, { role: { type: 'system' } }),
+        responses: {
+          200: ok(),
+          400: badRequest,
+          403: adminRequired,
+          404: failure('Нет ключа (KEY_NOT_FOUND) или пространства (SPACE_NOT_FOUND)'),
+          409: failure('Ключ этого запроса менять нельзя (OWN_KEY)')
+        }
+      }
+    },
+    '/admin/keys/{name}': {
+      delete: {
+        tags: ['admin'],
+        summary: 'Отозвать ключ',
+        parameters: [keyName, {
+          name: 'force',
+          in: 'query',
+          schema: { enum: ['1'] },
+          description: '1 — отозвать и ключ прокси (через него входят в веб-интерфейс)'
+        }],
+        responses: {
+          200: ok(),
+          403: adminRequired,
+          404: failure('Нет ключа (KEY_NOT_FOUND)'),
+          409: failure('Ключ этого запроса (OWN_KEY) или ключ прокси без force (PROXY_KEY)')
+        }
+      }
+    },
     '/spaces': {
       get: {
         tags: ['mailings'],
@@ -715,6 +889,40 @@ export const openApiDocument = {
           size: { type: 'integer', description: 'Размер в байтах' }
         },
         required: ['id', 'filename', 'contentType', 'size']
+      },
+      AdminSpace: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', example: 'sales' },
+          title: { type: 'string', example: 'Отдел продаж' },
+          from: { type: 'string', example: 'Продажи <sales@example.com>' },
+          createdAt: { type: 'string', format: 'date-time' },
+          members: { type: 'array', items: { type: 'string' }, example: ['ivan'] },
+          mailingCount: { type: 'integer' }
+        },
+        required: ['name', 'members', 'mailingCount']
+      },
+      ApiKey: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', example: 'site-sales' },
+          role: { $ref: '#/components/schemas/ApiKeyRole' },
+          createdAt: { type: 'string', format: 'date-time' },
+          lastUsedAt: { type: 'string', format: 'date-time' },
+          current: { type: 'boolean', description: 'Ключ этого запроса' }
+        },
+        required: ['name', 'role', 'createdAt', 'current']
+      },
+      ApiKeyRole: {
+        type: 'object',
+        description: 'space — одно пространство (space), system — службы, admin — все ' +
+          'пространства и /admin, proxy — фронт веб-клиента, legacy — старый ключ без роли ' +
+          '(только в списке)',
+        properties: {
+          type: { enum: ['space', 'system', 'admin', 'proxy', 'legacy'] },
+          space: { type: 'string' }
+        },
+        required: ['type']
       },
       Space: {
         type: 'object',

@@ -138,11 +138,11 @@ describe('resolveSpaceAccess', () => {
     const proxy = key({ proxy: true });
     assert.deepEqual(
       await resolveSpaceAccess(proxy, 'lav', undefined, spaces, admins),
-      { allowed: 'all' }
+      { admin: true, allowed: 'all' }
     );
     assert.deepEqual(
       await resolveSpaceAccess(proxy, 'lav', 'news', spaces, admins),
-      { allowed: 'all', current: 'news' }
+      { admin: true, allowed: 'all', current: 'news' }
     );
     await assert.rejects(
       resolveSpaceAccess(proxy, 'lav', 'nope', spaces, admins),

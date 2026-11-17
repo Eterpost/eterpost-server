@@ -18,6 +18,8 @@ const defaultConfig: ApiKeyRepositoryConfig = {
 };
 
 export interface ApiKeyRecord {
+  /** Ключ админа: все пространства и управление пространствами и ключами (/admin) */
+  admin?: boolean;
   createdAt: string;
   hash: string;
   lastUsedAt?: string;
@@ -29,7 +31,7 @@ export interface ApiKeyRecord {
   proxy: boolean;
   /** Ключ привязан к пространству рассылок */
   space?: string;
-  /** Системный ключ: доступ ко всем пространствам и управление ими */
+  /** Системный ключ: доступ ко всем пространствам (службы: mail-sorter, facade) */
   system?: boolean;
 }
 
@@ -37,20 +39,22 @@ export interface ApiKeyRecord {
  * Роль ключа; роли взаимоисключающие. Пустая роль — «старый» ключ (legacy)
  */
 export interface ApiKeyRole {
+  admin?: boolean;
   proxy?: boolean;
   space?: string;
   system?: boolean;
 }
 
 function assertSingleRole (role: ApiKeyRole): void {
-  if ([role.proxy, role.space, role.system].filter(Boolean).length > 1) {
+  if ([role.admin, role.proxy, role.space, role.system].filter(Boolean).length > 1) {
     throw new Error('Choose one role');
   }
 }
 
 // Только роли, которые заданы: у legacy-записей новых полей нет
-function roleFields (role: ApiKeyRole): { proxy: boolean; space?: string; system?: boolean } {
+function roleFields (role: ApiKeyRole): ApiKeyRole & { proxy: boolean } {
   return {
+    ...role.admin ? { admin: true } : {},
     proxy: Boolean(role.proxy),
     ...role.space ? { space: role.space } : {},
     ...role.system ? { system: true } : {}
@@ -60,8 +64,24 @@ function roleFields (role: ApiKeyRole): { proxy: boolean; space?: string; system
 /**
  * Ключ без роли, выданный до появления пространств
  */
-export function isLegacyKey (record: Pick<ApiKeyRecord, 'proxy' | 'space' | 'system'>): boolean {
-  return !record.proxy && !record.space && !record.system;
+export function isLegacyKey (record: ApiKeyRole): boolean {
+  return !record.admin && !record.proxy && !record.space && !record.system;
+}
+
+/**
+ * Роль ключа словом: space:<имя>, system, admin, proxy, legacy
+ */
+export function describeRole (record: ApiKeyRole): string {
+  if (record.space) {
+    return `space:${record.space}`;
+  }
+  if (record.system) {
+    return 'system';
+  }
+  if (record.admin) {
+    return 'admin';
+  }
+  return record.proxy ? 'proxy' : 'legacy';
 }
 
 // Имя попадает в журнал и в командную строку, поэтому без пробелов и спецсимволов

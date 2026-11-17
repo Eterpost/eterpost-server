@@ -7,6 +7,8 @@ import { DEFAULT_SPACE, SPACE_NAME_PATTERN, SpaceRepository } from '../SpaceRepo
  * К каким пространствам рассылок у запроса есть доступ
  */
 export interface SpaceAccess {
+  /** Админ: ключ с ролью admin или вошедший на фронте логин из server.auth.admins */
+  admin?: boolean;
   allowed: string[] | 'all';
   // текущее пространство: из ключа пространства или заголовка X-Eterpost-Space
   current?: string;
@@ -64,9 +66,12 @@ async function resolveAllowed (
   if (record.system) {
     return { allowed: 'all', system: true };
   }
+  if (record.admin) {
+    return { admin: true, allowed: 'all' };
+  }
   // Ключ прокси: пространства пользователя, вошедшего на фронте
   if (user && admins.includes(user)) {
-    return { allowed: 'all' };
+    return { admin: true, allowed: 'all' };
   }
   // Пока участники не заведены, веб-интерфейс после обновления не должен опустеть
   // (в том числе если фронт ещё не передаёт X-Remote-User)

@@ -208,7 +208,7 @@ describe('apiKeyAuth', { skip: redisSkip }, () => {
         Authorization: `Bearer ${frontKey}`, 'X-Eterpost-Space': 'sales', 'X-Remote-User': 'lav'
       }
     });
-    assert.deepEqual(admin.body.access, { allowed: 'all', current: 'sales' });
+    assert.deepEqual(admin.body.access, { admin: true, allowed: 'all', current: 'sales' });
 
     const anonymous = await request('/mailings');
     assert.deepEqual(anonymous.body.access, { allowed: 'all', legacy: true });

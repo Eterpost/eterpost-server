@@ -1,7 +1,7 @@
 import { parseArgs } from 'node:util';
 import { readConfig } from './readConfig';
 import { RedisConnectionPoolImpl } from './RedisConnectionPool';
-import { ApiKeyRecord, ApiKeyRepository, ApiKeyRole, isLegacyKey } from './ApiKeyRepository';
+import { ApiKeyRepository, ApiKeyRole, describeRole } from './ApiKeyRepository';
 import { SpaceRepository } from './SpaceRepository';
 
 
@@ -14,24 +14,17 @@ const usage = `Управление ключами API mail-server (хранят
 
 Роль (не больше одной; без роли — «старый» ключ, legacy):
   --space <пространство>         ключ работает только в этом пространстве
-  --system                       системный ключ: все пространства
+  --system                       системный ключ: все пространства (службы)
+  --admin                        ключ админа: все пространства и управление
+                                 пространствами и ключами (/admin)
   --proxy                        ключ фронта, которому сервер верит в заголовке
                                  X-Remote-User`;
-
-function describeRole (record: Pick<ApiKeyRecord, 'proxy' | 'space' | 'system'>): string {
-  if (record.space) {
-    return `space:${record.space}`;
-  }
-  if (record.system) {
-    return 'system';
-  }
-  return isLegacyKey(record) ? 'legacy' : 'proxy';
-}
 
 async function main () {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
     options: {
+      admin: { type: 'boolean' },
       help: { short: 'h', type: 'boolean' },
       proxy: { type: 'boolean' },
       space: { type: 'string' },
@@ -51,9 +44,11 @@ async function main () {
     console.error('Empty --space: give a space name');
     return 2;
   }
-  const role: ApiKeyRole = { proxy: values.proxy, space: values.space, system: values.system };
-  if (command === 'set-role' && !role.proxy && !role.space && !role.system) {
-    console.error('Usage: api-keys set-role <name> --space <space> | --system | --proxy');
+  const role: ApiKeyRole = {
+    admin: values.admin, proxy: values.proxy, space: values.space, system: values.system
+  };
+  if (command === 'set-role' && !role.admin && !role.proxy && !role.space && !role.system) {
+    console.error('Usage: api-keys set-role <name> --space <space> | --system | --admin | --proxy');
     return 2;
   }
 
