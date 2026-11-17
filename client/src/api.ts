@@ -237,3 +237,91 @@ export function deleteAttachment (mailingId: number, id: string): Promise<void> 
 export function attachmentUrl (mailingId: number, id: string): string {
   return API_URL + `/mailings/${mailingId}/attachments/${id}`;
 }
+
+export interface Me {
+  admin: boolean;
+  key?: string;
+  user?: string;
+}
+
+export function getMe (): Promise<Me> {
+  return apiRequest('/me', 'GET', null, undefined, false);
+}
+
+// Администрирование: запросы без X-Eterpost-Space — админ работает со всеми пространствами
+
+export type ApiKeyRoleType = 'admin' | 'legacy' | 'proxy' | 'space' | 'system';
+
+export interface ApiKeyRole {
+  space?: string;
+  type: ApiKeyRoleType;
+}
+
+export interface AdminKey {
+  createdAt: string;
+  current: boolean;
+  lastUsedAt?: string;
+  name: string;
+  role: ApiKeyRole;
+}
+
+export interface AdminSpace extends Space {
+  createdAt?: string;
+  mailingCount: number;
+  members: string[];
+}
+
+function adminRequest (endpoint: string, method: HttpMethod = 'GET', data?: any) {
+  return apiRequest('/admin' + endpoint, method, null, data, false);
+}
+
+const segment = encodeURIComponent;
+
+export function getAllMailings (): Promise<Mailing[]> {
+  return apiRequest('/mailings', 'GET', { kind: 'all' }, undefined, false);
+}
+
+export function moveMailing (id: number, space: string): Promise<void> {
+  return adminRequest(`/mailings/${id}/move`, 'POST', { space });
+}
+
+export function getAdminSpaces (): Promise<AdminSpace[]> {
+  return adminRequest('/spaces');
+}
+
+export function createSpace (space: { from?: string, name: string, title?: string }) {
+  return adminRequest('/spaces', 'POST', space);
+}
+
+export function updateSpace (name: string, patch: { from?: string, title?: string }) {
+  return adminRequest(`/spaces/${segment(name)}`, 'PUT', patch);
+}
+
+export function removeSpace (name: string) {
+  return adminRequest(`/spaces/${segment(name)}`, 'DELETE');
+}
+
+export function addSpaceMember (name: string, login: string) {
+  return adminRequest(`/spaces/${segment(name)}/members/${segment(login)}`, 'PUT', {});
+}
+
+export function removeSpaceMember (name: string, login: string) {
+  return adminRequest(`/spaces/${segment(name)}/members/${segment(login)}`, 'DELETE');
+}
+
+export function getAdminKeys (): Promise<AdminKey[]> {
+  return adminRequest('/keys');
+}
+
+export function issueKey (name: string, role: ApiKeyRole): Promise<{ key: string, name: string }> {
+  return adminRequest('/keys', 'POST', { name, role });
+}
+
+export function setKeyRole (name: string, role: ApiKeyRole): Promise<void> {
+  return adminRequest(`/keys/${segment(name)}/role`, 'PUT', { role });
+}
+
+export function revokeKey (name: string, force = false): Promise<void> {
+  return apiRequest(`/admin/keys/${segment(name)}`, 'DELETE', force ? { force: 1 } : null,
+    undefined, false);
+}

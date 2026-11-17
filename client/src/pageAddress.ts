@@ -61,3 +61,24 @@ export function storeSpace (space: string | undefined) {
     // нечего делать: выбор просто не запомнится
   }
 }
+
+// Раздел страницы: рассылки (по умолчанию) или администрирование с вкладкой
+export type AdminTab = 'mailings' | 'spaces' | 'keys';
+
+export const ADMIN_TABS: AdminTab[] = ['mailings', 'spaces', 'keys'];
+
+export function readAdminTabFromAddress (): AdminTab | undefined {
+  if (readParam('view') !== 'admin') {
+    return undefined;
+  }
+  const tab = readParam('tab');
+  return ADMIN_TABS.includes(tab as AdminTab) ? tab as AdminTab : 'mailings';
+}
+
+// undefined — обычный вид рассылок
+export function writeAdminTabToAddress (tab: AdminTab | undefined) {
+  writeParams({
+    tab: tab && tab !== 'mailings' ? tab : undefined,
+    view: tab ? 'admin' : undefined
+  });
+}
