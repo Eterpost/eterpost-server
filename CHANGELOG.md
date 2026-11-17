@@ -3,7 +3,7 @@
 All notable changes to eterpost-server. Versions follow [Semantic Versioning](https://semver.org/);
 before 1.0 a minor version brings new features and a patch version brings fixes.
 
-## Unreleased
+## 0.5.0 — 2026-11-17
 
 ### Receivers from a file
 - The receivers CSV file may have a header: `email`, `name` and any other columns,
