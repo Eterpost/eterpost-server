@@ -3,6 +3,12 @@
 All notable changes to eterpost-server. Versions follow [Semantic Versioning](https://semver.org/);
 before 1.0 a minor version brings new features and a patch version brings fixes.
 
+## 0.6.1 — 2026-11-17
+
+### Internal
+- The server is built as ES modules (`"type": "module"`); behaviour and API are the
+  same. The webpack config is now `client/webpack.config.cjs`.
+
 ## 0.6.0 — 2026-11-17
 
 ### Receiver fields in the letter
