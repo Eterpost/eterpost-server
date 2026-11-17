@@ -103,8 +103,8 @@ describe('MailingExecutor', { skip: redisSkip }, () => {
     it('should fill templates with receiver data but send to test address', async () => {
       mailer.sendEmail.mock.resetCalls();
       const personal = await mailingRepository.create({
-        html: '<p>Hello, {{name}} ({{email}})</p>', name: testName,
-        subject: 'For {{name}}', undeliveredCount: 0
+        html: '<p>Hello, {{receiver.name}} ({{receiver.email}})</p>', name: testName,
+        subject: 'For {{receiver.name}}', undeliveredCount: 0
       }, [{ email: 'client@example.com', name: 'Client' }]);
       const receiver = (await personal.getReceiverByEmail('client@example.com'))!;
       await executor.sendTestEmail(personal, 'me@example.com', receiver);
