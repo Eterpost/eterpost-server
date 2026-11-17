@@ -93,6 +93,7 @@ services:
       FACADE_URL: http://facade:8001
       CLIENT_URL: http://client
       MAIL_HOST: mail
+      STAND_ADMIN_KEY: ${STAND_ADMIN_KEY:-}
       STAND_NEWS_KEY: ${STAND_NEWS_KEY:-}
       STAND_SALES_KEY: ${STAND_SALES_KEY:-}
     depends_on:

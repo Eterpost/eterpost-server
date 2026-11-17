@@ -11,6 +11,8 @@ const MAIL_HOST = process.env.MAIL_HOST || '127.0.0.1';
 // Ключи пространств (создаются run.sh): «сайт» отдела продаж и новостей
 const SALES_KEY = process.env.STAND_SALES_KEY;
 const NEWS_KEY = process.env.STAND_NEWS_KEY;
+// Ключ админа: пространства и ключи через /admin
+const ADMIN_KEY = process.env.STAND_ADMIN_KEY;
 
 const MAILING_NAME = 'E2E рассылка';
 
@@ -87,7 +89,8 @@ async function waitFor (check, { timeout = 30000, interval = 500, what = 'condit
 }
 
 module.exports = {
-  api, CLIENT_URL, FACADE_URL, findMailing, MAIL_SERVER_URL, MAILING_NAME, NEWS_KEY, rawApi,
+  ADMIN_KEY, api, CLIENT_URL, FACADE_URL, findMailing, MAIL_SERVER_URL, MAILING_NAME, NEWS_KEY,
+  rawApi,
   readMailbox,
   SALES_KEY, sendRaw, waitFor
 };

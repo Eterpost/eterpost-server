@@ -16,7 +16,8 @@ SUBSCRIPTION_FACADE_SRC=../../subscription-facade MAIL_SORTER_SRC=../../mail-sor
 
 Ключи API и пространства создаёт `run.sh` после запуска mail-server:
 пространства `sales` и `news`, служебные ключи (`--system`) для mail-sorter и
-subscription-facade, ключи пространств (`--space`) для «сайтов» e2e-тестов. Сервер
+subscription-facade, ключи пространств (`--space`) для «сайтов» e2e-тестов
+и ключ админа (`--admin`, `STAND_ADMIN_KEY`) для проверки администрирования. Сервер
 работает с `server.auth.required: true`. Конфигурация facade и
 `.generated/keys.env` (переменные `STAND_*_KEY`) записываются в
 `stand/.generated/` (в git не попадает); для ручных запусков

@@ -42,16 +42,18 @@ STAND_SORTER_KEY=$(new_key stand-sorter --system)
 STAND_FACADE_KEY=$(new_key stand-facade --system)
 STAND_SALES_KEY=$(new_key stand-sales --space sales)
 STAND_NEWS_KEY=$(new_key stand-news --space news)
+STAND_ADMIN_KEY=$(new_key stand-admin --admin)
 printf '{\n  "apiKey": "%s",\n  "backend": "http://mail-server:8000",\n  "port": 8001\n}\n' \
     "$STAND_FACADE_KEY" >.generated/facade.json
-printf 'export STAND_SORTER_KEY=%s\nexport STAND_SALES_KEY=%s\nexport STAND_NEWS_KEY=%s\n' \
-    "$STAND_SORTER_KEY" "$STAND_SALES_KEY" "$STAND_NEWS_KEY" >.generated/keys.env
-export STAND_SORTER_KEY STAND_SALES_KEY STAND_NEWS_KEY
+printf 'export STAND_SORTER_KEY=%s\nexport STAND_SALES_KEY=%s\nexport STAND_NEWS_KEY=%s\nexport STAND_ADMIN_KEY=%s\n' \
+    "$STAND_SORTER_KEY" "$STAND_SALES_KEY" "$STAND_NEWS_KEY" "$STAND_ADMIN_KEY" >.generated/keys.env
+export STAND_SORTER_KEY STAND_SALES_KEY STAND_NEWS_KEY STAND_ADMIN_KEY
 
 compose up -d --wait facade client
 
 echo "=== Stage 1: mailing, subscription, incoming mail"
-compose run --rm e2e 1-mailing.test.js 1-spaces.test.js 1-attachments.test.js 1-images.test.js
+compose run --rm e2e 1-mailing.test.js 1-spaces.test.js 1-attachments.test.js 1-images.test.js \
+    1-admin.test.js
 
 echo "=== mail-sorter"
 compose run --rm mail-sorter
