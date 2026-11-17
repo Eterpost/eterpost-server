@@ -5,6 +5,13 @@ before 1.0 a minor version brings new features and a patch version brings fixes.
 
 ## Unreleased
 
+### Receivers from a file
+- The receivers CSV file may have a header: `email`, `name` and any other columns,
+  which go to `extraData` under their names — a file saved from Excel or LibreOffice
+  works as is (`,` or `;`, UTF-8 or windows-1251). Files without a header are read
+  in the old `email,name,JSON` format; JSON cut by unquoted commas is glued back.
+- Errors in the file are shown with line numbers instead of silently doing nothing.
+
 ### Administration
 - Web client: an "Администрирование" section for administrators with three tabs:
   all mailings of all spaces (filters, sorting, a summary of running mailings,

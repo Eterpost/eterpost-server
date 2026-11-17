@@ -4,6 +4,7 @@ import { Receiver } from '../reducers/mailings';
 import '../styles/ReceiverList';
 import { ConfirmationButton } from './elements/ConfirmationButton';
 import { formatDate } from '../formatDate';
+import { decodeReceiversFile, parseReceiverRows } from '../../../server/src/receiversCsv';
 
 
 export const MAX_RECEIVERS = 100;
@@ -47,7 +48,14 @@ function describeFailure (receiver: Receiver) {
   return `${kind} ${receiver.status}`;
 }
 
-export class ReceiverList extends React.Component<ReceiverListProps> {
+interface ReceiverListState {
+  // Ошибки последнего загруженного файла: при них список не меняется
+  fileErrors?: string[];
+}
+
+export class ReceiverList extends React.Component<ReceiverListProps, ReceiverListState> {
+  state: ReceiverListState = {};
+
   static defaultProps = {
     emptyText: 'Список пуст',
     title: 'Получатели'
@@ -129,6 +137,7 @@ export class ReceiverList extends React.Component<ReceiverListProps> {
           {this.props.title} ({length})
           {this.renderActions()}
         </h4>
+        {this.renderFileErrors()}
         <ul className='list'>
           {content}
           {empty}
@@ -146,21 +155,48 @@ export class ReceiverList extends React.Component<ReceiverListProps> {
     }
   };
 
+  private renderFileErrors () {
+    const errors = this.state.fileErrors;
+    if (!errors) {
+      return null;
+    }
+    return (
+      <div className='file-errors' role='alert'>
+        <p>Файл не загружен, список получателей не изменился:</p>
+        <ul>
+          {errors.map((text, index) => <li key={index}>{text}</li>)}
+        </ul>
+        <button className='action' onClick={() => this.setState({ fileErrors: undefined })}>
+          Скрыть
+        </button>
+      </div>
+    );
+  }
+
   private changeFile = async (event: React.FormEvent<HTMLInputElement>) => {
     const file = event.currentTarget.files && event.currentTarget.files[0];
-    if (file) {
-      const receiversData: Array<[string]> = await this.readFile(file);
-      const receivers: Receiver[] = receiversData
-        .map(line => line.map(str => str.trim()).filter(str => str.length))
-        .filter(line => line.length)
-        .map(line => ({
-          email: line[0],
-          name: line[1] || '',
-          extraData: JSON.parse(line[2] || '{}')
-      }));
-      if (this.props.onChange) {
-        this.props.onChange(receivers);
-      }
+    if (!file) {
+      return;
+    }
+    let rows: unknown[][];
+    try {
+      rows = await this.readFile(file);
+    } catch (error) {
+      this.setState({ fileErrors: ['не удалось прочитать файл как CSV'] });
+      return;
+    }
+    const { errors, receivers } = parseReceiverRows(rows);
+    if (errors.length) {
+      this.setState({ fileErrors: errors });
+      return;
+    }
+    if (!receivers.length) {
+      this.setState({ fileErrors: ['в файле нет ни одного получателя'] });
+      return;
+    }
+    this.setState({ fileErrors: undefined });
+    if (this.props.onChange) {
+      this.props.onChange(receivers as Receiver[]);
     }
   };
 
@@ -171,17 +207,16 @@ export class ReceiverList extends React.Component<ReceiverListProps> {
     }
   };
 
-  private readFile (file: File): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      parser.parse(file, {
-        complete: result => {
-          resolve(result.data);
-        },
-        error: error => {
-          reject(error);
-        }
-      });
-    });
+  // Кодировка определяется по содержимому (UTF-8 или windows-1251 из Excel),
+  // разделитель («,» или «;») — парсером
+  private async readFile (file: File): Promise<unknown[][]> {
+    const text = decodeReceiversFile(new Uint8Array(await file.arrayBuffer()));
+    const result = parser.parse<unknown[]>(text, { skipEmptyLines: false });
+    const fatal = result.errors.find(error => error.type !== 'Delimiter');
+    if (fatal) {
+      throw new Error(fatal.message);
+    }
+    return result.data;
   }
 
   private removeReceiver (receiver: Receiver) {

@@ -7,8 +7,9 @@ import { Checkbox } from './elements/Checkbox';
 import template from '../email-template.html';
 
 
-const RECEIVERS_HELP = 'Загрузите CSV-файл кнопкой «Из файла»: в каждой строке адрес, ' +
-  'имя и, если нужно, дополнительные данные в JSON — они доступны в шаблоне письма.';
+const RECEIVERS_HELP = 'Загрузите CSV-файл кнопкой «Из файла» (можно сохранить из Excel). ' +
+  'Первая строка — названия колонок: email, name и любые свои, например city. ' +
+  'Свои колонки доступны в шаблоне письма: {{receiver.extraData.city}}.';
 
 export interface MailingCreateData {
   from?: string;

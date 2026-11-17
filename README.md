@@ -234,9 +234,21 @@ envelope sender (Return-Path) and the `Sender` header stay `server.mail.from`,
 so bounces still reach the mailbox read by mail-sorter. The `From` domain needs
 SPF and DKIM records that allow the mail relay to send for it.
 
-Receivers are added in the web client from a CSV file without a header, one
-receiver per line: `email,name,extraData`, where `extraData` is an optional JSON
-object, e.g. `ivan@example.com,Ivan,{"city": "Moscow"}`. Invalid addresses and
+Receivers are added in the web client from a CSV file (it can be saved from
+Excel or LibreOffice: `,` or `;` as the separator, UTF-8 or windows-1251). The
+first line holds the column names: `email` is required, `name` is the name, every
+other column goes to `extraData` under its name:
+
+```
+email,name,city,price
+ivan@example.com,Ivan,Moscow,100
+```
+
+The template gets `{{receiver.extraData.city}}`. A file whose first line has no
+`email` column is read in the old format, one receiver per line:
+`email,name,extraData` with `extraData` as a JSON object
+(`ivan@example.com,Ivan,{"city": "Moscow"}`). Errors (a row without an address,
+broken JSON) are shown by line numbers, and the list is not changed. Invalid addresses and
 addresses whose last delivery status was a permanent error (5.x.x) are rejected
 when a mailing is created. A rejection as spam is the exception: the letter was
 refused because of its content or the sender (spam, blocklists, reputation,

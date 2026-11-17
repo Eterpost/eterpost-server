@@ -41,3 +41,22 @@
     color: $muted;
   }
 }
+
+.receiver-list .file-errors {
+  background-color: $error-bg;
+  border: 1px solid $error-border;
+  border-radius: 4px;
+  color: $error-text;
+  font-size: 14px;
+  margin: 8px;
+  padding: 6px 10px;
+
+  p {
+    margin: 0 0 4px;
+  }
+
+  ul {
+    margin: 0 0 4px;
+    padding-left: 20px;
+  }
+}
