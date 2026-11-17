@@ -4,6 +4,7 @@ import { MailingCreateData } from './components/AddForm';
 import { MAX_RECEIVERS } from './components/ReceiverList';
 import { SorterStatus } from '../../server/src/RedisSorterStatusRepository';
 import type { AttachmentInfo } from '../../server/src/attachments';
+import type { ReceiverFieldStats } from '../../server/src/templateFields';
 
 export type { AttachmentInfo };
 
@@ -172,6 +173,10 @@ export function getFailedReceivers (id: number): Promise<ReceiverList> {
 
 export function getReceivers (id: number): Promise<ReceiverList> {
   return apiRequest(`/mailings/${id}/receivers?limit=${MAX_RECEIVERS}`);
+}
+
+export function getReceiverFields (id: number): Promise<ReceiverFieldStats> {
+  return apiRequest(`/mailings/${id}/receiver-fields`);
 }
 
 export interface EmailPreview {

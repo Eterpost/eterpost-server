@@ -3,6 +3,8 @@ import { Receiver } from '../reducers/mailings';
 import '../styles/AddForm';
 import { ReceiverList } from './ReceiverList';
 import { Editor } from './Editor';
+import { insertableFields, TemplateFieldWarnings } from './TemplateFieldWarnings';
+import { collectFieldStats, ReceiverFieldStats } from '../../../server/src/templateFields';
 import { Checkbox } from './elements/Checkbox';
 import template from '../email-template.html';
 
@@ -45,6 +47,8 @@ interface AddFormState {
 
 export class AddForm extends React.Component<AddFormProps, AddFormState> {
   private editor: Editor | null;
+  // Сводка по полям считается заново только при новом списке получателей
+  private stats?: { receivers: Receiver[]; result: ReceiverFieldStats };
 
   constructor (props: AddFormProps) {
     super(props);
@@ -60,6 +64,7 @@ export class AddForm extends React.Component<AddFormProps, AddFormState> {
   }
 
   render () {
+    const stats = this.fieldStats();
     return (
       <div className='add-form-container' ref={this.props.containerRef}
            onKeyDown={this.handleKeyDown}>
@@ -108,7 +113,11 @@ export class AddForm extends React.Component<AddFormProps, AddFormState> {
             <div className='form-group stretch double'>
               <span className='input-name'>Текст письма</span>
               <Editor ref={(editor: Editor) => this.editor = editor} html={this.state.html}
-                      onChange={this.changeHtml} />
+                      onChange={this.changeHtml} fields={insertableFields(stats)}
+                      fieldsHint={stats ? undefined :
+                        'свои колонки появятся здесь, когда загрузите получателей'} />
+              <TemplateFieldWarnings sources={[this.state.subject, this.state.html]}
+                                     stats={stats} />
             </div>
             <div className='form-group stretch horizontal'>
               <ReceiverList onChange={this.changeReceivers} receivers={this.state.receivers}
@@ -120,6 +129,17 @@ export class AddForm extends React.Component<AddFormProps, AddFormState> {
         </div>
       </div>
     );
+  }
+
+  private fieldStats (): ReceiverFieldStats | undefined {
+    const { receivers } = this.state;
+    if (!receivers.length) {
+      return undefined;
+    }
+    if (this.stats?.receivers !== receivers) {
+      this.stats = { receivers, result: collectFieldStats(receivers) };
+    }
+    return this.stats.result;
   }
 
   private add = () => {

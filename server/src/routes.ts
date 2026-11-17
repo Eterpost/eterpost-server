@@ -9,6 +9,7 @@ import { updateMailing } from './controllers/updateMailing';
 import { Logger } from './Logger';
 import { MailingStateManager } from './MailingStateManager';
 import { getReceivers } from './controllers/getReceivers';
+import { getReceiverFields } from './controllers/getReceiverFields';
 import { deleteMailing } from './controllers/deleteMailing';
 import { sendTestEmail } from './controllers/sendTestEmail';
 import { getMe, setupAdminRoutes } from './controllers/admin';
@@ -78,6 +79,7 @@ export function setupRoutes (
     repository, stateManager, logger, receiverListFilter
   ));
   app.get('/mailings/:id/receivers', mailing, getReceivers(repository));
+  app.get('/mailings/:id/receiver-fields', mailing, getReceiverFields());
   app.get('/mailings/:id/failed-receivers', mailing, getFailedReceivers(failureCounter));
   app.get('/mailings/:id/results', mailing, getResults(repository, failureCounter));
   app.post('/mailings/:id/send-test-email', mailing, sendTestEmail(executor, logger));

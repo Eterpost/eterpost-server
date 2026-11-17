@@ -3,12 +3,17 @@ import { RichTextEditor } from './RichTextEditor';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.scss';
 import * as pretty from 'pretty';
+import { fieldPlaceholder, fieldTitle } from '../../../server/src/templateFields';
 
 
 export interface EditorProps {
   additionalTabs?: ReadonlyArray<{
     content: JSX.Element; name: string;
   }>;
+  // Поля получателя для кнопок «Вставить поле» (name, email, extraData.<колонка>)
+  fields?: ReadonlyArray<string>;
+  // Подсказка после кнопок, например «загрузите получателей»
+  fieldsHint?: string;
   html: string;
   onChange?: (value: string) => void;
 }
@@ -39,6 +44,7 @@ function saveLightPreview (value: boolean) {
 
 export class Editor extends React.Component<EditorProps, EditorState> {
   private editor: RichTextEditor | null;
+  private textarea: HTMLTextAreaElement | null;
 
   constructor (props: EditorProps) {
     super(props);
@@ -59,7 +65,8 @@ export class Editor extends React.Component<EditorProps, EditorState> {
       },
       {
         content: (
-          <textarea value={this.props.html} onChange={this.handleRawHtmlChange}>
+          <textarea value={this.props.html} onChange={this.handleRawHtmlChange}
+                    ref={textarea => this.textarea = textarea}>
           </textarea>
         ),
         name: 'HTML'
@@ -94,9 +101,51 @@ export class Editor extends React.Component<EditorProps, EditorState> {
           </TabList>
           {themeToggle}
         </div>
+        {this.renderFields()}
         {tabPanels}
       </Tabs>
     );
+  }
+
+  // Кнопки полей — только у вкладок с текстом письма
+  private renderFields () {
+    const { fields, fieldsHint } = this.props;
+    if (!fields || this.state.tabIndex > 1) {
+      return null;
+    }
+    return (
+      <div className='editor-fields' role='group' aria-label='Вставить поле получателя'>
+        <span className='editor-fields-label'>Вставить поле:</span>
+        {fields.map(field => (
+          <button key={field} type='button' className='editor-field'
+                  title={`Вставить ${fieldPlaceholder(field)}`}
+                  onMouseDown={event => event.preventDefault()}
+                  onClick={() => this.insertField(field)}>
+            {fieldTitle(field)}
+          </button>
+        ))}
+        {fieldsHint ? <span className='editor-fields-hint'>{fieldsHint}</span> : null}
+      </div>
+    );
+  }
+
+  private insertField (field: string) {
+    const text = fieldPlaceholder(field);
+    if (this.state.tabIndex === 0 && this.editor) {
+      this.editor.insertText(text);
+      return;
+    }
+    const textarea = this.textarea;
+    if (!textarea || !this.props.onChange) {
+      return;
+    }
+    const { selectionEnd, selectionStart, value } = textarea;
+    this.props.onChange(value.slice(0, selectionStart) + text + value.slice(selectionEnd));
+    const caret = selectionStart + text.length;
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(caret, caret);
+    });
   }
 
   private handleLightPreviewToggle = () => {

@@ -3,6 +3,19 @@
 All notable changes to eterpost-server. Versions follow [Semantic Versioning](https://semver.org/);
 before 1.0 a minor version brings new features and a patch version brings fixes.
 
+## Unreleased
+
+### Receiver fields in the letter
+- Web client: "Вставить поле" buttons above the letter text insert the receiver's
+  name, address and the columns of the loaded receivers at the cursor, in the visual
+  editor and in HTML; a column with spaces or signs becomes
+  `{{receiver.extraData.[Дата продления]}}`.
+- Under the editor, warnings about fields of the subject and text that will be
+  empty: no such column (with a hint when only the letter case differs), empty for
+  everyone, or empty for some receivers with an example address.
+- API: `GET /mailings/:id/receiver-fields` — how many receivers have the name and
+  each `extraData` column filled.
+
 ## 0.5.0 — 2026-11-17
 
 ### Receivers from a file

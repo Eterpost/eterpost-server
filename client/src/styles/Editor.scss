@@ -152,3 +152,52 @@
   border: 1px solid $border;
   color: $text;
 }
+
+// «Вставить поле»: кнопки полей получателя над текстом письма
+.editor-fields {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin: 0 0 8px;
+}
+
+.editor-fields-label, .editor-fields-hint {
+  color: $muted;
+  font-size: 14px;
+}
+
+.editor-field {
+  background-color: $selected;
+  border: 1px solid $border;
+  border-radius: 12px;
+  color: $text;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  max-width: 220px;
+  overflow: hidden;
+  padding: 1px 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: $accent;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+// Предупреждения о пустых подстановках под редактором
+.field-warnings {
+  color: $warning;
+  font-size: 14px;
+  margin: 6px 0 0;
+  padding-left: 20px;
+
+  code {
+    color: $text;
+  }
+}

@@ -244,7 +244,12 @@ email,name,city,price
 ivan@example.com,Ivan,Moscow,100
 ```
 
-The template gets `{{receiver.extraData.city}}`. A file whose first line has no
+The template gets `{{receiver.extraData.city}}`; a name with spaces or signs goes in
+square brackets: `{{receiver.extraData.[Renewal date]}}`. No need to type them: the
+"Вставить поле" buttons above the letter text insert the name, the address and the
+columns of the loaded receivers. Under the editor, warnings list fields that will be
+empty: no such column (often a different letter case) or empty for some receivers
+(with an example address). A file whose first line has no
 `email` column is read in the old format, one receiver per line:
 `email,name,extraData` with `extraData` as a JSON object
 (`ivan@example.com,Ivan,{"city": "Moscow"}`). Errors (a row without an address,
@@ -492,6 +497,7 @@ every route is documented.
 | `PUT /mailings/:id` | Change fields, `receivers`, or `state` (`2`/`"running"` — start, `3`/`"paused"` — pause) |
 | `DELETE /mailings/:id` | Delete (not while running) |
 | `GET /mailings/:id/receivers` | Receivers, `?limit=N`, `?format=csv` |
+| `GET /mailings/:id/receiver-fields` | How many receivers there are and how many have the name and each column filled |
 | `DELETE /mailings/:id/receivers/:email` | Remove a receiver |
 | `GET /mailings/:id/failed-receivers` | Receivers with delivery errors, `?limit=N`, `?format=csv` |
 | `GET /mailings/:id/results` | Results by receiver: sending, error, exclusion, unsubscription, open, click; `?event=`, `?offset=`, `?limit=`, `?format=csv` |

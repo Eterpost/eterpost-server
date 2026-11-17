@@ -585,6 +585,44 @@ export const openApiDocument = {
         }
       }
     },
+    '/mailings/{id}/receiver-fields': {
+      get: {
+        tags: ['receivers'],
+        summary: 'Заполненность полей получателей',
+        description:
+          'Сколько получателей всего и у скольких заполнены имя (`name`) и каждая своя ' +
+          'колонка (`extraData.<колонка>`), с примером адреса, где поле пустое. ' +
+          'Веб-интерфейс по этой сводке предупреждает о подстановках, которые у части ' +
+          'получателей окажутся пустыми.',
+        parameters: [mailingId()],
+        responses: {
+          200: ok({
+            type: 'object',
+            required: ['fields', 'total'],
+            properties: {
+              total: { type: 'integer', description: 'Всего получателей' },
+              fields: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  required: ['field', 'filled'],
+                  properties: {
+                    field: { type: 'string', example: 'extraData.city' },
+                    filled: { type: 'integer', description: 'У скольких поле заполнено' },
+                    emptyExample: {
+                      type: 'string', format: 'email',
+                      description: 'Адрес получателя, у которого поле пустое'
+                    }
+                  }
+                }
+              }
+            }
+          }),
+          400: badRequest,
+          404: notFound
+        }
+      }
+    },
     '/mailings/{id}/results': {
       get: {
         tags: ['receivers'],

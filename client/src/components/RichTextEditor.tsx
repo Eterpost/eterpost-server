@@ -14,16 +14,70 @@ export class RichTextEditor extends React.Component<
 > {
   private container: HTMLDivElement;
   private editor: any;
+  // Последнее место курсора в тексте: кнопка «вставить поле» забирает фокус
+  private range?: Range;
+
+  componentDidMount () {
+    document.addEventListener('selectionchange', this.saveRange);
+  }
+
+  componentWillUnmount () {
+    document.removeEventListener('selectionchange', this.saveRange);
+  }
 
   componentDidUpdate (prevProps: RichTextEditorProps) {
-    if (this.props.html !== prevProps.html) {
-      this.container.querySelector('.pell-content')!.innerHTML = this.props.html;
+    const content = this.container.querySelector('.pell-content')!;
+    // Свой же ввод уже в тексте: перезапись сбросила бы курсор
+    if (this.props.html !== prevProps.html && content.innerHTML !== this.props.html) {
+      content.innerHTML = this.props.html;
     }
+  }
+
+  /**
+   * Вставляет текст на место курсора, без курсора — в конец письма
+   */
+  insertText (text: string) {
+    const content = this.editor.content as HTMLElement;
+    content.focus();
+    // В пустом тексте pell сам оборачивает первую строку в абзац, но не внутри
+    // execCommand: абзац создаём сами
+    if (!content.textContent && !content.querySelector('img')) {
+      const paragraph = document.createElement('p');
+      paragraph.textContent = text;
+      content.replaceChildren(paragraph);
+      const range = document.createRange();
+      range.selectNodeContents(paragraph);
+      range.collapse(false);
+      window.getSelection()?.removeAllRanges();
+      window.getSelection()?.addRange(range);
+      this.handleChange(content.innerHTML);
+      return;
+    }
+    const selection = window.getSelection();
+    if (selection) {
+      let range = this.range;
+      if (!range || !content.contains(range.startContainer)) {
+        range = document.createRange();
+        range.selectNodeContents(content);
+        range.collapse(false);
+      }
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+    exec('insertText', text);
   }
 
   render () {
     return <div className='pell-container' ref={this.mountEditor}></div>;
   }
+
+  private saveRange = () => {
+    const selection = window.getSelection();
+    if (this.editor && selection && selection.rangeCount &&
+        this.editor.content.contains(selection.getRangeAt(0).startContainer)) {
+      this.range = selection.getRangeAt(0).cloneRange();
+    }
+  };
 
   private handleChange = (html: string) => {
     if (this.props.onChange) {

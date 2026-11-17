@@ -13,7 +13,9 @@ import { ReceiverList } from './ReceiverList';
 import { FailureList } from './FailureList';
 import { Checkbox } from './elements/Checkbox';
 import { formatDate } from '../formatDate';
-import { EmailPreview, RetryFilter } from '../api';
+import { EmailPreview, getReceiverFields, RetryFilter } from '../api';
+import { insertableFields, TemplateFieldWarnings } from './TemplateFieldWarnings';
+import { collectFieldStats, ReceiverFieldStats } from '../../../server/src/templateFields';
 import { EmailPreviewView } from './EmailPreviewView';
 import { fromPlaceholder } from './AddForm';
 import { AttachmentList } from './AttachmentList';
@@ -75,6 +77,8 @@ export interface MailingDetailViewProps {
 
 interface MailingDetailViewState {
   changed: boolean;
+  // Сводка сервера по полям сохранённых получателей
+  fieldStats?: ReceiverFieldStats;
   fields: MailingEditData;
   mailingId: number;
   preview?: EmailPreview;
@@ -85,6 +89,7 @@ interface MailingDetailViewState {
 function initState (mailing: Mailing) {
   return {
     changed: false,
+    fieldStats: undefined,
     fields: pick(mailing, keys) as MailingEditData,
     mailingId: mailing.id,
     preview: undefined,
@@ -107,6 +112,8 @@ export class MailingDetailView extends React.Component<
   }
 
   private handlers: { [name: string]: (value: any) => void };
+  // Сводка по новому, ещё не сохранённому списку получателей
+  private localStats?: { receivers: Receiver[]; result: ReceiverFieldStats };
   private refreshInterval: number;
 
   constructor (props: MailingDetailViewProps) {
@@ -120,6 +127,13 @@ export class MailingDetailView extends React.Component<
 
   componentDidMount () {
     this.refreshInterval = setInterval(this.refresh, REFRESH_INTERVAL) as any;
+    this.loadFieldStats();
+  }
+
+  componentDidUpdate (prevProps: MailingDetailViewProps) {
+    if (prevProps.mailing.id !== this.props.mailing.id) {
+      this.loadFieldStats();
+    }
   }
 
   componentWillUnmount () {
@@ -167,6 +181,7 @@ export class MailingDetailView extends React.Component<
     const from = typeof this.state.fields.from === 'string' ? this.state.fields.from : '';
     const replyTo = typeof this.state.fields.replyTo === 'string' ? this.state.fields.replyTo : '';
     const id = (name: string) => `mailing-${mailing.id}-${name}`;
+    const stats = this.fieldStats();
     return (
       <div className='mailing-detail-view'>
         <h2 className='header'>{mailing.name}</h2>
@@ -267,7 +282,9 @@ export class MailingDetailView extends React.Component<
           </FormGroup>
           <FormGroup stretch fraction={2}>
             <Editor onChange={this.handlers.html} html={this.state.fields.html}
-                    additionalTabs={listTabs} />
+                    additionalTabs={listTabs} fields={insertableFields(stats)} />
+            <TemplateFieldWarnings sources={[this.state.fields.subject, this.state.fields.html]}
+                                   stats={stats} />
           </FormGroup>
         </div>
 
@@ -326,6 +343,30 @@ export class MailingDetailView extends React.Component<
     );
   }
 
+
+  private fieldStats (): ReceiverFieldStats | undefined {
+    const { receivers, receiversChanged } = this.state.fields;
+    if (!receiversChanged) {
+      return this.state.fieldStats;
+    }
+    if (this.localStats?.receivers !== receivers) {
+      this.localStats = { receivers, result: collectFieldStats(receivers) };
+    }
+    return this.localStats.result;
+  }
+
+  private loadFieldStats = async () => {
+    const mailingId = this.props.mailing.id;
+    try {
+      const fieldStats = await getReceiverFields(mailingId);
+      // Пока считалось, могли выбрать другую рассылку
+      if (this.state.mailingId === mailingId) {
+        this.setState({ fieldStats });
+      }
+    } catch (error) {
+      // Без сводки нет только подсказок о пустых полях
+    }
+  };
 
   private handleAddAttachments = async (files: File[]) => {
     await this.props.onAddAttachments?.(this.props.mailing, files);
@@ -466,6 +507,7 @@ export class MailingDetailView extends React.Component<
           receiversCount: this.props.mailing.receiversCount!
         }
       });
+      this.loadFieldStats();
     }
   };
 
@@ -493,6 +535,7 @@ export class MailingDetailView extends React.Component<
           receiversCount: this.state.fields.receiversCount - 1
         }
       });
+      setTimeout(this.loadFieldStats, REFRESH_INTERVAL);
     }
   };
 
