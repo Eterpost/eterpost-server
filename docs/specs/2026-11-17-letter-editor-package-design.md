@@ -41,9 +41,10 @@
   тегом — `npm run build`, проверка, что `dist/` свежий, — в тестах.
 - `package.json`, поле `exports`:
   - `.` — `dist/index.js` (компонент и типы);
-  - `./fields` — без React, годится для сервера: условие `import` —
-    `dist/fields.js`, условие `require` — `dist/cjs/fields.cjs` (сервер Почтаря
-    собирается в CommonJS; модуль маленький, собирается дважды);
+  - `./fields` — `dist/fields.js` (без React, годится для сервера). Сервер Почтаря
+    собирается в CommonJS и подключает его через `require()` ESM-модуля: так умеет
+    Node 22.12+ (на проде 22.23), а TypeScript при `module: nodenext` это
+    разрешает — двойная сборка не нужна;
   - `./style.css` — `dist/letter-editor.css`.
 
 ## Интерфейс
