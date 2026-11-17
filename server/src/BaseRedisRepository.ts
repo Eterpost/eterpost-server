@@ -1,5 +1,5 @@
 import { WatchError } from 'redis';
-import { RedisClient, RedisConnectionPool } from './RedisConnectionPool';
+import { RedisClient, RedisConnectionPool } from './RedisConnectionPool.js';
 
 type Multi = ReturnType<RedisClient['multi']>;
 

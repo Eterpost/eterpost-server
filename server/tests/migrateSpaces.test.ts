@@ -1,9 +1,9 @@
 import { after, before, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { getTestingRedisConnectionPool, redisSkip } from './testing-utils';
-import { RedisConnectionPool } from '../src/RedisConnectionPool';
-import { RedisMailingRepository } from '../src/RedisMailingRepository';
-import { migrateMailingsToDefaultSpace } from '../src/migrateSpaces';
+import { getTestingRedisConnectionPool, redisSkip } from './testing-utils.js';
+import { RedisConnectionPool } from '../src/RedisConnectionPool.js';
+import { RedisMailingRepository } from '../src/RedisMailingRepository.js';
+import { migrateMailingsToDefaultSpace } from '../src/migrateSpaces.js';
 
 
 describe('migrateMailingsToDefaultSpace', { skip: redisSkip }, () => {

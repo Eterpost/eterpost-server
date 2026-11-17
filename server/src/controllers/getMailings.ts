@@ -1,9 +1,9 @@
-import { MailingRepository } from '../MailingRepository';
+import { MailingRepository } from '../MailingRepository.js';
 import { Request, Response } from 'express';
-import { error, success } from '../utils/response';
-import { catchPromise } from '../utils/catchPromise';
-import { describeRetries } from './describeRetries';
-import { canSee, getSpaceAccess } from '../middleware/spaceAccess';
+import { error, success } from '../utils/response.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { describeRetries } from './describeRetries.js';
+import { canSee, getSpaceAccess } from '../middleware/spaceAccess.js';
 
 
 export const MAILING_KINDS = ['live', 'test', 'all'] as const;

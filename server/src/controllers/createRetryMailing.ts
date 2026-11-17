@@ -1,15 +1,15 @@
-import { MailingRepository } from '../MailingRepository';
+import { MailingRepository } from '../MailingRepository.js';
 import { Request, Response } from 'express';
-import { error, success } from '../utils/response';
-import { MailingState } from '../MailingState';
-import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
-import { catchPromise } from '../utils/catchPromise';
-import { getListId } from '../getListId';
-import { Logger } from '../Logger';
-import { FailedReceiver, FailureCounter } from '../FailureCounter';
-import { canSee, getSpaceAccess } from '../middleware/spaceAccess';
-import { AttachmentStore } from '../AttachmentStore';
-import { attachFiles } from './attachments';
+import { error, success } from '../utils/response.js';
+import { MailingState } from '../MailingState.js';
+import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { getListId } from '../getListId.js';
+import { Logger } from '../Logger.js';
+import { FailedReceiver, FailureCounter } from '../FailureCounter.js';
+import { canSee, getSpaceAccess } from '../middleware/spaceAccess.js';
+import { AttachmentStore } from '../AttachmentStore.js';
+import { attachFiles } from './attachments.js';
 
 
 /**

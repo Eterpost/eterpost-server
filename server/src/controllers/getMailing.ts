@@ -1,11 +1,11 @@
-import { MailingRepository } from '../MailingRepository';
+import { MailingRepository } from '../MailingRepository.js';
 import { Request, Response } from 'express';
-import { success } from '../utils/response';
-import { getLoadedMailing } from '../middleware/loadMailing';
-import { catchPromise } from '../utils/catchPromise';
-import { describeRetries } from './describeRetries';
-import { MailingState } from '../MailingState';
-import { getAttachmentsConfig } from '../attachments';
+import { success } from '../utils/response.js';
+import { getLoadedMailing } from '../middleware/loadMailing.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { describeRetries } from './describeRetries.js';
+import { MailingState } from '../MailingState.js';
+import { getAttachmentsConfig } from '../attachments.js';
 
 
 export function getMailing (mailingRepository: MailingRepository, config: any) {

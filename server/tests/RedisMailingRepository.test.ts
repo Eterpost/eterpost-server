@@ -1,10 +1,10 @@
 import { after, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { getTestingRedisConnectionPool, redisSkip } from './testing-utils';
-import { RedisConnectionPool } from '../src/RedisConnectionPool';
-import { RedisMailingRepository } from '../src/RedisMailingRepository';
-import { MailingState } from '../src/MailingState';
-import { Receiver } from '../src/Receiver';
+import { getTestingRedisConnectionPool, redisSkip } from './testing-utils.js';
+import { RedisConnectionPool } from '../src/RedisConnectionPool.js';
+import { RedisMailingRepository } from '../src/RedisMailingRepository.js';
+import { MailingState } from '../src/MailingState.js';
+import { Receiver } from '../src/Receiver.js';
 
 
 const testHtml = '<h1>Test</h1>';

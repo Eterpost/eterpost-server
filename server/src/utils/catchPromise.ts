@@ -1,5 +1,5 @@
 import { RequestHandler, Request, Response } from 'express';
-import { error } from './response';
+import { error } from './response.js';
 
 
 type PromiseHandler = (req: Request, res: Response) => Promise<unknown>;

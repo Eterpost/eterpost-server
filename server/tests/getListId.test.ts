@@ -1,7 +1,7 @@
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { getListId } from '../src/getListId';
-import { Mailing } from '../src/Mailing';
+import { getListId } from '../src/getListId.js';
+import { Mailing } from '../src/Mailing.js';
 
 
 describe('getListId', () => {

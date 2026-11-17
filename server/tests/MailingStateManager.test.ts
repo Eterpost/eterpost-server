@@ -2,15 +2,15 @@ import { after, afterEach, before, beforeEach, describe, it, mock } from 'node:t
 import assert from 'node:assert/strict';
 import {
   createFakeLogger, getTestingRedisConnectionPool, redisSkip, sleep
-} from './testing-utils';
-import { RedisConnectionPool } from '../src/RedisConnectionPool';
-import { RedisMailingRepository } from '../src/RedisMailingRepository';
-import { RedisAddressStatsRepository } from '../src/RedisAddressStatsRepository';
-import { SpaceRepository } from '../src/SpaceRepository';
-import { MailingExecutor } from '../src/MailingExecutor';
-import { MailingStateManager } from '../src/MailingStateManager';
-import { MailingState } from '../src/MailingState';
-import { Mailing } from '../src/Mailing';
+} from './testing-utils.js';
+import { RedisConnectionPool } from '../src/RedisConnectionPool.js';
+import { RedisMailingRepository } from '../src/RedisMailingRepository.js';
+import { RedisAddressStatsRepository } from '../src/RedisAddressStatsRepository.js';
+import { SpaceRepository } from '../src/SpaceRepository.js';
+import { MailingExecutor } from '../src/MailingExecutor.js';
+import { MailingStateManager } from '../src/MailingStateManager.js';
+import { MailingState } from '../src/MailingState.js';
+import { Mailing } from '../src/Mailing.js';
 
 
 const testHtml = '<h1>Test</h1>';

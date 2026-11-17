@@ -1,11 +1,11 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { HandlebarsTemplate } from './HandlebarsTemplate';
+import { HandlebarsTemplate } from './HandlebarsTemplate.js';
 
 
 export function readHandlebarsTemplate (filename: string) {
   // server/dist/src/templates -> корень проекта
-  const path = resolve(__dirname, '..', '..', '..', '..', 'templates', filename);
+  const path = resolve(import.meta.dirname, '..', '..', '..', '..', 'templates', filename);
   try {
     return new HandlebarsTemplate(readFileSync(path, 'utf8'));
   } catch (error) {

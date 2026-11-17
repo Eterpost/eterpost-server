@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { collectFieldStats } from 'eterpost-letter-editor/fields';
-import { getReceiverFields } from '../src/controllers/getReceiverFields';
+import { getReceiverFields } from '../src/controllers/getReceiverFields.js';
 
 
 const receivers = [

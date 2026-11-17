@@ -1,15 +1,15 @@
 import { Express, NextFunction, Request, Response } from 'express';
-import { error, success } from '../utils/response';
-import { catchPromise } from '../utils/catchPromise';
-import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
-import { describeActor, getActor } from '../middleware/apiKeyAuth';
-import { getSpaceAccess } from '../middleware/spaceAccess';
+import { error, success } from '../utils/response.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware.js';
+import { describeActor, getActor } from '../middleware/apiKeyAuth.js';
+import { getSpaceAccess } from '../middleware/spaceAccess.js';
 import {
   API_KEY_NAME_PATTERN, ApiKeyRecord, ApiKeyRepository, ApiKeyRole, describeRole
-} from '../ApiKeyRepository';
-import { DEFAULT_SPACE, SPACE_NAME_PATTERN, SpaceRepository } from '../SpaceRepository';
-import { MailingRepository } from '../MailingRepository';
-import { Logger } from '../Logger';
+} from '../ApiKeyRepository.js';
+import { DEFAULT_SPACE, SPACE_NAME_PATTERN, SpaceRepository } from '../SpaceRepository.js';
+import { MailingRepository } from '../MailingRepository.js';
+import { Logger } from '../Logger.js';
 
 
 /**

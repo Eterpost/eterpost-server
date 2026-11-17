@@ -18,7 +18,7 @@ export default tseslint.config(
     }
   },
   {
-    files: ['client/webpack.config.js'],
+    files: ['client/webpack.config.cjs'],
     languageOptions: { globals: globals.node, sourceType: 'commonjs' },
     rules: { '@typescript-eslint/no-require-imports': 'off' }
   }

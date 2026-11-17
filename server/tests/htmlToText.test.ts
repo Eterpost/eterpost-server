@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { htmlToText } from '../src/composeMessage';
+import { htmlToText } from '../src/composeMessage.js';
 
 
 // Обёртка письма свёрстана таблицами, внутри — таблица данных

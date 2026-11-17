@@ -1,20 +1,20 @@
-import { MailingRepository } from '../MailingRepository';
+import { MailingRepository } from '../MailingRepository.js';
 import { Request, Response } from 'express';
-import { error, success } from '../utils/response';
-import { MailingState } from '../MailingState';
-import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
-import { catchPromise } from '../utils/catchPromise';
-import { getListId } from '../getListId';
-import { Logger } from '../Logger';
-import { Receiver } from '../Receiver';
-import { ReceiverListFilter } from '../ReceiverListFilter';
-import { generateUniqueCode } from '../utils/codes';
-import { canSee, getSpaceAccess, spaceForNewMailing } from '../middleware/spaceAccess';
-import { AttachmentStore } from '../AttachmentStore';
+import { error, success } from '../utils/response.js';
+import { MailingState } from '../MailingState.js';
+import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { getListId } from '../getListId.js';
+import { Logger } from '../Logger.js';
+import { Receiver } from '../Receiver.js';
+import { ReceiverListFilter } from '../ReceiverListFilter.js';
+import { generateUniqueCode } from '../utils/codes.js';
+import { canSee, getSpaceAccess, spaceForNewMailing } from '../middleware/spaceAccess.js';
+import { AttachmentStore } from '../AttachmentStore.js';
 import {
   AttachmentInfo, detectContentType, getAttachmentsConfig, normalizeFilename, totalSize
-} from '../attachments';
-import { AttachmentUpload, attachFiles, sendTooLarge } from './attachments';
+} from '../attachments.js';
+import { AttachmentUpload, attachFiles, sendTooLarge } from './attachments.js';
 
 
 export function addMailing (config: any, mailingRepository: MailingRepository, logger: Logger,

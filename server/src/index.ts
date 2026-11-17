@@ -1,26 +1,26 @@
 import path from 'node:path';
-import { readConfig } from './readConfig';
-import { validateConfig } from './validateConfig';
-import { RedisMailingRepository } from './RedisMailingRepository';
-import { createExpressServer } from './createExpressServer';
-import { setupRoutes } from './routes';
-import { MailingExecutor } from './MailingExecutor';
-import { ConsoleMailSender } from './ConsoleMailSender';
-import { Logger } from './Logger';
-import { MailingStateManager } from './MailingStateManager';
-import { SmtpMailSender } from './SmtpMailSender';
-import { RedisAddressStatsRepository } from './RedisAddressStatsRepository';
-import { RedisConnectionPoolImpl } from './RedisConnectionPool';
-import { FailureCounter } from './FailureCounter';
-import { ReceiverListFilter } from './ReceiverListFilter';
-import { RedisSubscriptionRequestRepository } from './RedisSubscriptionRequestRepository';
-import { RedisSorterStatusRepository } from './RedisSorterStatusRepository';
-import { readHandlebarsTemplate } from './templates/readTemplate';
-import { ApiKeyRepository } from './ApiKeyRepository';
-import { SpaceRepository } from './SpaceRepository';
-import { migrateMailingsToDefaultSpace } from './migrateSpaces';
-import { AttachmentStore } from './AttachmentStore';
-import { getAttachmentsConfig } from './attachments';
+import { readConfig } from './readConfig.js';
+import { validateConfig } from './validateConfig.js';
+import { RedisMailingRepository } from './RedisMailingRepository.js';
+import { createExpressServer } from './createExpressServer.js';
+import { setupRoutes } from './routes.js';
+import { MailingExecutor } from './MailingExecutor.js';
+import { ConsoleMailSender } from './ConsoleMailSender.js';
+import { Logger } from './Logger.js';
+import { MailingStateManager } from './MailingStateManager.js';
+import { SmtpMailSender } from './SmtpMailSender.js';
+import { RedisAddressStatsRepository } from './RedisAddressStatsRepository.js';
+import { RedisConnectionPoolImpl } from './RedisConnectionPool.js';
+import { FailureCounter } from './FailureCounter.js';
+import { ReceiverListFilter } from './ReceiverListFilter.js';
+import { RedisSubscriptionRequestRepository } from './RedisSubscriptionRequestRepository.js';
+import { RedisSorterStatusRepository } from './RedisSorterStatusRepository.js';
+import { readHandlebarsTemplate } from './templates/readTemplate.js';
+import { ApiKeyRepository } from './ApiKeyRepository.js';
+import { SpaceRepository } from './SpaceRepository.js';
+import { migrateMailingsToDefaultSpace } from './migrateSpaces.js';
+import { AttachmentStore } from './AttachmentStore.js';
+import { getAttachmentsConfig } from './attachments.js';
 
 
 async function main () {

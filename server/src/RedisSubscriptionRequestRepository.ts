@@ -1,7 +1,7 @@
-import { BaseRedisRepository } from './BaseRedisRepository';
-import { RedisConnectionPool } from './RedisConnectionPool';
-import { SubscriptionRequest, SubscriptionRequestProperties } from './SubscriptionRequest';
-import { SubscriptionRequestRepository } from './SubscriptionRequestRepository';
+import { BaseRedisRepository } from './BaseRedisRepository.js';
+import { RedisConnectionPool } from './RedisConnectionPool.js';
+import { SubscriptionRequest, SubscriptionRequestProperties } from './SubscriptionRequest.js';
+import { SubscriptionRequestRepository } from './SubscriptionRequestRepository.js';
 
 
 export class RedisSubscriptionRequestRepository

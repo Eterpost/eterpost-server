@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { substituteEnv } from '../src/readConfig';
+import { substituteEnv } from '../src/readConfig.js';
 
 
 describe('substituteEnv', () => {

@@ -1,8 +1,8 @@
 import { parseArgs } from 'node:util';
-import { readConfig } from './readConfig';
-import { RedisConnectionPoolImpl } from './RedisConnectionPool';
-import { RedisMailingRepository } from './RedisMailingRepository';
-import { DEFAULT_SPACE, SPACE_NAME_PATTERN, SpaceRepository } from './SpaceRepository';
+import { readConfig } from './readConfig.js';
+import { RedisConnectionPoolImpl } from './RedisConnectionPool.js';
+import { RedisMailingRepository } from './RedisMailingRepository.js';
+import { DEFAULT_SPACE, SPACE_NAME_PATTERN, SpaceRepository } from './SpaceRepository.js';
 
 
 const usage = `Управление пространствами рассылок mail-server (хранятся в Redis из конфига сервера)

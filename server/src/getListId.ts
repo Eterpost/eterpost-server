@@ -1,4 +1,4 @@
-import { Mailing } from './Mailing';
+import { Mailing } from './Mailing.js';
 
 
 // List-Id по RFC 2919: <метка.домен>, без «@». Метка — дата и номер

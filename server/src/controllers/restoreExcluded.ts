@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
-import { MailingRepository } from '../MailingRepository';
-import { AddressStatsRepository } from '../AddressStatsRepository';
-import { success } from '../utils/response';
-import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
-import { catchPromise } from '../utils/catchPromise';
-import { Logger } from '../Logger';
-import { getLoadedMailing } from '../middleware/loadMailing';
+import { MailingRepository } from '../MailingRepository.js';
+import { AddressStatsRepository } from '../AddressStatsRepository.js';
+import { success } from '../utils/response.js';
+import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { Logger } from '../Logger.js';
+import { getLoadedMailing } from '../middleware/loadMailing.js';
 
 
 /**

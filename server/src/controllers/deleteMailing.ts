@@ -1,11 +1,11 @@
-import { MailingRepository } from '../MailingRepository';
+import { MailingRepository } from '../MailingRepository.js';
 import { Request, Response } from 'express';
-import { error, success } from '../utils/response';
-import { catchPromise } from '../utils/catchPromise';
-import { MailingState } from '../MailingState';
-import { getLoadedMailing } from '../middleware/loadMailing';
-import { Logger } from '../Logger';
-import { AttachmentStore } from '../AttachmentStore';
+import { error, success } from '../utils/response.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { MailingState } from '../MailingState.js';
+import { getLoadedMailing } from '../middleware/loadMailing.js';
+import { Logger } from '../Logger.js';
+import { AttachmentStore } from '../AttachmentStore.js';
 
 
 export function deleteMailing (

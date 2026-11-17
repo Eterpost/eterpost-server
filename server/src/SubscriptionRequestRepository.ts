@@ -1,4 +1,4 @@
-import { SubscriptionRequestProperties, SubscriptionRequest } from './SubscriptionRequest';
+import { SubscriptionRequestProperties, SubscriptionRequest } from './SubscriptionRequest.js';
 
 /**
  * Интерфейс хранилища, содержащего информацию о заявках на подписку

@@ -1,9 +1,9 @@
-import { MailingExecutor, MailingExecutorEvents } from './MailingExecutor';
-import { Mailing } from './Mailing';
-import { MailingState } from './MailingState';
-import { Logger } from './Logger';
-import { MailingRepository } from './MailingRepository';
-import { sleep } from './utils/sleep';
+import { MailingExecutor, MailingExecutorEvents } from './MailingExecutor.js';
+import { Mailing } from './Mailing.js';
+import { MailingState } from './MailingState.js';
+import { Logger } from './Logger.js';
+import { MailingRepository } from './MailingRepository.js';
+import { sleep } from './utils/sleep.js';
 
 
 /**

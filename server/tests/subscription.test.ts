@@ -2,26 +2,26 @@ import { after, before, beforeEach, describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createFakeLogger, getTestingRedisConnectionPool, redisSkip, sleep
-} from './testing-utils';
-import { RedisConnectionPool } from '../src/RedisConnectionPool';
-import { RedisMailingRepository } from '../src/RedisMailingRepository';
-import { RedisSubscriptionRequestRepository } from '../src/RedisSubscriptionRequestRepository';
-import { MailingState } from '../src/MailingState';
-import { Email } from '../src/Email';
-import { SubscriptionRequest } from '../src/SubscriptionRequest';
+} from './testing-utils.js';
+import { RedisConnectionPool } from '../src/RedisConnectionPool.js';
+import { RedisMailingRepository } from '../src/RedisMailingRepository.js';
+import { RedisSubscriptionRequestRepository } from '../src/RedisSubscriptionRequestRepository.js';
+import { MailingState } from '../src/MailingState.js';
+import { Email } from '../src/Email.js';
+import { SubscriptionRequest } from '../src/SubscriptionRequest.js';
 import {
   getConfirmUrl, requestSubscription, SubscribeTemplateContext
-} from '../src/controllers/requestSubscription';
-import { HandlebarsTemplate } from '../src/templates/HandlebarsTemplate';
+} from '../src/controllers/requestSubscription.js';
+import { HandlebarsTemplate } from '../src/templates/HandlebarsTemplate.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { subscribe } from '../src/controllers/subscribe';
-import { unsubscribe } from '../src/controllers/unsubscribe';
-import { unsubscribeFromAll } from '../src/controllers/unsubscribeFromAll';
-import { addMailing } from '../src/controllers/addMailing';
-import { ReceiverListFilter } from '../src/ReceiverListFilter';
-import { MailingRepository } from '../src/MailingRepository';
-import { loadMailing } from '../src/middleware/loadMailing';
+import { subscribe } from '../src/controllers/subscribe.js';
+import { unsubscribe } from '../src/controllers/unsubscribe.js';
+import { unsubscribeFromAll } from '../src/controllers/unsubscribeFromAll.js';
+import { addMailing } from '../src/controllers/addMailing.js';
+import { ReceiverListFilter } from '../src/ReceiverListFilter.js';
+import { MailingRepository } from '../src/MailingRepository.js';
+import { loadMailing } from '../src/middleware/loadMailing.js';
 
 
 const testHtml = '<h1>Test</h1>';
@@ -220,7 +220,9 @@ describe('subscription', { skip: redisSkip }, () => {
     it('should link to the subscription pages from the config', async () => {
       // tests/ в dist/tests -> корень проекта
       const source = readFileSync(
-        join(__dirname, '..', '..', '..', 'templates', 'confirm-subscription.hbs.example'), 'utf8'
+        join(import.meta.dirname, '..', '..', '..', 'templates',
+          'confirm-subscription.hbs.example'),
+        'utf8'
       );
       requestSubscriptionController = withMailing(mailingRepository, requestSubscription(
         subscriptionRepository, logger,

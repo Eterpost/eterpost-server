@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { toEmailDocument } from '../src/emailDocument';
+import { toEmailDocument } from '../src/emailDocument.js';
 
 
 describe('toEmailDocument', () => {

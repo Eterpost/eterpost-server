@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { ApiKeyRecord, ApiKeyRepository, isLegacyKey } from '../ApiKeyRepository';
-import { Logger } from '../Logger';
-import { SpaceRepository } from '../SpaceRepository';
-import { error } from '../utils/response';
-import { resolveSpaceAccess, SpaceForbiddenError } from './spaceAccess';
+import { ApiKeyRecord, ApiKeyRepository, isLegacyKey } from '../ApiKeyRepository.js';
+import { Logger } from '../Logger.js';
+import { SpaceRepository } from '../SpaceRepository.js';
+import { error } from '../utils/response.js';
+import { resolveSpaceAccess, SpaceForbiddenError } from './spaceAccess.js';
 
 
 export interface ApiAuthConfig {

@@ -1,18 +1,18 @@
 import express, { NextFunction, Request, RequestHandler, Response } from 'express';
-import { MailingRepository } from '../MailingRepository';
-import { MailingState } from '../MailingState';
-import { AttachmentStore } from '../AttachmentStore';
+import { MailingRepository } from '../MailingRepository.js';
+import { MailingState } from '../MailingState.js';
+import { AttachmentStore } from '../AttachmentStore.js';
 import {
   AttachmentInfo, detectContentType, normalizeFilename, totalSize
-} from '../attachments';
+} from '../attachments.js';
 
 const MULTIPART = /^\s*multipart\//i;
-import { getLoadedMailing } from '../middleware/loadMailing';
-import { catchPromise } from '../utils/catchPromise';
-import { error, success } from '../utils/response';
-import { Logger } from '../Logger';
-import { Mailing } from '../Mailing';
-import { MailingExecutor, MissingAttachmentError } from '../MailingExecutor';
+import { getLoadedMailing } from '../middleware/loadMailing.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { error, success } from '../utils/response.js';
+import { Logger } from '../Logger.js';
+import { Mailing } from '../Mailing.js';
+import { MailingExecutor, MissingAttachmentError } from '../MailingExecutor.js';
 
 
 type Refusal = 'running' | 'size' | 'missing';

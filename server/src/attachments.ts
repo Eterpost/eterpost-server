@@ -1,7 +1,8 @@
+import { createRequire } from 'node:module';
 import path from 'node:path';
 
-// У модуля nodemailer нет типов: таблица типов по расширению
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+// У модуля nodemailer нет типов и нет входа ESM: таблица типов по расширению
+const require = createRequire(import.meta.url);
 const { detectMimeType } = require('nodemailer/lib/mime-funcs/mime-types') as {
   detectMimeType: (filename: string) => string
 };

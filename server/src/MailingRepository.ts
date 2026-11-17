@@ -1,5 +1,5 @@
-import { Mailing, MailingProperties } from './Mailing';
-import { Receiver, ReceiverProperties } from './Receiver';
+import { Mailing, MailingProperties } from './Mailing.js';
+import { Receiver, ReceiverProperties } from './Receiver.js';
 
 
 /**

@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
-import { error, success } from '../utils/response';
-import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
-import { catchPromise } from '../utils/catchPromise';
-import { Logger } from '../Logger';
-import { SubscriptionRequestRepository } from '../SubscriptionRequestRepository';
-import { Receiver } from '../Receiver';
-import { getLoadedMailing } from '../middleware/loadMailing';
+import { error, success } from '../utils/response.js';
+import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { Logger } from '../Logger.js';
+import { SubscriptionRequestRepository } from '../SubscriptionRequestRepository.js';
+import { Receiver } from '../Receiver.js';
+import { getLoadedMailing } from '../middleware/loadMailing.js';
 
 
 export function subscribe (

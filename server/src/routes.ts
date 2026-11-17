@@ -1,50 +1,53 @@
 import express, { Express, Request, Response } from 'express';
 import path from 'node:path';
-import { MailingRepository } from './MailingRepository';
-import { MailingExecutor } from './MailingExecutor';
-import { getMailings } from './controllers/getMailings';
-import { getMailing } from './controllers/getMailing';
-import { addMailing } from './controllers/addMailing';
-import { updateMailing } from './controllers/updateMailing';
-import { Logger } from './Logger';
-import { MailingStateManager } from './MailingStateManager';
-import { getReceivers } from './controllers/getReceivers';
-import { getReceiverFields } from './controllers/getReceiverFields';
-import { deleteMailing } from './controllers/deleteMailing';
-import { sendTestEmail } from './controllers/sendTestEmail';
-import { getMe, setupAdminRoutes } from './controllers/admin';
-import { previewEmail } from './controllers/previewEmail';
-import { previewDraft } from './controllers/previewDraft';
-import { getSpaces } from './controllers/getSpaces';
-import { restoreExcluded } from './controllers/restoreExcluded';
-import { trackClick, trackOpen } from './controllers/tracking';
-import { getResults } from './controllers/getResults';
-import { AddressStatsRepository } from './AddressStatsRepository';
-import { getFailedReceivers } from './controllers/getFailedReceivers';
-import { FailureCounter } from './FailureCounter';
-import { ReceiverListFilter } from './ReceiverListFilter';
-import { createRetryMailing } from './controllers/createRetryMailing';
-import { requestSubscription, SubscribeTemplateContext } from './controllers/requestSubscription';
-import { SubscriptionRequestRepository } from './SubscriptionRequestRepository';
-import { MailSender } from './MailSender';
-import { Template } from './templates/Template';
-import { subscribe } from './controllers/subscribe';
-import { unsubscribe } from './controllers/unsubscribe';
-import { deleteReceiver } from './controllers/deleteReceiver';
-import { unsubscribeFromAll } from './controllers/unsubscribeFromAll';
-import { getSorterStatus } from './controllers/getSorterStatus';
-import { RedisSorterStatusRepository } from './RedisSorterStatusRepository';
-import { openApiDocument, swaggerUiHtml, swaggerUiInit } from './openapi';
-import { ApiKeyRepository } from './ApiKeyRepository';
-import { apiKeyAuth } from './middleware/apiKeyAuth';
-import { SpaceRepository } from './SpaceRepository';
-import { loadMailing } from './middleware/loadMailing';
-import { AttachmentStore } from './AttachmentStore';
-import { getAttachmentsConfig } from './attachments';
+import { fileURLToPath } from 'node:url';
+import { MailingRepository } from './MailingRepository.js';
+import { MailingExecutor } from './MailingExecutor.js';
+import { getMailings } from './controllers/getMailings.js';
+import { getMailing } from './controllers/getMailing.js';
+import { addMailing } from './controllers/addMailing.js';
+import { updateMailing } from './controllers/updateMailing.js';
+import { Logger } from './Logger.js';
+import { MailingStateManager } from './MailingStateManager.js';
+import { getReceivers } from './controllers/getReceivers.js';
+import { getReceiverFields } from './controllers/getReceiverFields.js';
+import { deleteMailing } from './controllers/deleteMailing.js';
+import { sendTestEmail } from './controllers/sendTestEmail.js';
+import { getMe, setupAdminRoutes } from './controllers/admin.js';
+import { previewEmail } from './controllers/previewEmail.js';
+import { previewDraft } from './controllers/previewDraft.js';
+import { getSpaces } from './controllers/getSpaces.js';
+import { restoreExcluded } from './controllers/restoreExcluded.js';
+import { trackClick, trackOpen } from './controllers/tracking.js';
+import { getResults } from './controllers/getResults.js';
+import { AddressStatsRepository } from './AddressStatsRepository.js';
+import { getFailedReceivers } from './controllers/getFailedReceivers.js';
+import { FailureCounter } from './FailureCounter.js';
+import { ReceiverListFilter } from './ReceiverListFilter.js';
+import { createRetryMailing } from './controllers/createRetryMailing.js';
+import {
+  requestSubscription, SubscribeTemplateContext
+} from './controllers/requestSubscription.js';
+import { SubscriptionRequestRepository } from './SubscriptionRequestRepository.js';
+import { MailSender } from './MailSender.js';
+import { Template } from './templates/Template.js';
+import { subscribe } from './controllers/subscribe.js';
+import { unsubscribe } from './controllers/unsubscribe.js';
+import { deleteReceiver } from './controllers/deleteReceiver.js';
+import { unsubscribeFromAll } from './controllers/unsubscribeFromAll.js';
+import { getSorterStatus } from './controllers/getSorterStatus.js';
+import { RedisSorterStatusRepository } from './RedisSorterStatusRepository.js';
+import { openApiDocument, swaggerUiHtml, swaggerUiInit } from './openapi.js';
+import { ApiKeyRepository } from './ApiKeyRepository.js';
+import { apiKeyAuth } from './middleware/apiKeyAuth.js';
+import { SpaceRepository } from './SpaceRepository.js';
+import { loadMailing } from './middleware/loadMailing.js';
+import { AttachmentStore } from './AttachmentStore.js';
+import { getAttachmentsConfig } from './attachments.js';
 import {
   checkAttachmentsBeforeStart, deleteAttachment, downloadAttachment, rawAttachmentBody,
   requireAttachmentStore, uploadAttachment
-} from './controllers/attachments';
+} from './controllers/attachments.js';
 
 
 export function setupRoutes (
@@ -139,6 +142,8 @@ export function setupApiDocs (app: Express) {
   app.get('/docs/init.js', (req: Request, res: Response) => {
     res.type('js').send(swaggerUiInit);
   });
-  const swaggerUiDir = path.dirname(require.resolve('swagger-ui-dist/swagger-ui-bundle.js'));
+  const swaggerUiDir = path.dirname(
+    fileURLToPath(import.meta.resolve('swagger-ui-dist/swagger-ui-bundle.js'))
+  );
   app.use('/docs', express.static(swaggerUiDir, { index: false }));
 }

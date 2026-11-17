@@ -5,8 +5,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Server } from 'node:http';
 import express from 'express';
-import { setupRoutes } from '../src/routes';
-import { openApiDocument } from '../src/openapi';
+import { setupRoutes } from '../src/routes.js';
+import { openApiDocument } from '../src/openapi.js';
 
 
 function createApp () {
@@ -35,7 +35,8 @@ function getRoutes (app: express.Express) {
 
 describe('OpenAPI', () => {
   it('should take the API version from package.json', () => {
-    const pkg = JSON.parse(readFileSync(join(__dirname, '..', '..', '..', 'package.json'), 'utf8'));
+    const pkgPath = join(import.meta.dirname, '..', '..', '..', 'package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
     assert.equal(openApiDocument.info.version, pkg.version);
   });
 

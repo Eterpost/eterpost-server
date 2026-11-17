@@ -1,10 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { createTransport } from 'nodemailer';
-import { SmtpMailSender } from '../src/SmtpMailSender';
-import { Email } from '../src/Email';
-import { Receiver } from '../src/Receiver';
-import { composeMessage } from '../src/composeMessage';
+import { SmtpMailSender } from '../src/SmtpMailSender.js';
+import { Email } from '../src/Email.js';
+import { Receiver } from '../src/Receiver.js';
+import { composeMessage } from '../src/composeMessage.js';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';

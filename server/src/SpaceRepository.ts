@@ -1,4 +1,4 @@
-import { RedisConnectionPool } from './RedisConnectionPool';
+import { RedisConnectionPool } from './RedisConnectionPool.js';
 
 
 export interface SpaceRepositoryConfig {

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { Receiver } from '../src/Receiver';
+import { Receiver } from '../src/Receiver.js';
 
 
 const email = 'theowl@etersoft.ru';

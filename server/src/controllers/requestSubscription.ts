@@ -1,17 +1,17 @@
 import { Request, Response } from 'express';
-import { error, success } from '../utils/response';
-import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
-import { catchPromise } from '../utils/catchPromise';
-import { Logger } from '../Logger';
-import { SubscriptionRequestRepository } from '../SubscriptionRequestRepository';
-import { MailSender } from '../MailSender';
-import { Template } from '../templates/Template';
-import { Mailing } from '../Mailing';
-import { SubscriptionRequest } from '../SubscriptionRequest';
-import { Email } from '../Email';
-import { Receiver } from '../Receiver';
-import { generateUniqueCode } from '../utils/codes';
-import { getLoadedMailing } from '../middleware/loadMailing';
+import { error, success } from '../utils/response.js';
+import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { Logger } from '../Logger.js';
+import { SubscriptionRequestRepository } from '../SubscriptionRequestRepository.js';
+import { MailSender } from '../MailSender.js';
+import { Template } from '../templates/Template.js';
+import { Mailing } from '../Mailing.js';
+import { SubscriptionRequest } from '../SubscriptionRequest.js';
+import { Email } from '../Email.js';
+import { Receiver } from '../Receiver.js';
+import { generateUniqueCode } from '../utils/codes.js';
+import { getLoadedMailing } from '../middleware/loadMailing.js';
 
 
 export interface SubscribeTemplateContext {

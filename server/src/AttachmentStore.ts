@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { access, constants, copyFile, mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { AttachmentInfo } from './attachments';
+import { AttachmentInfo } from './attachments.js';
 
 
 const ID_PATTERN = /^[0-9a-f]{16}$/;

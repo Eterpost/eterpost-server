@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { RedisConnectionPool } from './RedisConnectionPool';
+import { RedisConnectionPool } from './RedisConnectionPool.js';
 
 
 export interface ApiKeyRepositoryConfig {

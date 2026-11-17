@@ -1,8 +1,8 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
-import { MailingRepository } from '../MailingRepository';
-import { Mailing } from '../Mailing';
-import { error } from '../utils/response';
-import { canSee, getSpaceAccess } from './spaceAccess';
+import { MailingRepository } from '../MailingRepository.js';
+import { Mailing } from '../Mailing.js';
+import { error } from '../utils/response.js';
+import { canSee, getSpaceAccess } from './spaceAccess.js';
 
 
 /**

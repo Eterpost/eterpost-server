@@ -1,4 +1,4 @@
-import { AddressStatsProperties, AddressStats } from './AddressStats';
+import { AddressStatsProperties, AddressStats } from './AddressStats.js';
 
 
 /**

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyTracking, createTrackingToken, isTrackingToken } from '../src/tracking';
+import { applyTracking, createTrackingToken, isTrackingToken } from '../src/tracking.js';
 
 
 describe('applyTracking', () => {

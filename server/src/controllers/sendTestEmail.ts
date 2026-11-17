@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
-import { success } from '../utils/response';
-import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
-import { catchPromise } from '../utils/catchPromise';
-import { Logger } from '../Logger';
-import { MailingExecutor } from '../MailingExecutor';
-import { getLoadedMailing } from '../middleware/loadMailing';
-import { sendMissingAttachment } from './attachments';
-import { Receiver } from '../Receiver';
+import { success } from '../utils/response.js';
+import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { Logger } from '../Logger.js';
+import { MailingExecutor } from '../MailingExecutor.js';
+import { getLoadedMailing } from '../middleware/loadMailing.js';
+import { sendMissingAttachment } from './attachments.js';
+import { Receiver } from '../Receiver.js';
 
 
 /**

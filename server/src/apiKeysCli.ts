@@ -1,8 +1,8 @@
 import { parseArgs } from 'node:util';
-import { readConfig } from './readConfig';
-import { RedisConnectionPoolImpl } from './RedisConnectionPool';
-import { ApiKeyRepository, ApiKeyRole, describeRole } from './ApiKeyRepository';
-import { SpaceRepository } from './SpaceRepository';
+import { readConfig } from './readConfig.js';
+import { RedisConnectionPoolImpl } from './RedisConnectionPool.js';
+import { ApiKeyRepository, ApiKeyRole, describeRole } from './ApiKeyRepository.js';
+import { SpaceRepository } from './SpaceRepository.js';
 
 
 const usage = `Управление ключами API mail-server (хранятся в Redis из конфига сервера)

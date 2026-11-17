@@ -1,9 +1,9 @@
 import { after, before, beforeEach, describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { RedisAddressStatsRepository } from '../src/RedisAddressStatsRepository';
-import { RedisConnectionPool } from '../src/RedisConnectionPool';
-import { AddressStats } from '../src/AddressStats';
-import { getTestingRedisConnectionPool, lock, redisSkip } from './testing-utils';
+import { RedisAddressStatsRepository } from '../src/RedisAddressStatsRepository.js';
+import { RedisConnectionPool } from '../src/RedisConnectionPool.js';
+import { AddressStats } from '../src/AddressStats.js';
+import { getTestingRedisConnectionPool, lock, redisSkip } from './testing-utils.js';
 
 
 const testEmail = 'test-email-address@etersoft.ru';

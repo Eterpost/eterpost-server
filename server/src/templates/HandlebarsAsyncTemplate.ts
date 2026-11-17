@@ -1,7 +1,7 @@
 import handlebars from 'handlebars';
-import { AsyncTemplate } from './AsyncTemplate';
-import { Receiver } from '../Receiver';
-import { ExternalContentError, TemplateError } from './TemplateErrors';
+import { AsyncTemplate } from './AsyncTemplate.js';
+import { Receiver } from '../Receiver.js';
+import { ExternalContentError, TemplateError } from './TemplateErrors.js';
 
 
 export class HandlebarsAsyncTemplate<Context> implements AsyncTemplate<Context> {

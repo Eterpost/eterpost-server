@@ -1,6 +1,9 @@
-import { AddressStatsRepository } from './AddressStatsRepository';
-import { Receiver } from './Receiver';
-import { isEmail } from 'validator';
+import { AddressStatsRepository } from './AddressStatsRepository.js';
+import { Receiver } from './Receiver.js';
+import validator from 'validator';
+
+// validator — CommonJS без именованных экспортов для ESM
+const { isEmail } = validator;
 
 
 const DEFAULT_STATS_BATCH_SIZE = 1000;

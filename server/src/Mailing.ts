@@ -1,11 +1,11 @@
-import { Receiver } from './Receiver';
-import { MailingRepository } from './MailingRepository';
-import { AsyncTemplate } from './templates/AsyncTemplate';
-import { HandlebarsAsyncTemplate } from './templates/HandlebarsAsyncTemplate';
-import { MailingState } from './MailingState';
-import { TemplateError } from './templates/TemplateErrors';
-import { DEFAULT_SPACE } from './SpaceRepository';
-import { AttachmentInfo } from './attachments';
+import { Receiver } from './Receiver.js';
+import { MailingRepository } from './MailingRepository.js';
+import { AsyncTemplate } from './templates/AsyncTemplate.js';
+import { HandlebarsAsyncTemplate } from './templates/HandlebarsAsyncTemplate.js';
+import { MailingState } from './MailingState.js';
+import { TemplateError } from './templates/TemplateErrors.js';
+import { DEFAULT_SPACE } from './SpaceRepository.js';
+import { AttachmentInfo } from './attachments.js';
 
 
 export interface MailingProperties {

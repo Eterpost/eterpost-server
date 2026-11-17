@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { getSorterStatus } from '../src/controllers/getSorterStatus';
+import { getSorterStatus } from '../src/controllers/getSorterStatus.js';
 
 
 function callHandler (status: any, config: any = { server: {} }) {

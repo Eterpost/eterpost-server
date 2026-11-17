@@ -1,14 +1,14 @@
 import { Request, Response } from 'express';
-import { success } from '../utils/response';
-import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
-import { catchPromise } from '../utils/catchPromise';
-import { MailingExecutor } from '../MailingExecutor';
-import { Mailing } from '../Mailing';
-import { Receiver } from '../Receiver';
-import { getListId } from '../getListId';
-import { generateUniqueCode } from '../utils/codes';
-import { getSpaceAccess, spaceForNewMailing } from '../middleware/spaceAccess';
-import { formatPreview, sendPreviewError } from './previewEmail';
+import { success } from '../utils/response.js';
+import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { MailingExecutor } from '../MailingExecutor.js';
+import { Mailing } from '../Mailing.js';
+import { Receiver } from '../Receiver.js';
+import { getListId } from '../getListId.js';
+import { generateUniqueCode } from '../utils/codes.js';
+import { getSpaceAccess, spaceForNewMailing } from '../middleware/spaceAccess.js';
+import { formatPreview, sendPreviewError } from './previewEmail.js';
 
 
 const MAX_RECEIVERS = 100;

@@ -1,10 +1,10 @@
-import { MailingRepository } from '../MailingRepository';
+import { MailingRepository } from '../MailingRepository.js';
 import { Request, Response } from 'express';
-import { error, success } from '../utils/response';
-import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
-import { catchPromise } from '../utils/catchPromise';
-import { getSpaceAccess } from '../middleware/spaceAccess';
-import { Logger } from '../Logger';
+import { error, success } from '../utils/response.js';
+import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { getSpaceAccess } from '../middleware/spaceAccess.js';
+import { Logger } from '../Logger.js';
 
 
 /**

@@ -1,6 +1,6 @@
 import express, { Express, NextFunction, Request, RequestHandler, Response } from 'express';
 import cors from 'cors';
-import { bodyParser } from './middleware/bodyParser';
+import { bodyParser } from './middleware/bodyParser.js';
 
 
 export function createExpressServer (config: any): Express {

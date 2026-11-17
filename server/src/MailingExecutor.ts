@@ -1,20 +1,23 @@
-import { Mailing } from './Mailing';
-import { MailingState } from './MailingState';
-import { MailSender } from './MailSender';
-import { Receiver } from './Receiver';
-import { Email, Headers } from './Email';
+import { Mailing } from './Mailing.js';
+import { MailingState } from './MailingState.js';
+import { MailSender } from './MailSender.js';
+import { Receiver } from './Receiver.js';
+import { Email, Headers } from './Email.js';
 import { EventEmitter } from 'events';
-import { MailingRepository } from './MailingRepository';
-import { Logger } from './Logger';
-import { AddressStatsRepository } from './AddressStatsRepository';
-import { AddressStatsProperties } from './AddressStats';
-import { isEmail } from 'validator';
-import { sleep } from './utils/sleep';
-import { ComposedMessage, composeMessage, htmlToText } from './composeMessage';
-import { applyTracking, createTrackingToken } from './tracking';
-import { createSpamDetector } from './spamDetection';
-import { SpaceRepository } from './SpaceRepository';
-import { AttachmentStore } from './AttachmentStore';
+import { MailingRepository } from './MailingRepository.js';
+import { Logger } from './Logger.js';
+import { AddressStatsRepository } from './AddressStatsRepository.js';
+import { AddressStatsProperties } from './AddressStats.js';
+import validator from 'validator';
+import { sleep } from './utils/sleep.js';
+import { ComposedMessage, composeMessage, htmlToText } from './composeMessage.js';
+import { applyTracking, createTrackingToken } from './tracking.js';
+import { createSpamDetector } from './spamDetection.js';
+import { SpaceRepository } from './SpaceRepository.js';
+import { AttachmentStore } from './AttachmentStore.js';
+
+// validator — CommonJS без именованных экспортов для ESM
+const { isEmail } = validator;
 
 
 // Паузы перед повторами при временной ошибке SMTP (секунды), если не заданы

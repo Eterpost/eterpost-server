@@ -1,7 +1,7 @@
-import { MailingFailure, MailingRepository } from './MailingRepository';
-import { AddressStatsRepository } from './AddressStatsRepository';
-import { AddressStats } from './AddressStats';
-import { Mailing } from './Mailing';
+import { MailingFailure, MailingRepository } from './MailingRepository.js';
+import { AddressStatsRepository } from './AddressStatsRepository.js';
+import { AddressStats } from './AddressStats.js';
+import { Mailing } from './Mailing.js';
 
 
 export interface FailedReceiver {

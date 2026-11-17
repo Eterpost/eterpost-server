@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { error, success } from '../utils/response';
-import { catchPromise } from '../utils/catchPromise';
-import { MailingState } from '../MailingState';
-import { Logger } from '../Logger';
-import { getLoadedMailing } from '../middleware/loadMailing';
+import { error, success } from '../utils/response.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { MailingState } from '../MailingState.js';
+import { Logger } from '../Logger.js';
+import { getLoadedMailing } from '../middleware/loadMailing.js';
 
 
 export function deleteReceiver (logger: Logger) {

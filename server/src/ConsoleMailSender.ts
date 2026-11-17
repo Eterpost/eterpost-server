@@ -1,6 +1,6 @@
-import { Email } from './Email';
-import { MailSender } from './MailSender';
-import { sleep } from './utils/sleep';
+import { Email } from './Email.js';
+import { MailSender } from './MailSender.js';
+import { sleep } from './utils/sleep.js';
 
 
 /**

@@ -1,4 +1,4 @@
-import { MailingRepository } from './MailingRepository';
+import { MailingRepository } from './MailingRepository.js';
 
 
 /**

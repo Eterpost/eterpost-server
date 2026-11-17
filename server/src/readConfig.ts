@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 
-const ROOT = join(__dirname, '..', '..', '..');
+const ROOT = join(import.meta.dirname, '..', '..', '..');
 
 export function readConfig (): any {
   const baseConfig = readJson(join(ROOT, 'config.default.json'));

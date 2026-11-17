@@ -1,5 +1,5 @@
 import handlebars from 'handlebars';
-import { Template } from './Template';
+import { Template } from './Template.js';
 
 
 export class HandlebarsTemplate<Context> implements Template<Context> {

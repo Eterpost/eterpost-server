@@ -1,9 +1,11 @@
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
+import { Ajv } from 'ajv';
+import ajvFormats from 'ajv-formats';
 import { Request, Response, NextFunction } from 'express';
-import { error } from '../utils/response';
+import { error } from '../utils/response.js';
 
 
+// ajv-formats — CommonJS: из ESM его функция лежит в поле default
+const addFormats = ajvFormats.default;
 const ajv = new Ajv({ allErrors: false, strict: false });
 addFormats(ajv);
 

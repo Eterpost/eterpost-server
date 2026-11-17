@@ -1,12 +1,12 @@
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { toEmailDocument } from '../src/emailDocument';
-import { createFakeLogger } from './testing-utils';
-import { MailingExecutor } from '../src/MailingExecutor';
-import { Mailing } from '../src/Mailing';
-import { previewDraft } from '../src/controllers/previewDraft';
-import { previewEmail } from '../src/controllers/previewEmail';
-import { loadMailing } from '../src/middleware/loadMailing';
+import { toEmailDocument } from '../src/emailDocument.js';
+import { createFakeLogger } from './testing-utils.js';
+import { MailingExecutor } from '../src/MailingExecutor.js';
+import { Mailing } from '../src/Mailing.js';
+import { previewDraft } from '../src/controllers/previewDraft.js';
+import { previewEmail } from '../src/controllers/previewEmail.js';
+import { loadMailing } from '../src/middleware/loadMailing.js';
 
 
 const config = {

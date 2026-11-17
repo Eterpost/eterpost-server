@@ -98,7 +98,9 @@ module.exports = (env, argv) => {
       })
     ],
     resolve: {
-      extensions: ['.js', '.ts', '.tsx', '.scss']
+      extensions: ['.js', '.ts', '.tsx', '.scss'],
+      // Модули сервера (ESM) импортируют друг друга с .js — это их .ts
+      extensionAlias: { '.js': ['.ts', '.tsx', '.js'] }
     },
     stats: {
       chunks: false,

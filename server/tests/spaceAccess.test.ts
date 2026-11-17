@@ -1,10 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { ApiKeyRecord } from '../src/ApiKeyRepository';
-import { Space, SpaceRepository } from '../src/SpaceRepository';
+import { ApiKeyRecord } from '../src/ApiKeyRepository.js';
+import { Space, SpaceRepository } from '../src/SpaceRepository.js';
 import {
   canSee, listedSpaces, resolveSpaceAccess, SpaceAccess, SpaceForbiddenError, spaceForNewMailing
-} from '../src/middleware/spaceAccess';
+} from '../src/middleware/spaceAccess.js';
 
 
 // Пространства sales и news; ivan — участник обоих

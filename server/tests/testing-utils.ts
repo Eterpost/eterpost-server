@@ -1,6 +1,6 @@
 import { mock } from 'node:test';
-import { Logger } from '../src/Logger';
-import { RedisConnectionPoolImpl } from '../src/RedisConnectionPool';
+import { Logger } from '../src/Logger.js';
+import { RedisConnectionPoolImpl } from '../src/RedisConnectionPool.js';
 
 
 // Тестовая база Redis задаётся только явно: тесты очищают её (FLUSHDB).

@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { success } from '../utils/response';
-import { catchPromise } from '../utils/catchPromise';
-import { FailureCounter } from '../FailureCounter';
-import { serveCsv } from '../utils/serveCsv';
-import { getLoadedMailing } from '../middleware/loadMailing';
+import { success } from '../utils/response.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { FailureCounter } from '../FailureCounter.js';
+import { serveCsv } from '../utils/serveCsv.js';
+import { getLoadedMailing } from '../middleware/loadMailing.js';
 
 
 export function getFailedReceivers (failureCounter: FailureCounter) {

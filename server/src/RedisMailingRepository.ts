@@ -1,12 +1,12 @@
-import { Mailing, MailingProperties } from './Mailing';
-import { MailingState } from './MailingState';
-import { Receiver, ReceiverProperties } from './Receiver';
+import { Mailing, MailingProperties } from './Mailing.js';
+import { MailingState } from './MailingState.js';
+import { Receiver, ReceiverProperties } from './Receiver.js';
 import {
   MailingFailure, MailingRepository, MailingUnsubscribe, RcptRetry, TrackedLetter, TrackingStats
-} from './MailingRepository';
-import { BaseRedisRepository } from './BaseRedisRepository';
-import { RedisClient, RedisConnectionPool } from './RedisConnectionPool';
-import { DEFAULT_SPACE } from './SpaceRepository';
+} from './MailingRepository.js';
+import { BaseRedisRepository } from './BaseRedisRepository.js';
+import { RedisClient, RedisConnectionPool } from './RedisConnectionPool.js';
+import { DEFAULT_SPACE } from './SpaceRepository.js';
 
 
 export interface RedisMailingRepositoryConfig {

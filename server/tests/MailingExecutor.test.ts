@@ -1,25 +1,25 @@
 import { after, afterEach, before, beforeEach, describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { toEmailDocument } from '../src/emailDocument';
+import { toEmailDocument } from '../src/emailDocument.js';
 import {
   createFakeLogger, getTestingRedisConnectionPool, redisSkip, sleep
-} from './testing-utils';
-import { RedisConnectionPool } from '../src/RedisConnectionPool';
-import { RedisMailingRepository } from '../src/RedisMailingRepository';
-import { RedisAddressStatsRepository } from '../src/RedisAddressStatsRepository';
-import { MailingExecutor } from '../src/MailingExecutor';
-import { MailingState } from '../src/MailingState';
-import { Mailing } from '../src/Mailing';
-import { Email } from '../src/Email';
-import { Receiver } from '../src/Receiver';
-import { SpaceRepository } from '../src/SpaceRepository';
+} from './testing-utils.js';
+import { RedisConnectionPool } from '../src/RedisConnectionPool.js';
+import { RedisMailingRepository } from '../src/RedisMailingRepository.js';
+import { RedisAddressStatsRepository } from '../src/RedisAddressStatsRepository.js';
+import { MailingExecutor } from '../src/MailingExecutor.js';
+import { MailingState } from '../src/MailingState.js';
+import { Mailing } from '../src/Mailing.js';
+import { Email } from '../src/Email.js';
+import { Receiver } from '../src/Receiver.js';
+import { SpaceRepository } from '../src/SpaceRepository.js';
 import { once } from 'node:events';
-import { trackClick, trackOpen } from '../src/controllers/tracking';
+import { trackClick, trackOpen } from '../src/controllers/tracking.js';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { AttachmentStore } from '../src/AttachmentStore';
-import { MissingAttachmentError } from '../src/MailingExecutor';
+import { AttachmentStore } from '../src/AttachmentStore.js';
+import { MissingAttachmentError } from '../src/MailingExecutor.js';
 
 
 const testHtml = '<h1>Test</h1>';

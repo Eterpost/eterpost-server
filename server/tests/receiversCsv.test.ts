@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { decodeReceiversFile, parseReceiverRows } from '../src/receiversCsv';
+import { decodeReceiversFile, parseReceiverRows } from '../src/receiversCsv.js';
 
 
 describe('parseReceiverRows', () => {

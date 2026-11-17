@@ -1,7 +1,7 @@
-import { AddressStatsRepository } from './AddressStatsRepository';
-import { AddressStatsProperties, AddressStats } from './AddressStats';
-import { BaseRedisRepository } from './BaseRedisRepository';
-import { RedisConnectionPool } from './RedisConnectionPool';
+import { AddressStatsRepository } from './AddressStatsRepository.js';
+import { AddressStatsProperties, AddressStats } from './AddressStats.js';
+import { BaseRedisRepository } from './BaseRedisRepository.js';
+import { RedisConnectionPool } from './RedisConnectionPool.js';
 
 
 export interface RedisAddressStatsRepositoryConfig {

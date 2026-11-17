@@ -1,8 +1,10 @@
 import { after, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { getTestingRedisConnectionPool, redisSkip } from './testing-utils';
-import { RedisConnectionPool } from '../src/RedisConnectionPool';
-import { ApiKeyRecord, ApiKeyRepository, hashApiKey, isLegacyKey } from '../src/ApiKeyRepository';
+import { getTestingRedisConnectionPool, redisSkip } from './testing-utils.js';
+import { RedisConnectionPool } from '../src/RedisConnectionPool.js';
+import {
+  ApiKeyRecord, ApiKeyRepository, hashApiKey, isLegacyKey
+} from '../src/ApiKeyRepository.js';
 
 
 describe('ApiKeyRepository roles', { skip: redisSkip }, () => {

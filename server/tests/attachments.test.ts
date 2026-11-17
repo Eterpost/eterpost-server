@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   detectContentType, getAttachmentsConfig, normalizeFilename, totalSize
-} from '../src/attachments';
+} from '../src/attachments.js';
 
 
 describe('attachments', () => {

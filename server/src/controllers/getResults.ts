@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { MailingRepository } from '../MailingRepository';
-import { FailureCounter } from '../FailureCounter';
-import { success, error } from '../utils/response';
-import { catchPromise } from '../utils/catchPromise';
-import { serveCsv } from '../utils/serveCsv';
-import { getLoadedMailing } from '../middleware/loadMailing';
+import { MailingRepository } from '../MailingRepository.js';
+import { FailureCounter } from '../FailureCounter.js';
+import { success, error } from '../utils/response.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { serveCsv } from '../utils/serveCsv.js';
+import { getLoadedMailing } from '../middleware/loadMailing.js';
 
 
 export interface ReceiverResult {

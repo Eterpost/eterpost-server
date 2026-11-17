@@ -1,6 +1,6 @@
 import { convert } from 'html-to-text';
-import { Email } from './Email';
-import { toEmailDocument } from './emailDocument';
+import { Email } from './Email.js';
+import { toEmailDocument } from './emailDocument.js';
 
 
 // Картинки пропускаем: в тексте от них остались бы только адреса или data: URI.

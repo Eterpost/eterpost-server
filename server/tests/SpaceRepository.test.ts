@@ -1,8 +1,8 @@
 import { after, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { RedisConnectionPool } from '../src/RedisConnectionPool';
-import { SpaceRepository } from '../src/SpaceRepository';
-import { getTestingRedisConnectionPool, redisSkip } from './testing-utils';
+import { RedisConnectionPool } from '../src/RedisConnectionPool.js';
+import { SpaceRepository } from '../src/SpaceRepository.js';
+import { getTestingRedisConnectionPool, redisSkip } from './testing-utils.js';
 
 
 describe('SpaceRepository', { skip: redisSkip }, () => {

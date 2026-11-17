@@ -1,8 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { ReceiverListFilter } from '../src/ReceiverListFilter';
-import { Receiver } from '../src/Receiver';
-import { AddressStats } from '../src/AddressStats';
+import { ReceiverListFilter } from '../src/ReceiverListFilter.js';
+import { Receiver } from '../src/Receiver.js';
+import { AddressStats } from '../src/AddressStats.js';
 
 
 describe('ReceiverListFilter', () => {

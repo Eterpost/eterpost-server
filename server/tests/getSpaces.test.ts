@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { getSpaces } from '../src/controllers/getSpaces';
+import { getSpaces } from '../src/controllers/getSpaces.js';
 
 
 const stored = [

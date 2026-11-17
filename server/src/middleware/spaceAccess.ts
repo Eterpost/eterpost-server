@@ -1,6 +1,6 @@
 import { Response } from 'express';
-import { ApiKeyRecord, isLegacyKey } from '../ApiKeyRepository';
-import { DEFAULT_SPACE, SPACE_NAME_PATTERN, SpaceRepository } from '../SpaceRepository';
+import { ApiKeyRecord, isLegacyKey } from '../ApiKeyRepository.js';
+import { DEFAULT_SPACE, SPACE_NAME_PATTERN, SpaceRepository } from '../SpaceRepository.js';
 
 
 /**

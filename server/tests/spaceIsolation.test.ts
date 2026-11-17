@@ -2,17 +2,17 @@ import { after, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { AddressInfo } from 'node:net';
 import { Server } from 'node:http';
-import { createFakeLogger, getTestingRedisConnectionPool, redisSkip } from './testing-utils';
-import { RedisConnectionPool } from '../src/RedisConnectionPool';
-import { RedisMailingRepository } from '../src/RedisMailingRepository';
-import { RedisAddressStatsRepository } from '../src/RedisAddressStatsRepository';
-import { RedisSubscriptionRequestRepository } from '../src/RedisSubscriptionRequestRepository';
-import { ApiKeyRepository } from '../src/ApiKeyRepository';
-import { SpaceRepository } from '../src/SpaceRepository';
-import { FailureCounter } from '../src/FailureCounter';
-import { ReceiverListFilter } from '../src/ReceiverListFilter';
-import { createExpressServer } from '../src/createExpressServer';
-import { setupRoutes } from '../src/routes';
+import { createFakeLogger, getTestingRedisConnectionPool, redisSkip } from './testing-utils.js';
+import { RedisConnectionPool } from '../src/RedisConnectionPool.js';
+import { RedisMailingRepository } from '../src/RedisMailingRepository.js';
+import { RedisAddressStatsRepository } from '../src/RedisAddressStatsRepository.js';
+import { RedisSubscriptionRequestRepository } from '../src/RedisSubscriptionRequestRepository.js';
+import { ApiKeyRepository } from '../src/ApiKeyRepository.js';
+import { SpaceRepository } from '../src/SpaceRepository.js';
+import { FailureCounter } from '../src/FailureCounter.js';
+import { ReceiverListFilter } from '../src/ReceiverListFilter.js';
+import { createExpressServer } from '../src/createExpressServer.js';
+import { setupRoutes } from '../src/routes.js';
 
 
 const mailingBody = {

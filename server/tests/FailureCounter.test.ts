@@ -1,15 +1,15 @@
 import { after, before, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createFakeLogger, getTestingRedisConnectionPool, redisSkip } from './testing-utils';
-import { RedisConnectionPool } from '../src/RedisConnectionPool';
-import { RedisMailingRepository } from '../src/RedisMailingRepository';
-import { RedisAddressStatsRepository } from '../src/RedisAddressStatsRepository';
-import { FailureCounter } from '../src/FailureCounter';
-import { unsubscribeFromAll } from '../src/controllers/unsubscribeFromAll';
-import { createRetryMailing } from '../src/controllers/createRetryMailing';
-import { restoreExcluded } from '../src/controllers/restoreExcluded';
-import { getResults } from '../src/controllers/getResults';
-import { loadMailing } from '../src/middleware/loadMailing';
+import { createFakeLogger, getTestingRedisConnectionPool, redisSkip } from './testing-utils.js';
+import { RedisConnectionPool } from '../src/RedisConnectionPool.js';
+import { RedisMailingRepository } from '../src/RedisMailingRepository.js';
+import { RedisAddressStatsRepository } from '../src/RedisAddressStatsRepository.js';
+import { FailureCounter } from '../src/FailureCounter.js';
+import { unsubscribeFromAll } from '../src/controllers/unsubscribeFromAll.js';
+import { createRetryMailing } from '../src/controllers/createRetryMailing.js';
+import { restoreExcluded } from '../src/controllers/restoreExcluded.js';
+import { getResults } from '../src/controllers/getResults.js';
+import { loadMailing } from '../src/middleware/loadMailing.js';
 
 
 const bounced = 'failure-counter-bounced@example.com';

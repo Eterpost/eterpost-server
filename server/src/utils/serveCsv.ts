@@ -1,4 +1,4 @@
-import { serializeToCsv } from './serializeToCsv';
+import { serializeToCsv } from './serializeToCsv.js';
 import { Response } from 'express';
 
 

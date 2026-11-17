@@ -1,7 +1,7 @@
-import { MailSender } from './MailSender';
-import { Email } from './Email';
+import { MailSender } from './MailSender.js';
+import { Email } from './Email.js';
 import { createTransport, Transporter } from 'nodemailer';
-import { composeMessage } from './composeMessage';
+import { composeMessage } from './composeMessage.js';
 
 
 export interface SmtpMailSenderConfig {

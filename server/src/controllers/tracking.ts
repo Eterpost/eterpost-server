@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { MailingRepository, TrackedLetter } from '../MailingRepository';
-import { success, error } from '../utils/response';
-import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
-import { catchPromise } from '../utils/catchPromise';
-import { isTrackingToken } from '../tracking';
-import { canSee, getSpaceAccess } from '../middleware/spaceAccess';
+import { MailingRepository, TrackedLetter } from '../MailingRepository.js';
+import { success, error } from '../utils/response.js';
+import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { isTrackingToken } from '../tracking.js';
+import { canSee, getSpaceAccess } from '../middleware/spaceAccess.js';
 
 
 /**

@@ -1,4 +1,4 @@
-import { Receiver } from './Receiver';
+import { Receiver } from './Receiver.js';
 
 
 export interface Headers {

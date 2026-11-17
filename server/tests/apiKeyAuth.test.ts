@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { AddressInfo } from 'node:net';
 import { Server } from 'node:http';
 import express, { Request, Response } from 'express';
-import { createFakeLogger, getTestingRedisConnectionPool, redisSkip } from './testing-utils';
-import { RedisConnectionPool } from '../src/RedisConnectionPool';
-import { ApiKeyRepository, hashApiKey } from '../src/ApiKeyRepository';
-import { apiKeyAuth, getActor } from '../src/middleware/apiKeyAuth';
-import { getSpaceAccess } from '../src/middleware/spaceAccess';
-import { SpaceRepository } from '../src/SpaceRepository';
-import { bodyParser } from '../src/middleware/bodyParser';
-import { Logger } from '../src/Logger';
+import { createFakeLogger, getTestingRedisConnectionPool, redisSkip } from './testing-utils.js';
+import { RedisConnectionPool } from '../src/RedisConnectionPool.js';
+import { ApiKeyRepository, hashApiKey } from '../src/ApiKeyRepository.js';
+import { apiKeyAuth, getActor } from '../src/middleware/apiKeyAuth.js';
+import { getSpaceAccess } from '../src/middleware/spaceAccess.js';
+import { SpaceRepository } from '../src/SpaceRepository.js';
+import { bodyParser } from '../src/middleware/bodyParser.js';
+import { Logger } from '../src/Logger.js';
 
 
 describe('ApiKeyRepository', { skip: redisSkip }, () => {

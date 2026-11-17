@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { success } from '../utils/response';
-import { catchPromise } from '../utils/catchPromise';
-import { DEFAULT_SPACE, SpaceRepository } from '../SpaceRepository';
-import { getSpaceAccess, listedSpaces } from '../middleware/spaceAccess';
+import { success } from '../utils/response.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { DEFAULT_SPACE, SpaceRepository } from '../SpaceRepository.js';
+import { getSpaceAccess, listedSpaces } from '../middleware/spaceAccess.js';
 
 
 /**

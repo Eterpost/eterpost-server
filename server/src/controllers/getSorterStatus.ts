@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { success } from '../utils/response';
-import { catchPromise } from '../utils/catchPromise';
-import { RedisSorterStatusRepository } from '../RedisSorterStatusRepository';
+import { success } from '../utils/response.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { RedisSorterStatusRepository } from '../RedisSorterStatusRepository.js';
 
 
 // mail-sorter по умолчанию запускается раз в час

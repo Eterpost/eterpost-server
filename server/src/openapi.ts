@@ -1,27 +1,31 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { requestBodyJsonSchema as addMailingBody } from './controllers/addMailing';
+import { requestBodyJsonSchema as addMailingBody } from './controllers/addMailing.js';
 import {
   createKeyBody, createSpaceBody, moveMailingBody, setKeyRoleBody, updateSpaceBody
-} from './controllers/admin';
-import { requestBodyJsonSchema as createRetryMailingBody } from './controllers/createRetryMailing';
+} from './controllers/admin.js';
+import {
+  requestBodyJsonSchema as createRetryMailingBody
+} from './controllers/createRetryMailing.js';
 import {
   requestBodyJsonSchema as requestSubscriptionBody
-} from './controllers/requestSubscription';
-import { requestBodyJsonSchema as previewDraftBody } from './controllers/previewDraft';
-import { requestBodyJsonSchema as previewEmailBody } from './controllers/previewEmail';
-import { requestBodyJsonSchema as restoreExcludedBody } from './controllers/restoreExcluded';
-import { clickBodyJsonSchema, openBodyJsonSchema } from './controllers/tracking';
-import { requestBodyJsonSchema as sendTestEmailBody } from './controllers/sendTestEmail';
-import { requestBodyJsonSchema as subscribeBody } from './controllers/subscribe';
-import { requestBodyJsonSchema as unsubscribeBody } from './controllers/unsubscribe';
-import { requestBodyJsonSchema as unsubscribeFromAllBody } from './controllers/unsubscribeFromAll';
-import { requestBodyJsonSchema as updateMailingBody } from './controllers/updateMailing';
+} from './controllers/requestSubscription.js';
+import { requestBodyJsonSchema as previewDraftBody } from './controllers/previewDraft.js';
+import { requestBodyJsonSchema as previewEmailBody } from './controllers/previewEmail.js';
+import { requestBodyJsonSchema as restoreExcludedBody } from './controllers/restoreExcluded.js';
+import { clickBodyJsonSchema, openBodyJsonSchema } from './controllers/tracking.js';
+import { requestBodyJsonSchema as sendTestEmailBody } from './controllers/sendTestEmail.js';
+import { requestBodyJsonSchema as subscribeBody } from './controllers/subscribe.js';
+import { requestBodyJsonSchema as unsubscribeBody } from './controllers/unsubscribe.js';
+import {
+  requestBodyJsonSchema as unsubscribeFromAllBody
+} from './controllers/unsubscribeFromAll.js';
+import { requestBodyJsonSchema as updateMailingBody } from './controllers/updateMailing.js';
 
 // Версия API — версия пакета: package.json в корне проекта
 // (код запускается из server/dist/src)
 function packageVersion (): string {
-  const path = join(__dirname, '..', '..', '..', 'package.json');
+  const path = join(import.meta.dirname, '..', '..', '..', 'package.json');
   return JSON.parse(readFileSync(path, 'utf8')).version;
 }
 

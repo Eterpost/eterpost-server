@@ -1,16 +1,16 @@
-import { MailingRepository } from '../MailingRepository';
+import { MailingRepository } from '../MailingRepository.js';
 import { Request, Response } from 'express';
-import { success, error } from '../utils/response';
-import { catchPromise } from '../utils/catchPromise';
-import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware';
-import { MailingState } from '../MailingState';
-import { MailingStateManager } from '../MailingStateManager';
-import { Logger } from '../Logger';
-import { Receiver } from '../Receiver';
-import { ReceiverListFilter } from '../ReceiverListFilter';
-import { generateUniqueCode } from '../utils/codes';
-import { Mailing } from '../Mailing';
-import { getLoadedMailing } from '../middleware/loadMailing';
+import { success, error } from '../utils/response.js';
+import { catchPromise } from '../utils/catchPromise.js';
+import { jsonSchemaMiddleware } from '../middleware/jsonSchemaMiddleware.js';
+import { MailingState } from '../MailingState.js';
+import { MailingStateManager } from '../MailingStateManager.js';
+import { Logger } from '../Logger.js';
+import { Receiver } from '../Receiver.js';
+import { ReceiverListFilter } from '../ReceiverListFilter.js';
+import { generateUniqueCode } from '../utils/codes.js';
+import { Mailing } from '../Mailing.js';
+import { getLoadedMailing } from '../middleware/loadMailing.js';
 
 
 export function updateMailing (
