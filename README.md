@@ -511,6 +511,7 @@ config has `%{NAME}`, pass the same environment variables):
 ```
 node server/dist/src/apiKeysCli.js add site-example      # print a new key
 node server/dist/src/apiKeysCli.js add front --proxy     # a reverse proxy key
+node server/dist/src/apiKeysCli.js add claude --admin    # an administrator key (/admin)
 node server/dist/src/apiKeysCli.js list                  # name, type, created, last used
 node server/dist/src/apiKeysCli.js revoke site-example
 ```
@@ -533,13 +534,14 @@ available only inside its space; a mailing of another space answers `404`, as
 if it did not exist. Mailings created before spaces appeared are moved to the
 space `default` on the first start (the log tells how many).
 
-Roles of API keys (`api-keys add <name> --space <space> | --system | --proxy`,
+Roles of API keys (`api-keys add <name> --space <space> | --system | --admin | --proxy`,
 `api-keys set-role <name> …` changes the role of an existing key):
 
 | Role | For | Sees |
 |---|---|---|
 | `--space sales` | sites and scripts of a sender | only mailings of its space |
 | `--system` | mail-sorter, subscription-facade | all mailings; needed for unsubscription, subscription, counters and bounces |
+| `--admin` | administrators and their scripts | all mailings and administration (`/admin`): spaces, members, keys |
 | `--proxy` | the front of the web client | spaces of the user from `X-Remote-User` (all spaces for logins in `server.auth.admins`) |
 | none (legacy) | keys created before spaces | all mailings, as before; logged as a warning `has no role` (at most once per 10 minutes per key) |
 
@@ -596,6 +598,29 @@ Upgrading a running installation is described in
 [deploy/lxc/README.md](deploy/lxc/README.md#переход-на-пространства-рассылок).
 Note: a non-numeric mailing id in `/mailings/:id/...` (including subscribe and
 unsubscribe) now answers `400 Invalid ID`.
+
+### Administration
+
+An administrator is a login from `server.auth.admins` signed in through the
+front, or a key with the `--admin` role. In the web client an administrator
+has the "Администрирование" link under the header (`?view=admin`) with three
+tabs:
+
+- **All mailings** — a table over all spaces: space, name, state, sent and
+  errors; filters by space, state, live/test and name; a summary of what is
+  running now. A click on the name opens the mailing in its space; each row can
+  move the mailing to another space (unless it is running).
+- **Spaces** — create, title and From, members, remove an empty space.
+- **API keys** — the list with roles and last use, issuing a key (its value is
+  shown once), changing the role, revoking. The key of the request itself cannot
+  be changed or revoked; a proxy key is revoked only with a confirmation
+  (`?force=1` in the API).
+
+The same is available in the API: `GET /me` (`{key, user, admin}`) and the
+`/admin/*` routes (see `/docs`). Other keys, `--system` included, get 403
+(`ADMIN_REQUIRED`) on `/admin/*`. Changes are logged with the key and the user:
+`admin: key "site" issued (space:sales) by lav via front`. Human administrators
+are listed only in the config.
 
 ## Development
 

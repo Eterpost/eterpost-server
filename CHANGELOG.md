@@ -3,6 +3,20 @@
 All notable changes to eterpost-server. Versions follow [Semantic Versioning](https://semver.org/);
 before 1.0 a minor version brings new features and a patch version brings fixes.
 
+## Unreleased
+
+### Administration
+- Web client: an "Администрирование" section for administrators with three tabs:
+  all mailings of all spaces (filters, sorting, a summary of running mailings,
+  opening a mailing in its space, moving it to another space), spaces (create,
+  title and From, members, remove an empty one) and API keys (issue with the value
+  shown once, change the role, revoke).
+- API: `GET /me` and `/admin/*` routes for spaces, members, keys and moving mailings;
+  only for logins from `server.auth.admins` through the front and keys with the new
+  `admin` role (`apiKeysCli add|set-role <name> --admin`), others get 403
+  `ADMIN_REQUIRED`. The key of the request cannot be changed or revoked, proxy keys
+  are revoked only with `?force=1`.
+
 ## 0.4.0 — 2026-11-16
 
 - Test email can be filled with the data of a mailing receiver: `send-test-email`
