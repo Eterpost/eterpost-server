@@ -8,13 +8,15 @@ import { ConfirmationButton } from './elements/ConfirmationButton';
 import { FormGroup } from './elements/FormGroup';
 import { TextInput } from './elements/TextInput';
 import pick from 'lodash-es/pick';
-import { Editor } from './Editor';
+import { LetterEditor } from 'eterpost-letter-editor';
+import 'eterpost-letter-editor/style.css';
 import { ReceiverList } from './ReceiverList';
 import { FailureList } from './FailureList';
 import { Checkbox } from './elements/Checkbox';
 import { formatDate } from '../formatDate';
 import { EmailPreview, getReceiverFields, RetryFilter } from '../api';
-import { insertableFields, TemplateFieldWarnings } from './TemplateFieldWarnings';
+import { receiverFieldOptions } from '../receiverFieldOptions';
+import { uploadImage } from '../uploadImage';
 import { collectFieldStats, ReceiverFieldStats } from 'eterpost-letter-editor/fields';
 import { EmailPreviewView } from './EmailPreviewView';
 import { fromPlaceholder } from './AddForm';
@@ -281,10 +283,10 @@ export class MailingDetailView extends React.Component<
                        placeholder='по умолчанию — на адрес отправителя' />
           </FormGroup>
           <FormGroup stretch fraction={2}>
-            <Editor onChange={this.handlers.html} html={this.state.fields.html}
-                    additionalTabs={listTabs} fields={insertableFields(stats)} />
-            <TemplateFieldWarnings sources={[this.state.fields.subject, this.state.fields.html]}
-                                   stats={stats} />
+            <LetterEditor onChange={this.handlers.html} html={this.state.fields.html}
+                          extraTabs={listTabs} fields={receiverFieldOptions(stats)}
+                          stats={stats} subject={this.state.fields.subject}
+                          uploadImage={uploadImage} />
           </FormGroup>
         </div>
 

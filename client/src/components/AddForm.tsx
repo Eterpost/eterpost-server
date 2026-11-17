@@ -2,8 +2,10 @@ import * as React from 'react';
 import { Receiver } from '../reducers/mailings';
 import '../styles/AddForm';
 import { ReceiverList } from './ReceiverList';
-import { Editor } from './Editor';
-import { insertableFields, TemplateFieldWarnings } from './TemplateFieldWarnings';
+import { LetterEditor } from 'eterpost-letter-editor';
+import 'eterpost-letter-editor/style.css';
+import { receiverFieldOptions } from '../receiverFieldOptions';
+import { uploadImage } from '../uploadImage';
 import { collectFieldStats, ReceiverFieldStats } from 'eterpost-letter-editor/fields';
 import { Checkbox } from './elements/Checkbox';
 import template from '../email-template.html';
@@ -46,7 +48,6 @@ interface AddFormState {
 }
 
 export class AddForm extends React.Component<AddFormProps, AddFormState> {
-  private editor: Editor | null;
   // Сводка по полям считается заново только при новом списке получателей
   private stats?: { receivers: Receiver[]; result: ReceiverFieldStats };
 
@@ -112,12 +113,11 @@ export class AddForm extends React.Component<AddFormProps, AddFormState> {
             </div>
             <div className='form-group stretch double'>
               <span className='input-name'>Текст письма</span>
-              <Editor ref={(editor: Editor) => this.editor = editor} html={this.state.html}
-                      onChange={this.changeHtml} fields={insertableFields(stats)}
-                      fieldsHint={stats ? undefined :
-                        'свои колонки появятся здесь, когда загрузите получателей'} />
-              <TemplateFieldWarnings sources={[this.state.subject, this.state.html]}
-                                     stats={stats} />
+              <LetterEditor html={this.state.html} onChange={this.changeHtml}
+                            fields={receiverFieldOptions(stats)} stats={stats}
+                            subject={this.state.subject} uploadImage={uploadImage}
+                            fieldsHint={stats ? undefined :
+                              'свои колонки появятся здесь, когда загрузите получателей'} />
             </div>
             <div className='form-group stretch horizontal'>
               <ReceiverList onChange={this.changeReceivers} receivers={this.state.receivers}
@@ -143,9 +143,6 @@ export class AddForm extends React.Component<AddFormProps, AddFormState> {
   }
 
   private add = () => {
-    if (!this.editor) {
-      return;
-    }
     const mailing = {
       from: this.state.from || undefined,
       html: this.state.html,

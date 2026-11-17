@@ -1,104 +1,27 @@
 @use 'tokens' as *;
 
-.form-group.stretch {
-  .react-tabs {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-
-    .react-tabs__tab-panel--selected {
-      display: flex;
-      flex: 1;
-      flex-direction: column;
-    }
-  }
-
-  .editor-tabs-bar {
-    margin: 0 0 -1px;
-  }
-
-  .editor-wrapper {
-    flex: 1;
-  }
+// Редактор письма (пакет eterpost-letter-editor) в цветах интерфейса Почтаря
+.le-editor {
+  --le-bg: #{$bg};
+  --le-surface: #{$surface};
+  --le-text: #{$text};
+  --le-muted: #{$muted};
+  --le-border: #{$border};
+  --le-accent: #{$accent};
+  --le-selected: #{$selected};
+  --le-hover: #{$hover};
+  --le-pressed: #{$pressed};
+  --le-warning: #{$warning};
+  --le-focus: #{$accent};
 }
 
-.editor-wrapper {
-  display: flex;
-  flex-direction: column;
-
-  textarea {
-    flex: 1;
-  }
-
-  .pell-container {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-
-    .pell-actionbar {
-      margin-top: 1px;
-
-      .pell-button {
-        min-width: 30px;
-        width: auto;
-      }
-    }
-
-    .pell-content {
-      flex: 1;
-    }
-  }
+// В растянутой группе формы редактор занимает всё место
+.form-group.stretch .le-editor {
+  flex: 1;
 }
 
-// Вкладки и переключатель фона письма в одной строке
-.editor-tabs-bar {
-  align-items: flex-end;
-  border-bottom: 1px solid $border;
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-
-  .react-tabs__tab-list {
-    border-bottom: none;
-    flex: 1;
-    margin: 0;
-  }
-}
-
-.editor-theme-toggle {
-  background: none;
-  border: 1px solid $border;
-  border-radius: 4px;
-  color: $text;
-  cursor: pointer;
-  display: none;
-  font: inherit;
-  font-size: 14px;
-  margin-bottom: 4px;
-  min-height: 32px;
-  padding: 0 10px;
-
-  &:hover {
-    background-color: $hover;
-  }
-
-  &:focus-visible {
-    @include focus-ring;
-  }
-
-  &[aria-pressed='true'] {
-    background-color: $selected;
-    border-color: $accent;
-  }
-
-  // В светлой теме письмо и так на белом — кнопка не нужна
-  @media (prefers-color-scheme: dark) {
-    display: block;
-  }
-}
-
-// Цвета react-tabs и pell под тему интерфейса. :root — чтобы перекрыть
-// их собственные стили независимо от порядка подключения
+// Цвета react-tabs (вкладки предпросмотра) под тему интерфейса. :root — чтобы
+// перекрыть их собственные стили независимо от порядка подключения
 :root .react-tabs__tab-list {
   border-bottom-color: $border;
 }
@@ -115,89 +38,4 @@
 
 :root .react-tabs__tab:focus-visible {
   @include focus-ring;
-}
-
-:root .pell {
-  border-color: $border;
-}
-
-:root .pell-actionbar {
-  background-color: $surface;
-  border-bottom-color: $border;
-}
-
-:root .pell-button {
-  color: $text;
-}
-
-:root .pell-button-selected {
-  background-color: $pressed;
-}
-
-// Текст письма — в цветах темы; «Светлый фон» показывает его так, как
-// увидит получатель со светлой темой
-:root .pell-content {
-  background-color: $bg;
-  color: $text;
-}
-
-:root .light-preview .pell-content {
-  background-color: #fff;
-  color: #1a1a1a;
-  color-scheme: light;
-}
-
-:root .editor-wrapper textarea {
-  background-color: $surface;
-  border: 1px solid $border;
-  color: $text;
-}
-
-// «Вставить поле»: кнопки полей получателя над текстом письма
-.editor-fields {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 6px;
-  margin: 0 0 8px;
-}
-
-.editor-fields-label, .editor-fields-hint {
-  color: $muted;
-  font-size: 14px;
-}
-
-.editor-field {
-  background-color: $selected;
-  border: 1px solid $border;
-  border-radius: 12px;
-  color: $text;
-  cursor: pointer;
-  font: inherit;
-  font-size: 14px;
-  max-width: 220px;
-  overflow: hidden;
-  padding: 1px 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-
-  &:hover {
-    border-color: $accent;
-  }
-
-  &:focus-visible {
-    @include focus-ring;
-  }
-}
-
-// Предупреждения о пустых подстановках под редактором
-.field-warnings {
-  color: $warning;
-  font-size: 14px;
-  margin: 6px 0 0;
-  padding-left: 20px;
-
-  code {
-    color: $text;
-  }
 }

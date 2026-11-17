@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import 'react-tabs/style/react-tabs.scss';
 import { EmailPreview } from '../api';
 import { Button } from './elements/Button';
 import '../styles/EmailPreviewView';
