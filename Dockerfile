@@ -1,6 +1,8 @@
 # Сборка: docker build --target server -t mail-server .
 #         docker build --target client -t mail-server-client .
 FROM node:22-alpine AS build
+# git — для зависимости eterpost-letter-editor из git-тега
+RUN apk add --no-cache git
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=optional --ignore-scripts
@@ -10,6 +12,7 @@ RUN rm -f config.json && npm run server:build && npm run client:build
 # API-сервер. Конфигурация — /app/config.json (поверх config.default.json),
 # шаблон письма подписки — /app/templates/confirm-subscription.hbs, вложения — /app/data
 FROM node:22-alpine AS server
+RUN apk add --no-cache git
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package.json package-lock.json ./

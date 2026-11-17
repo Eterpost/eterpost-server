@@ -249,7 +249,9 @@ square brackets: `{{receiver.extraData.[Renewal date]}}`. No need to type them: 
 "Вставить поле" buttons above the letter text insert the name, the address and the
 columns of the loaded receivers. Under the editor, warnings list fields that will be
 empty: no such column (often a different letter case) or empty for some receivers
-(with an example address). A file whose first line has no
+(with an example address). The letter editor is a separate package,
+[eterpost-letter-editor](https://github.com/Eterpost/eterpost-letter-editor), which can
+be embedded into another React interface. A file whose first line has no
 `email` column is read in the old format, one receiver per line:
 `email,name,extraData` with `extraData` as a JSON object
 (`ivan@example.com,Ivan,{"city": "Moscow"}`). Errors (a row without an address,

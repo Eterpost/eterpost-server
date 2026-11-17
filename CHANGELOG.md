@@ -3,7 +3,7 @@
 All notable changes to eterpost-server. Versions follow [Semantic Versioning](https://semver.org/);
 before 1.0 a minor version brings new features and a patch version brings fixes.
 
-## Unreleased
+## 0.6.0 — 2026-11-17
 
 ### Receiver fields in the letter
 - Web client: "Вставить поле" buttons above the letter text insert the receiver's
@@ -15,6 +15,13 @@ before 1.0 a minor version brings new features and a patch version brings fixes.
   everyone, or empty for some receivers with an example address.
 - API: `GET /mailings/:id/receiver-fields` — how many receivers have the name and
   each `extraData` column filled.
+
+### Letter editor package
+- The letter editor moved to a separate package,
+  [eterpost-letter-editor](https://github.com/Eterpost/eterpost-letter-editor) 0.1.0,
+  so other React interfaces can embed it; the web client uses it and looks the same.
+- The "Светлый фон" choice is stored under a new key, so it resets once.
+- The Docker image installs `git`: the package comes from a git tag.
 
 ## 0.5.0 — 2026-11-17
 
