@@ -1,6 +1,6 @@
 {
   "name": "eterpost-server",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Bulk mailing service",
   "type": "module",
   "main": "server/dist/src/index.js",
@@ -25,7 +25,7 @@
     "cors": "^2.8.6",
     "cron-converter": "^2.1.0",
     "csv-stringify": "^6.9.0",
-    "eterpost-letter-editor": "github:Eterpost/eterpost-letter-editor#v0.1.0",
+    "eterpost-letter-editor": "github:Eterpost/eterpost-letter-editor#v0.1.1",
     "express": "^5.1.0",
     "handlebars": "^4.7.10",
     "html-to-text": "^10.0.1",

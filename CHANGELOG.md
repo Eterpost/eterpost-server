@@ -3,6 +3,12 @@
 All notable changes to eterpost-server. Versions follow [Semantic Versioning](https://semver.org/);
 before 1.0 a minor version brings new features and a patch version brings fixes.
 
+## 0.6.2 — 2026-11-18
+
+### Fixed
+- The visual editor shows a border around the letter, so its edges are visible
+  (eterpost-letter-editor 0.1.1).
+
 ## 0.6.1 — 2026-11-17
 
 ### Internal
